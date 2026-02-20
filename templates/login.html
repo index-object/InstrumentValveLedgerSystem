@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 仪表阀门台账系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { max-width: 400px; width: 100%; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="login-container">
+        <div class="card login-card shadow">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <h4 class="text-primary">仪表阀门台账系统</h4>
+                </div>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-danger">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">用户名</label>
+                        <input type="text" name="username" class="form-control" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">密码</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="remember" class="form-check-input" id="remember">
+                        <label class="form-check-label" for="remember">记住我</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">登录</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
