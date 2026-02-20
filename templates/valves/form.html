@@ -1,195 +1,261 @@
 {% extends "base.html" %}
 
-{% block title %}{% if valve %}编辑{% else %}新建{% endif %}台账{% endblock %}
+{% block page_title %}{% if valve %}编辑{% else %}新建{% endif %}台账{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-page-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        color: white;
+        padding: 32px;
+        border-radius: var(--radius-md);
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .form-page-header h2 { margin: 0; font-size: 24px; font-weight: 600; }
+    .form-page-header p { margin: 8px 0 0; opacity: 0.85; font-size: 14px; }
+</style>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('valves.list') }}" class="btn-back">
+    <i class="bi bi-arrow-left"></i> 返回列表
+</a>
+{% endblock %}
 
 {% block content %}
-<h2>{% if valve %}编辑{% else %}新建{% endif %}台账</h2>
+<div class="form-page-header">
+    <div>
+        <h2><i class="bi bi-{% if valve %}pencil-square{% else %}plus-circle{% endif %}"></i> {% if valve %}编辑{% else %}新建{% endif %}台账</h2>
+        <p>填写仪表阀门详细信息，提交后等待审批</p>
+    </div>
+</div>
 
 <form method="POST">
-    <div class="card mb-3">
-        <div class="card-header">基本信息</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">序号</label>
-                    <input type="text" name="序号" class="form-control" value="{{ valve.序号 or '' }}">
+    <div class="form-section" id="basic-info">
+        <div class="form-section-header">
+            <i class="bi bi-id-card"></i>
+            <h5>基本信息</h5>
+        </div>
+        <div class="form-section-body">
+            <div class="field-row">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-hash" style="color: var(--text-muted);"></i> 序号</label>
+                    <input type="text" name="序号" class="form-control form-control-modern" value="{{ valve.序号 or '' }}" placeholder="自动编号">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">位号 *</label>
-                    <input type="text" name="位号" class="form-control" value="{{ valve.位号 or '' }}" required>
+                <div class="field-item">
+                    <label class="form-label"><span class="required">*</span> <i class="bi bi-upc" style="color: var(--text-muted);"></i> 位号</label>
+                    <input type="text" name="位号" class="form-control form-control-modern" value="{{ valve.位号 or '' }}" required placeholder="请输入位号">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">名称 *</label>
-                    <input type="text" name="名称" class="form-control" value="{{ valve.名称 or '' }}" required>
+                <div class="field-item">
+                    <label class="form-label"><span class="required">*</span> <i class="bi bi-tag" style="color: var(--text-muted);"></i> 名称</label>
+                    <input type="text" name="名称" class="form-control form-control-modern" value="{{ valve.名称 or '' }}" required placeholder="请输入设备名称">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">装置名称 *</label>
-                    <input type="text" name="装置名称" class="form-control" value="{{ valve.装置名称 or '' }}" required>
+            </div>
+            <div class="field-row">
+                <div class="field-item">
+                    <label class="form-label"><span class="required">*</span> <i class="bi bi-building" style="color: var(--text-muted);"></i> 装置名称</label>
+                    <input type="text" name="装置名称" class="form-control form-control-modern" value="{{ valve.装置名称 or '' }}" required placeholder="请输入装置名称">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">设备等级</label>
-                    <input type="text" name="设备等级" class="form-control" value="{{ valve.设备等级 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-layers" style="color: var(--text-muted);"></i> 设备等级</label>
+                    <input type="text" name="设备等级" class="form-control form-control-modern" value="{{ valve.设备等级 or '' }}" placeholder="如：A级、B级">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">型号规格</label>
-                    <input type="text" name="型号规格" class="form-control" value="{{ valve.型号规格 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-aspect-ratio" style="color: var(--text-muted);"></i> 型号规格</label>
+                    <input type="text" name="型号规格" class="form-control form-control-modern" value="{{ valve.型号规格 or '' }}" placeholder="请输入型号规格">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">生产厂家</label>
-                    <input type="text" name="生产厂家" class="form-control" value="{{ valve.生产厂家 or '' }}">
+            </div>
+            <div class="field-row">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-factory" style="color: var(--text-muted);"></i> 生产厂家</label>
+                    <input type="text" name="生产厂家" class="form-control form-control-modern" value="{{ valve.生产厂家 or '' }}" placeholder="请输入生产厂家">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">安装位置及用途</label>
-                    <input type="text" name="安装位置及用途" class="form-control" value="{{ valve.安装位置及用途 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-geo-alt" style="color: var(--text-muted);"></i> 安装位置及用途</label>
+                    <input type="text" name="安装位置及用途" class="form-control form-control-modern" value="{{ valve.安装位置及用途 or '' }}" placeholder="请输入安装位置">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">设备编号</label>
-                    <input type="text" name="设备编号" class="form-control" value="{{ valve.设备编号 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-qr-code" style="color: var(--text-muted);"></i> 设备编号</label>
+                    <input type="text" name="设备编号" class="form-control form-control-modern" value="{{ valve.设备编号 or '' }}" placeholder="请输入设备编号">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">是否联锁</label>
-                    <input type="text" name="是否联锁" class="form-control" value="{{ valve.是否联锁 or '' }}">
+            </div>
+            <div class="field-row">
+                <div class="field-item" style="flex: 0 0 300px;">
+                    <label class="form-label"><i class="bi bi-exclamation-triangle" style="color: var(--text-muted);"></i> 是否联锁</label>
+                    <input type="text" name="是否联锁" class="form-control form-control-modern" value="{{ valve.是否联锁 or '' }}" placeholder="是/否">
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header">工艺条件</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">介质名称</label>
-                    <input type="text" name="工艺条件_介质名称" class="form-control" value="{{ valve.工艺条件_介质名称 or '' }}">
+    <div class="form-section" id="process-conditions">
+        <div class="form-section-header" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
+            <i class="bi bi-thermometer-half"></i>
+            <h5>工艺条件</h5>
+        </div>
+        <div class="form-section-body">
+            <div class="field-row">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-droplet" style="color: var(--text-muted);"></i> 介质名称</label>
+                    <input type="text" name="工艺条件_介质名称" class="form-control form-control-modern" value="{{ valve.工艺条件_介质名称 or '' }}" placeholder="请输入介质名称">
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">设计温度</label>
-                    <input type="text" name="工艺条件_设计温度" class="form-control" value="{{ valve.工艺条件_设计温度 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-thermometer" style="color: var(--text-muted);"></i> 设计温度</label>
+                    <input type="text" name="工艺条件_设计温度" class="form-control form-control-modern" value="{{ valve.工艺条件_设计温度 or '' }}" placeholder="如：200℃">
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">阀前压力</label>
-                    <input type="text" name="工艺条件_阀前压力" class="form-control" value="{{ valve.工艺条件_阀前压力 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-arrow-left-right" style="color: var(--text-muted);"></i> 阀前压力</label>
+                    <input type="text" name="工艺条件_阀前压力" class="form-control form-control-modern" value="{{ valve.工艺条件_阀前压力 or '' }}" placeholder="如：1.6MPa">
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">阀后压力</label>
-                    <input type="text" name="工艺条件_阀后压力" class="form-control" value="{{ valve.工艺条件_阀后压力 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-arrow-right" style="color: var(--text-muted);"></i> 阀后压力</label>
+                    <input type="text" name="工艺条件_阀后压力" class="form-control form-control-modern" value="{{ valve.工艺条件_阀后压力 or '' }}" placeholder="如：0.8MPa">
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header">阀体信息</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">公称通径</label>
-                    <input type="text" name="阀体_公称通径" class="form-control" value="{{ valve.阀体_公称通径 or '' }}">
+    <div class="form-section" id="valve-body">
+        <div class="form-section-header" style="background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);">
+            <i class="bi bi-box-seam"></i>
+            <h5>阀体信息</h5>
+        </div>
+        <div class="form-section-body">
+            <div class="field-row">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-rulers" style="color: var(--text-muted);"></i> 公称通径</label>
+                    <input type="text" name="阀体_公称通径" class="form-control form-control-modern" value="{{ valve.阀体_公称通径 or '' }}" placeholder="如：DN100">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">连接方式及规格</label>
-                    <input type="text" name="阀体_连接方式及规格" class="form-control" value="{{ valve.阀体_连接方式及规格 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-link-45deg" style="color: var(--text-muted);"></i> 连接方式及规格</label>
+                    <input type="text" name="阀体_连接方式及规格" class="form-control form-control-modern" value="{{ valve.阀体_连接方式及规格 or '' }}" placeholder="如：法兰连接">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">阀体材质</label>
-                    <input type="text" name="阀体_材质" class="form-control" value="{{ valve.阀体_材质 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-gem" style="color: var(--text-muted);"></i> 阀体材质</label>
+                    <input type="text" name="阀体_材质" class="form-control form-control-modern" value="{{ valve.阀体_材质 or '' }}" placeholder="请输入阀体材质">
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header">阀内件信息</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">阀座直径</label>
-                    <input type="text" name="阀内件_阀座直径" class="form-control" value="{{ valve.阀内件_阀座直径 or '' }}">
+    <div class="form-section" id="valve-internal">
+        <div class="form-section-header" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+            <i class="bi bi-sliders"></i>
+            <h5>阀内件信息</h5>
+        </div>
+        <div class="form-section-body">
+            <div class="field-row">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-circle" style="color: var(--text-muted);"></i> 阀座直径</label>
+                    <input type="text" name="阀内件_阀座直径" class="form-control form-control-modern" value="{{ valve.阀内件_阀座直径 or '' }}" placeholder="请输入阀座直径">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">阀芯材质</label>
-                    <input type="text" name="阀内件_阀芯材质" class="form-control" value="{{ valve.阀内件_阀芯材质 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-gem" style="color: var(--text-muted);"></i> 阀芯材质</label>
+                    <input type="text" name="阀内件_阀芯材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀芯材质 or '' }}" placeholder="请输入阀芯材质">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">阀座材质</label>
-                    <input type="text" name="阀内件_阀座材质" class="form-control" value="{{ valve.阀内件_阀座材质 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-gem"></i> 阀座材质</label>
+                    <input type="text" name="阀内件_阀座材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀座材质 or '' }}" placeholder="请输入阀座材质">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">阀杆材质</label>
-                    <input type="text" name="阀内件_阀杆材质" class="form-control" value="{{ valve.阀内件_阀杆材质 or '' }}">
+            </div>
+            <div class="field-row">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-stickies" style="color: var(--text-muted);"></i> 阀杆材质</label>
+                    <input type="text" name="阀内件_阀杆材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀杆材质 or '' }}" placeholder="请输入阀杆材质">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">流量特性</label>
-                    <input type="text" name="阀内件_流量特性" class="form-control" value="{{ valve.阀内件_流量特性 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-graph-up" style="color: var(--text-muted);"></i> 流量特性</label>
+                    <input type="text" name="阀内件_流量特性" class="form-control form-control-modern" value="{{ valve.阀内件_流量特性 or '' }}" placeholder="如：线性、等百分比">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">泄露等级</label>
-                    <input type="text" name="阀内件_泄露等级" class="form-control" value="{{ valve.阀内件_泄露等级 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-shield-check" style="color: var(--text-muted);"></i> 泄露等级</label>
+                    <input type="text" name="阀内件_泄露等级" class="form-control form-control-modern" value="{{ valve.阀内件_泄露等级 or '' }}" placeholder="如：IV级、V级">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Cv值</label>
-                    <input type="text" name="阀内件_Cv值" class="form-control" value="{{ valve.阀内件_Cv值 or '' }}">
+            </div>
+            <div class="field-row">
+                <div class="field-item" style="flex: 0 0 300px;">
+                    <label class="form-label"><i class="bi bi-calculator" style="color: var(--text-muted);"></i> Cv值</label>
+                    <input type="text" name="阀内件_Cv值" class="form-control form-control-modern" value="{{ valve.阀内件_Cv值 or '' }}" placeholder="请输入Cv值">
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header">执行机构信息</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">形式</label>
-                    <input type="text" name="执行机构_形式" class="form-control" value="{{ valve.执行机构_形式 or '' }}">
+    <div class="form-section" id="actuator">
+        <div class="form-section-header" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
+            <i class="bi bi-lightning-charge"></i>
+            <h5>执行机构信息</h5>
+        </div>
+        <div class="form-section-body">
+            <div class="field-row">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-cpu" style="color: var(--text-muted);"></i> 形式</label>
+                    <input type="text" name="执行机构_形式" class="form-control form-control-modern" value="{{ valve.执行机构_形式 or '' }}" placeholder="如：气动薄膜式">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">型号规格</label>
-                    <input type="text" name="执行机构_型号规格" class="form-control" value="{{ valve.执行机构_型号规格 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-aspect-ratio" style="color: var(--text-muted);"></i> 型号规格</label>
+                    <input type="text" name="执行机构_型号规格" class="form-control form-control-modern" value="{{ valve.执行机构_型号规格 or '' }}" placeholder="请输入型号规格">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">厂家</label>
-                    <input type="text" name="执行机构_厂家" class="form-control" value="{{ valve.执行机构_厂家 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-factory" style="color: var(--text-muted);"></i> 厂家</label>
+                    <input type="text" name="执行机构_厂家" class="form-control form-control-modern" value="{{ valve.执行机构_厂家 or '' }}" placeholder="请输入生产厂家">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">作用形式</label>
-                    <input type="text" name="执行机构_作用形式" class="form-control" value="{{ valve.执行机构_作用形式 or '' }}">
+            </div>
+            <div class="field-row">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-arrow-repeat" style="color: var(--text-muted);"></i> 作用形式</label>
+                    <input type="text" name="执行机构_作用形式" class="form-control form-control-modern" value="{{ valve.执行机构_作用形式 or '' }}" placeholder="如：正作用、反作用">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">行程</label>
-                    <input type="text" name="执行机构_行程" class="form-control" value="{{ valve.执行机构_行程 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-arrows-expand" style="color: var(--text-muted);"></i> 行程</label>
+                    <input type="text" name="执行机构_行程" class="form-control form-control-modern" value="{{ valve.执行机构_行程 or '' }}" placeholder="如：30mm">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">弹簧范围</label>
-                    <input type="text" name="执行机构_弹簧范围" class="form-control" value="{{ valve.执行机构_弹簧范围 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-bounding-box" style="color: var(--text-muted);"></i> 弹簧范围</label>
+                    <input type="text" name="执行机构_弹簧范围" class="form-control form-control-modern" value="{{ valve.执行机构_弹簧范围 or '' }}" placeholder="如：0.2-0.8MPa">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">气源压力</label>
-                    <input type="text" name="执行机构_气源压力" class="form-control" value="{{ valve.执行机构_气源压力 or '' }}">
+            </div>
+            <div class="field-row">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-wind" style="color: var(--text-muted);"></i> 气源压力</label>
+                    <input type="text" name="执行机构_气源压力" class="form-control form-control-modern" value="{{ valve.执行机构_气源压力 or '' }}" placeholder="如：0.5MPa">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">故障位置</label>
-                    <input type="text" name="执行机构_故障位置" class="form-control" value="{{ valve.执行机构_故障位置 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-exclamation-octagon" style="color: var(--text-muted);"></i> 故障位置</label>
+                    <input type="text" name="执行机构_故障位置" class="form-control form-control-modern" value="{{ valve.执行机构_故障位置 or '' }}" placeholder="如：故障关、故障开">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">关阀时间</label>
-                    <input type="text" name="执行机构_关阀时间" class="form-control" value="{{ valve.执行机构_关阀时间 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-clock" style="color: var(--text-muted);"></i> 关阀时间</label>
+                    <input type="text" name="执行机构_关阀时间" class="form-control form-control-modern" value="{{ valve.执行机构_关阀时间 or '' }}" placeholder="如：5s">
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">开阀时间</label>
-                    <input type="text" name="执行机构_开阀时间" class="form-control" value="{{ valve.执行机构_开阀时间 or '' }}">
+                <div class="field-item">
+                    <label class="form-label"><i class="bi bi-clock-history" style="color: var(--text-muted);"></i> 开阀时间</label>
+                    <input type="text" name="执行机构_开阀时间" class="form-control form-control-modern" value="{{ valve.执行机构_开阀时间 or '' }}" placeholder="如：8s">
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header">备注</div>
-        <div class="card-body">
-            <textarea name="备注" class="form-control" rows="3">{{ valve.备注 or '' }}</textarea>
+    <div class="form-section" id="remarks">
+        <div class="form-section-header" style="background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);">
+            <i class="bi bi-chat-text"></i>
+            <h5>备注</h5>
+        </div>
+        <div class="form-section-body">
+            <textarea name="备注" class="form-control form-control-modern" rows="4" placeholder="请输入其他需要说明的信息...">{{ valve.备注 or '' }}</textarea>
         </div>
     </div>
 
-    <button type="submit" class="btn btn-primary">提交</button>
-    <a href="{{ url_for('valves.list') }}" class="btn btn-secondary">返回</a>
+    <div class="d-flex gap-3" style="margin-bottom: 32px;" id="submit-actions">
+        <button type="submit" class="btn-submit">
+            <i class="bi bi-check-circle"></i> 提交审批
+        </button>
+        <a href="{{ url_for('valves.list') }}" class="btn-back">
+            <i class="bi bi-x-circle"></i> 取消
+        </a>
+    </div>
 </form>
 {% endblock %}

@@ -399,7 +399,12 @@ def export_data():
         )
 
     df = pd.DataFrame(data)
-    output = make_response(df.to_excel(index=False, engine="openpyxl"))
+    from io import BytesIO
+
+    buffer = BytesIO()
+    df.to_excel(buffer, index=False, engine="openpyxl")
+    buffer.seek(0)
+    output = make_response(buffer.read())
     output.headers["Content-Disposition"] = "attachment; filename=valves.xlsx"
     output.headers["Content-Type"] = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

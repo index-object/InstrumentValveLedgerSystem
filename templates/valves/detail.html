@@ -1,110 +1,145 @@
 {% extends "base.html" %}
 
-{% block title %}{{ valve.位号 }} - 台账详情{% endblock %}
+{% block page_title %}台账详情{% endblock %}
+
+{% block header_actions %}
+<div class="d-flex gap-2">
+    {% if valve.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+    <a href="{{ url_for('valves.edit', id=valve.id) }}" class="btn btn-primary-custom"><i class="bi bi-pencil"></i> 编辑</a>
+    {% endif %}
+    <a href="{{ url_for('valves.list') }}" class="btn" style="background: #e2e8f0; color: #475569;"><i class="bi bi-arrow-left"></i> 返回</a>
+</div>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>{{ valve.位号 }} - {{ valve.名称 }}</h2>
-    <div>
-        {% if valve.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
-        <a href="{{ url_for('valves.edit', id=valve.id) }}" class="btn btn-primary">编辑</a>
+<div class="modern-card mb-4">
+    <div class="p-4" style="border-bottom: 1px solid var(--border-color);">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 style="font-weight: 600; margin-bottom: 8px;">{{ valve.位号 }} - {{ valve.名称 }}</h3>
+                <span class="text-muted">装置: {{ valve.装置名称 }}</span>
+            </div>
+            <div>
+                {% if valve.status == 'approved' %}
+                <span class="badge-status badge-approved">已审批</span>
+                {% elif valve.status == 'pending' %}
+                <span class="badge-status badge-pending">待审批</span>
+                {% elif valve.status == 'rejected' %}
+                <span class="badge-status badge-rejected">已驳回</span>
+                {% else %}
+                <span class="badge-status badge-draft">草稿</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="card-body-custom">
+        <div class="detail-section mb-4">
+            <h5 class="detail-title"><i class="bi bi-info-circle"></i> 基础信息</h5>
+            <div class="detail-grid">
+                <div class="detail-item"><span class="detail-label">序号</span><span class="detail-value">{{ valve.序号 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">位号</span><span class="detail-value">{{ valve.位号 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">名称</span><span class="detail-value">{{ valve.名称 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">装置名称</span><span class="detail-value">{{ valve.装置名称 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">设备等级</span><span class="detail-value">{{ valve.设备等级 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">型号规格</span><span class="detail-value">{{ valve.型号规格 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">生产厂家</span><span class="detail-value">{{ valve.生产厂家 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">安装位置</span><span class="detail-value">{{ valve.安装位置及用途 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">设备编号</span><span class="detail-value">{{ valve.设备编号 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">是否联锁</span><span class="detail-value">{{ valve.是否联锁 or '-' }}</span></div>
+            </div>
+        </div>
+        
+        <div class="detail-section mb-4">
+            <h5 class="detail-title"><i class="bi bi-gear"></i> 工艺条件</h5>
+            <div class="detail-grid">
+                <div class="detail-item"><span class="detail-label">介质名称</span><span class="detail-value">{{ valve.工艺条件_介质名称 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">设计温度</span><span class="detail-value">{{ valve.工艺条件_设计温度 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">阀前压力</span><span class="detail-value">{{ valve.工艺条件_阀前压力 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">阀后压力</span><span class="detail-value">{{ valve.工艺条件_阀后压力 or '-' }}</span></div>
+            </div>
+        </div>
+        
+        <div class="detail-section mb-4">
+            <h5 class="detail-title"><i class="bi bi-box"></i> 阀体信息</h5>
+            <div class="detail-grid">
+                <div class="detail-item"><span class="detail-label">公称通径</span><span class="detail-value">{{ valve.阀体_公称通径 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">连接方式</span><span class="detail-value">{{ valve.阀体_连接方式及规格 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">材质</span><span class="detail-value">{{ valve.阀体_材质 or '-' }}</span></div>
+            </div>
+        </div>
+        
+        <div class="detail-section mb-4">
+            <h5 class="detail-title"><i class="bi bi-sliders"></i> 阀内件信息</h5>
+            <div class="detail-grid">
+                <div class="detail-item"><span class="detail-label">阀座直径</span><span class="detail-value">{{ valve.阀内件_阀座直径 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">阀芯材质</span><span class="detail-value">{{ valve.阀内件_阀芯材质 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">阀座材质</span><span class="detail-value">{{ valve.阀内件_阀座材质 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">阀杆材质</span><span class="detail-value">{{ valve.阀内件_阀杆材质 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">流量特性</span><span class="detail-value">{{ valve.阀内件_流量特性 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">泄露等级</span><span class="detail-value">{{ valve.阀内件_泄露等级 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">Cv值</span><span class="detail-value">{{ valve.阀内件_Cv值 or '-' }}</span></div>
+            </div>
+        </div>
+        
+        <div class="detail-section mb-4">
+            <h5 class="detail-title"><i class="bi bi-lightning"></i> 执行机构信息</h5>
+            <div class="detail-grid">
+                <div class="detail-item"><span class="detail-label">形式</span><span class="detail-value">{{ valve.执行机构_形式 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">型号规格</span><span class="detail-value">{{ valve.执行机构_型号规格 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">厂家</span><span class="detail-value">{{ valve.执行机构_厂家 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">作用形式</span><span class="detail-value">{{ valve.执行机构_作用形式 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">行程</span><span class="detail-value">{{ valve.执行机构_行程 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">弹簧范围</span><span class="detail-value">{{ valve.执行机构_弹簧范围 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">气源压力</span><span class="detail-value">{{ valve.执行机构_气源压力 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">故障位置</span><span class="detail-value">{{ valve.执行机构_故障位置 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">关阀时间</span><span class="detail-value">{{ valve.执行机构_关阀时间 or '-' }}</span></div>
+                <div class="detail-item"><span class="detail-label">开阀时间</span><span class="detail-value">{{ valve.执行机构_开阀时间 or '-' }}</span></div>
+            </div>
+        </div>
+        
+        {% if valve.备注 %}
+        <div class="detail-section">
+            <h5 class="detail-title"><i class="bi bi-chat-left-text"></i> 备注</h5>
+            <p style="color: var(--text-dark);">{{ valve.备注 }}</p>
+        </div>
         {% endif %}
-        <a href="{{ url_for('valves.list') }}" class="btn btn-secondary">返回</a>
     </div>
 </div>
 
-<div class="mb-3">
-    {% if valve.status == 'approved' %}
-    <span class="badge bg-success">已审批</span>
-    {% elif valve.status == 'pending' %}
-    <span class="badge bg-warning">待审批</span>
-    {% elif valve.status == 'rejected' %}
-    <span class="badge bg-danger">已驳回</span>
-    {% else %}
-    <span class="badge bg-secondary">草稿</span>
-    {% endif %}
-</div>
-
-<div class="card mb-3">
-    <div class="card-header">基础信息</div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4"><strong>序号:</strong> {{ valve.序号 }}</div>
-            <div class="col-md-4"><strong>位号:</strong> {{ valve.位号 }}</div>
-            <div class="col-md-4"><strong>名称:</strong> {{ valve.名称 }}</div>
-            <div class="col-md-4"><strong>装置名称:</strong> {{ valve.装置名称 }}</div>
-            <div class="col-md-4"><strong>设备等级:</strong> {{ valve.设备等级 }}</div>
-            <div class="col-md-4"><strong>型号规格:</strong> {{ valve.型号规格 }}</div>
-            <div class="col-md-4"><strong>生产厂家:</strong> {{ valve.生产厂家 }}</div>
-            <div class="col-md-4"><strong>安装位置:</strong> {{ valve.安装位置及用途 }}</div>
-            <div class="col-md-4"><strong>设备编号:</strong> {{ valve.设备编号 }}</div>
-            <div class="col-md-4"><strong>是否联锁:</strong> {{ valve.是否联锁 }}</div>
-        </div>
-    </div>
-</div>
-
-<div class="card mb-3">
-    <div class="card-header">工艺条件</div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-3"><strong>介质名称:</strong> {{ valve.工艺条件_介质名称 }}</div>
-            <div class="col-md-3"><strong>设计温度:</strong> {{ valve.工艺条件_设计温度 }}</div>
-            <div class="col-md-3"><strong>阀前压力:</strong> {{ valve.工艺条件_阀前压力 }}</div>
-            <div class="col-md-3"><strong>阀后压力:</strong> {{ valve.工艺条件_阀后压力 }}</div>
-        </div>
-    </div>
-</div>
-
-<div class="card mb-3">
-    <div class="card-header">阀体信息</div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4"><strong>公称通径:</strong> {{ valve.阀体_公称通径 }}</div>
-            <div class="col-md-4"><strong>连接方式:</strong> {{ valve.阀体_连接方式及规格 }}</div>
-            <div class="col-md-4"><strong>材质:</strong> {{ valve.阀体_材质 }}</div>
-        </div>
-    </div>
-</div>
-
-<div class="card mb-3">
-    <div class="card-header">阀内件信息</div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4"><strong>阀座直径:</strong> {{ valve.阀内件_阀座直径 }}</div>
-            <div class="col-md-4"><strong>阀芯材质:</strong> {{ valve.阀内件_阀芯材质 }}</div>
-            <div class="col-md-4"><strong>阀座材质:</strong> {{ valve.阀内件_阀座材质 }}</div>
-            <div class="col-md-4"><strong>阀杆材质:</strong> {{ valve.阀内件_阀杆材质 }}</div>
-            <div class="col-md-4"><strong>流量特性:</strong> {{ valve.阀内件_流量特性 }}</div>
-            <div class="col-md-4"><strong>泄露等级:</strong> {{ valve.阀内件_泄露等级 }}</div>
-            <div class="col-md-4"><strong>Cv值:</strong> {{ valve.阀内件_Cv值 }}</div>
-        </div>
-    </div>
-</div>
-
-<div class="card mb-3">
-    <div class="card-header">执行机构信息</div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4"><strong>形式:</strong> {{ valve.执行机构_形式 }}</div>
-            <div class="col-md-4"><strong>型号规格:</strong> {{ valve.执行机构_型号规格 }}</div>
-            <div class="col-md-4"><strong>厂家:</strong> {{ valve.执行机构_厂家 }}</div>
-            <div class="col-md-4"><strong>作用形式:</strong> {{ valve.执行机构_作用形式 }}</div>
-            <div class="col-md-4"><strong>行程:</strong> {{ valve.执行机构_行程 }}</div>
-            <div class="col-md-4"><strong>弹簧范围:</strong> {{ valve.执行机构_弹簧范围 }}</div>
-            <div class="col-md-4"><strong>气源压力:</strong> {{ valve.执行机构_气源压力 }}</div>
-            <div class="col-md-4"><strong>故障位置:</strong> {{ valve.执行机构_故障位置 }}</div>
-            <div class="col-md-4"><strong>关阀时间:</strong> {{ valve.执行机构_关阀时间 }}</div>
-            <div class="col-md-4"><strong>开阀时间:</strong> {{ valve.执行机构_开阀时间 }}</div>
-        </div>
-    </div>
-</div>
-
-{% if valve.备注 %}
-<div class="card mb-3">
-    <div class="card-header">备注</div>
-    <div class="card-body">
-        {{ valve.备注 }}
-    </div>
-</div>
-{% endif %}
+<style>
+.detail-section { }
+.detail-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.detail-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.detail-value {
+    font-size: 14px;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+</style>
 {% endblock %}

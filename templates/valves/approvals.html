@@ -1,58 +1,78 @@
 {% extends "base.html" %}
 
-{% block title %}审批管理{% endblock %}
+{% block page_title %}审批管理{% endblock %}
 
 {% block content %}
-<h2>审批管理</h2>
-
-<ul class="nav nav-tabs mb-3">
-    <li class="nav-item">
-        <a class="nav-link {% if current_status == 'pending' %}active{% endif %}" href="{{ url_for('valves.approvals', status='pending') }}">待审批</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {% if current_status == 'approved' %}active{% endif %}" href="{{ url_for('valves.approvals', status='approved') }}">已审批</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {% if current_status == 'rejected' %}active{% endif %}" href="{{ url_for('valves.approvals', status='rejected') }}">已驳回</a>
-    </li>
-</ul>
-
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
-        <thead>
-            <tr>
-                <th>序号</th>
-                <th>位号</th>
-                <th>名称</th>
-                <th>装置名称</th>
-                <th>申请人</th>
-                <th>申请时间</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for valve in valves %}
-            <tr>
-                <td>{{ valve.序号 }}</td>
-                <td><a href="{{ url_for('valves.detail', id=valve.id) }}">{{ valve.位号 }}</a></td>
-                <td>{{ valve.名称 }}</td>
-                <td>{{ valve.装置名称 }}</td>
-                <td>{{ valve.creator.real_name or valve.creator.username if valve.creator else '-' }}</td>
-                <td>{{ valve.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>
-                    {% if current_status == 'pending' %}
-                    <form method="POST" action="{{ url_for('valves.approve', id=valve.id) }}" style="display:inline;">
-                        <input type="hidden" name="comment" value="">
-                        <button type="submit" class="btn btn-sm btn-success">通过</button>
-                    </form>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="rejectValve({{ valve.id }})">驳回</button>
-                    {% endif %}
-                    <a href="{{ url_for('valves.detail', id=valve.id) }}" class="btn btn-sm btn-info">查看</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="modern-card">
+    <div class="px-4 pt-4">
+        <ul class="nav nav-tabs border-0" style="gap: 8px;">
+            <li class="nav-item">
+                <a class="nav-link {% if current_status == 'pending' %}active{% endif %}" href="{{ url_for('valves.approvals', status='pending') }}" 
+                   style="padding: 10px 20px; border-radius: 6px; color: var(--text-dark); {% if current_status == 'pending' %}background: var(--primary-color); color: white;{% endif %}">
+                    <i class="bi bi-clock"></i> 待审批
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_status == 'approved' %}active{% endif %}" href="{{ url_for('valves.approvals', status='approved') }}"
+                   style="padding: 10px 20px; border-radius: 6px; color: var(--text-dark); {% if current_status == 'approved' %}background: var(--primary-color); color: white;{% endif %}">
+                    <i class="bi bi-check-circle"></i> 已审批
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if current_status == 'rejected' %}active{% endif %}" href="{{ url_for('valves.approvals', status='rejected') }}"
+                   style="padding: 10px 20px; border-radius: 6px; color: var(--text-dark); {% if current_status == 'rejected' %}background: var(--primary-color); color: white;{% endif %}">
+                    <i class="bi bi-x-circle"></i> 已驳回
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>序号</th>
+                    <th>位号</th>
+                    <th>名称</th>
+                    <th>装置名称</th>
+                    <th>申请人</th>
+                    <th>申请时间</th>
+                    <th style="width: 180px;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for valve in valves %}
+                <tr>
+                    <td>{{ valve.序号 }}</td>
+                    <td><a href="{{ url_for('valves.detail', id=valve.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
+                    <td>{{ valve.名称 }}</td>
+                    <td>{{ valve.装置名称 }}</td>
+                    <td>{{ valve.creator.real_name or valve.creator.username if valve.creator else '-' }}</td>
+                    <td>{{ valve.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        {% if current_status == 'pending' %}
+                        <form method="POST" action="{{ url_for('valves.approve', id=valve.id) }}" style="display:inline;">
+                            <input type="hidden" name="comment" value="">
+                            <button type="submit" class="btn-action" style="background: #d1fae5; color: #065f46;"><i class="bi bi-check-lg"></i> 通过</button>
+                        </form>
+                        <button type="button" class="btn-action" style="background: #fee2e2; color: #991b1b;" onclick="rejectValve({{ valve.id }})"><i class="bi bi-x-lg"></i> 驳回</button>
+                        {% endif %}
+                        <a href="{{ url_for('valves.detail', id=valve.id) }}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i> 查看</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <p>暂无数据</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>

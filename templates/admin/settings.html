@@ -1,36 +1,38 @@
 {% extends "base.html" %}
 
-{% block title %}系统设置{% endblock %}
+{% block page_title %}系统设置{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('admin.index') }}" class="btn" style="background: #e2e8f0; color: #475569;"><i class="bi bi-arrow-left"></i> 返回</a>
+{% endblock %}
 
 {% block content %}
-<h2>系统设置</h2>
-
 <form method="POST">
-    <div class="card mb-3">
-        <div class="card-header">审批设置</div>
-        <div class="card-body">
+    <div class="modern-card mb-4">
+        <div class="card-header-custom"><i class="bi bi-check2-square"></i> 审批设置</div>
+        <div class="card-body-custom">
             <div class="mb-3">
-                <label class="form-label">审批模式</label>
-                <select name="auto_approval" class="form-select">
+                <label class="form-label" style="font-weight: 500;">审批模式</label>
+                <select name="auto_approval" class="form-control form-control-modern">
                     <option value="true" {% if auto_approval == 'true' %}selected{% endif %}>自动审批</option>
                     <option value="false" {% if auto_approval == 'false' %}selected{% endif %}>手动审批</option>
                 </select>
-                <small class="text-muted">自动审批: 员工提交后立即生效; 手动审批: 需要领导审批</small>
+                <small class="text-muted d-block mt-2">自动审批: 员工提交后立即生效; 手动审批: 需要领导审批</small>
             </div>
         </div>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header">用户设置</div>
-        <div class="card-body">
+    <div class="modern-card mb-4">
+        <div class="card-header-custom"><i class="bi bi-person"></i> 用户设置</div>
+        <div class="card-body-custom">
             <div class="mb-3">
-                <label class="form-label">默认初始密码</label>
-                <input type="text" name="default_password" class="form-control" value="{{ default_password }}">
-                <small class="text-muted">新用户默认密码</small>
+                <label class="form-label" style="font-weight: 500;">默认初始密码</label>
+                <input type="text" name="default_password" class="form-control form-control-modern" value="{{ default_password }}">
+                <small class="text-muted d-block mt-2">新用户默认密码</small>
             </div>
             <div class="mb-3">
-                <label class="form-label">每页显示数量</label>
-                <select name="page_size" class="form-select">
+                <label class="form-label" style="font-weight: 500;">每页显示数量</label>
+                <select name="page_size" class="form-control form-control-modern">
                     <option value="10" {% if page_size == '10' %}selected{% endif %}>10条</option>
                     <option value="20" {% if page_size == '20' %}selected{% endif %}>20条</option>
                     <option value="50" {% if page_size == '50' %}selected{% endif %}>50条</option>
@@ -39,17 +41,16 @@
         </div>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header">系统信息</div>
-        <div class="card-body">
+    <div class="modern-card mb-4">
+        <div class="card-header-custom"><i class="bi bi-gear"></i> 系统信息</div>
+        <div class="card-body-custom">
             <div class="mb-3">
-                <label class="form-label">系统名称</label>
-                <input type="text" name="system_name" class="form-control" value="{{ system_name }}">
+                <label class="form-label" style="font-weight: 500;">系统名称</label>
+                <input type="text" name="system_name" class="form-control form-control-modern" value="{{ system_name }}">
             </div>
         </div>
     </div>
 
-    <button type="submit" class="btn btn-primary">保存设置</button>
-    <a href="{{ url_for('admin.index') }}" class="btn btn-secondary">返回</a>
+    <button type="submit" class="btn btn-primary-custom"><i class="bi bi-check-lg"></i> 保存设置</button>
 </form>
 {% endblock %}
