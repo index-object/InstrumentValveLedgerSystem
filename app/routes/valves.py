@@ -249,3 +249,160 @@ def reject(id):
 
     flash("已驳回")
     return redirect(url_for("valves.approvals"))
+
+
+@valves.route("/import", methods=["GET", "POST"])
+@login_required
+def import_data():
+    if current_user.role not in ["leader", "admin"]:
+        flash("需要领导权限")
+        return redirect(url_for("valves.list"))
+
+    if request.method == "POST":
+        if "file" not in request.files:
+            flash("请选择文件")
+            return redirect(request.url)
+
+        file = request.files["file"]
+        if file.filename == "":
+            flash("请选择文件")
+            return redirect(request.url)
+
+        if file:
+            import pandas as pd
+
+            df = pd.read_excel(file)
+
+            column_map = {
+                "序号": "序号",
+                "装置名称": "装置名称",
+                "位号": "位号",
+                "名称": "名称",
+                "设备等级": "设备等级",
+                "型号规格": "型号规格",
+                "生产厂家": "生产厂家",
+                "安装位置及用途": "安装位置及用途",
+                "工艺条件_介质名称": "工艺条件_介质名称",
+                "工艺条件_设计温度": "工艺条件_设计温度",
+                "工艺条件_阀前压力": "工艺条件_阀前压力",
+                "工艺条件_阀后压力": "工艺条件_阀后压力",
+                "阀体_公称通径": "阀体_公称通径",
+                "阀体_连接方式及规格": "阀体_连接方式及规格",
+                "阀体_材质": "阀体_材质",
+                "阀内件_阀座直径": "阀内件_阀座直径",
+                "阀内件_阀芯材质": "阀内件_阀芯材质",
+                "阀内件_阀座材质": "阀内件_阀座材质",
+                "阀内件_阀杆材质": "阀内件_阀杆材质",
+                "阀内件_流量特性": "阀内件_流量特性",
+                "阀内件_泄露等级": "阀内件_泄露等级",
+                "阀内件_Cv值": "阀内件_Cv值",
+                "执行机构_形式": "执行机构_形式",
+                "执行机构_型号规格": "执行机构_型号规格",
+                "执行机构_厂家": "执行机构_厂家",
+                "执行机构_作用形式": "执行机构_作用形式",
+                "执行机构_行程": "执行机构_行程",
+                "执行机构_弹簧范围": "执行机构_弹簧范围",
+                "执行机构_气源压力": "执行机构_气源压力",
+                "执行机构_故障位置": "执行机构_故障位置",
+                "执行机构_关阀时间": "执行机构_关阀时间",
+                "执行机构_开阀时间": "执行机构_开阀时间",
+                "设备编号": "设备编号",
+                "是否联锁": "是否联锁",
+                "备注": "备注",
+            }
+
+            new_count = 0
+            update_count = 0
+            for _, row in df.iterrows():
+                if pd.isna(row.get("位号")):
+                    continue
+
+                existing = Valve.query.filter_by(位号=row["位号"]).first()
+                if existing:
+                    for excel_col, db_col in column_map.items():
+                        if excel_col in df.columns and pd.notna(row.get(excel_col)):
+                            setattr(existing, db_col, str(row[excel_col]))
+                    update_count += 1
+                else:
+                    valve = Valve()
+                    for excel_col, db_col in column_map.items():
+                        if excel_col in df.columns and pd.notna(row.get(excel_col)):
+                            setattr(valve, db_col, str(row[excel_col]))
+
+                    valve.created_by = current_user.id
+
+                    auto_approve = Setting.query.get("auto_approval")
+                    if auto_approve and auto_approve.value == "true":
+                        valve.status = "approved"
+                        valve.approved_by = current_user.id
+                        valve.approved_at = datetime.utcnow()
+                    else:
+                        valve.status = "approved"
+
+                    db.session.add(valve)
+                    new_count += 1
+
+            db.session.commit()
+            flash(f"成功导入 {new_count} 条新记录，更新 {update_count} 条现有记录")
+            return redirect(url_for("valves.list"))
+
+    return render_template("valves/import.html")
+
+
+@valves.route("/export")
+@login_required
+def export_data():
+    import pandas as pd
+
+    valves = Valve.query.filter_by(status="approved").all()
+
+    data = []
+    for v in valves:
+        data.append(
+            {
+                "序号": v.序号,
+                "装置名称": v.装置名称,
+                "位号": v.位号,
+                "名称": v.名称,
+                "设备等级": v.设备等级,
+                "型号规格": v.型号规格,
+                "生产厂家": v.生产厂家,
+                "安装位置及用途": v.安装位置及用途,
+                "工艺条件_介质名称": v.工艺条件_介质名称,
+                "工艺条件_设计温度": v.工艺条件_设计温度,
+                "工艺条件_阀前压力": v.工艺条件_阀前压力,
+                "工艺条件_阀后压力": v.工艺条件_阀后压力,
+                "阀体_公称通径": v.阀体_公称通径,
+                "阀体_连接方式及规格": v.阀体_连接方式及规格,
+                "阀体_材质": v.阀体_材质,
+                "阀内件_阀座直径": v.阀内件_阀座直径,
+                "阀内件_阀芯材质": v.阀内件_阀芯材质,
+                "阀内件_阀座材质": v.阀内件_阀座材质,
+                "阀内件_阀杆材质": v.阀内件_阀杆材质,
+                "阀内件_流量特性": v.阀内件_流量特性,
+                "阀内件_泄露等级": v.阀内件_泄露等级,
+                "阀内件_Cv值": v.阀内件_Cv值,
+                "执行机构_形式": v.执行机构_形式,
+                "执行机构_型号规格": v.执行机构_型号规格,
+                "执行机构_厂家": v.执行机构_厂家,
+                "执行机构_作用形式": v.执行机构_作用形式,
+                "执行机构_行程": v.执行机构_行程,
+                "执行机构_弹簧范围": v.执行机构_弹簧范围,
+                "执行机构_气源压力": v.执行机构_气源压力,
+                "执行机构_故障位置": v.执行机构_故障位置,
+                "执行机构_关阀时间": v.执行机构_关阀时间,
+                "执行机构_开阀时间": v.执行机构_开阀时间,
+                "设备编号": v.设备编号,
+                "是否联锁": v.是否联锁,
+                "备注": v.备注,
+            }
+        )
+
+    df = pd.DataFrame(data)
+    output = make_response(df.to_excel(index=False, engine="openpyxl"))
+    output.headers["Content-Disposition"] = "attachment; filename=valves.xlsx"
+    output.headers["Content-Type"] = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    return output
