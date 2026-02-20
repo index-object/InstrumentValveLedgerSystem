@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}维护记录列表{% endblock %}
+
+{% block content %}
+<h2>维护记录列表</h2>
+
+<form method="get" class="mb-3">
+    <div class="row">
+        <div class="col-md-4">
+            <input type="text" name="search" class="form-control" placeholder="搜索检修内容..." value="{{ request.args.get('search', '') }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">搜索</button>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>设备位号</th>
+                <th>设备名称</th>
+                <th>类型</th>
+                <th>日期</th>
+                <th>负责人</th>
+                <th>内容</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td><a href="{{ url_for('valves.detail', id=record.valve_id) }}">{{ record.设备位号 }}</a></td>
+                <td>{{ record.设备名称 }}</td>
+                <td>{{ record.类型 }}</td>
+                <td>{{ record.日期.strftime('%Y-%m-%d') }}</td>
+                <td>{{ record.负责人 }}</td>
+                <td>{{ record.内容[:50] }}{% if record.内容 and record.内容|length > 50 %}...{% endif %}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center text-muted">暂无维护记录</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

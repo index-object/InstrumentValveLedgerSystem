@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}照片管理 - {{ valve.位号 }}{% endblock %}
+
+{% block content %}
+<h2>照片管理 - {{ valve.位号 }}</h2>
+
+<div class="card mb-3">
+    <div class="card-header">上传新照片</div>
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label">选择照片</label>
+                <input type="file" name="photo" class="form-control" accept="image/*" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">描述</label>
+                <input type="text" name="description" class="form-control" placeholder="可选描述">
+            </div>
+            <button type="submit" class="btn btn-primary">上传</button>
+            <a href="{{ url_for('valves.detail', id=valve.id) }}" class="btn btn-secondary">返回</a>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">已有照片</div>
+    <div class="card-body">
+        {% if valve.photos %}
+        <div class="row">
+            {% for photo in valve.photos %}
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" class="card-img-top" alt="{{ photo.description }}">
+                    <div class="card-body">
+                        <small class="text-muted">{{ photo.description }}</small><br>
+                        <small class="text-muted">{{ photo.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">暂无照片</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

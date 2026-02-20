@@ -406,3 +406,81 @@ def export_data():
     )
 
     return output
+
+
+@valves.route("/valve/<int:id>/photos", methods=["GET", "POST"])
+@login_required
+def photos(id):
+    from app.models import ValvePhoto
+
+    valve = Valve.query.get_or_404(id)
+
+    if request.method == "POST":
+        if "photo" not in request.files:
+            flash("请选择文件")
+            return redirect(request.url)
+
+        file = request.files["photo"]
+        if file and allowed_file(file.filename):
+            from flask import current_app
+
+            filename = secure_filename(
+                f"{valve.位号}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
+            )
+            file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], filename))
+
+            photo = ValvePhoto(
+                valve_id=valve.id,
+                filename=filename,
+                description=request.form.get("description", ""),
+                uploaded_by=current_user.id,
+            )
+            db.session.add(photo)
+            db.session.commit()
+            flash("上传成功")
+
+    return render_template("valves/photos.html", valve=valve)
+
+
+@valves.route("/valve/<int:id>/maintenance", methods=["GET", "POST"])
+@login_required
+def maintenance(id):
+    from app.models import MaintenanceRecord
+
+    valve = Valve.query.get_or_404(id)
+
+    if request.method == "POST":
+        record = MaintenanceRecord(
+            valve_id=valve.id,
+            类型=request.form.get("类型"),
+            日期=datetime.strptime(request.form.get("日期"), "%Y-%m-%d").date(),
+            内容=request.form.get("内容"),
+            负责人=request.form.get("负责人"),
+            created_by=current_user.id,
+        )
+        db.session.add(record)
+        db.session.commit()
+        flash("添加成功")
+        return redirect(url_for("valves.maintenance", id=id))
+
+    records = (
+        MaintenanceRecord.query.filter_by(valve_id=id)
+        .order_by(MaintenanceRecord.日期.desc())
+        .all()
+    )
+    return render_template("valves/maintenance.html", valve=valve, records=records)
+
+
+@valves.route("/maintenance")
+@login_required
+def maintenance_list():
+    from app.models import MaintenanceRecord
+
+    query = MaintenanceRecord.query
+
+    search = request.args.get("search")
+    if search:
+        query = query.filter(MaintenanceRecord.内容.contains(search))
+
+    records = query.order_by(MaintenanceRecord.日期.desc()).all()
+    return render_template("maintenance/list.html", records=records)
