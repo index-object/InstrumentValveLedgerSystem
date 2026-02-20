@@ -8,3 +8,24 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Flask
+instance/
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
