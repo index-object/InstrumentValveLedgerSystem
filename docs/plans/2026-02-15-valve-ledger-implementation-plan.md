@@ -10,6 +10,14 @@
 
 ---
 
+## ⚠️ 前端 UI 设计规则
+
+> **IMPORTANT:** 当实施任何前端 UI 设计工作时（包括创建、修改 HTML 模板、样式、页面布局等），**必须**使用 `ui-ux-pro-max` 技能。
+> 
+> 使用方式: `task(load_skills=["ui-ux-pro-max"], category="visual-engineering", ...)`
+
+---
+
 ## Task 1: 项目初始化与依赖配置
 
 **Files:**
