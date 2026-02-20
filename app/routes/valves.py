@@ -181,3 +181,71 @@ def my_applications():
         .all()
     )
     return render_template("valves/my_applications.html", valves=my_valves)
+
+
+@valves.route("/approvals")
+@login_required
+def approvals():
+    if current_user.role not in ["leader", "admin"]:
+        flash("需要领导权限")
+        return redirect(url_for("valves.list"))
+
+    status = request.args.get("status", "pending")
+    if status == "pending":
+        valves_list = Valve.query.filter_by(status="pending").all()
+    elif status == "approved":
+        valves_list = Valve.query.filter_by(status="approved").all()
+    else:
+        valves_list = Valve.query.filter_by(status="rejected").all()
+
+    return render_template(
+        "valves/approvals.html", valves=valves_list, current_status=status
+    )
+
+
+@valves.route("/valve/approve/<int:id>", methods=["POST"])
+@login_required
+def approve(id):
+    if current_user.role not in ["leader", "admin"]:
+        flash("需要领导权限")
+        return redirect(url_for("valves.list"))
+
+    valve = Valve.query.get_or_404(id)
+    valve.status = "approved"
+    valve.approved_by = current_user.id
+    valve.approved_at = datetime.utcnow()
+
+    log = ApprovalLog(
+        valve_id=valve.id,
+        action="approve",
+        user_id=current_user.id,
+        comment=request.form.get("comment", ""),
+    )
+    db.session.add(log)
+    db.session.commit()
+
+    flash("审批通过")
+    return redirect(url_for("valves.approvals"))
+
+
+@valves.route("/valve/reject/<int:id>", methods=["POST"])
+@login_required
+def reject(id):
+    if current_user.role not in ["leader", "admin"]:
+        flash("需要领导权限")
+        return redirect(url_for("valves.list"))
+
+    valve = Valve.query.get_or_404(id)
+    valve.status = "rejected"
+
+    log = ApprovalLog(
+        valve_id=valve.id,
+        action="reject",
+        user_id=current_user.id,
+        comment=request.form.get("comment", ""),
+    )
+    db.session.add(log)
+    db.session.commit()
+
+    flash("已驳回")
+    return redirect(url_for("valves.approvals"))
