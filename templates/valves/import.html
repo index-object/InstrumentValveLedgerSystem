@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}导入数据{% endblock %}
+
+{% block content %}
+<h2>导入数据</h2>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label">选择 Excel 文件</label>
+                <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+            </div>
+            <div class="mb-3">
+                <small class="text-muted">支持 .xlsx 和 .xls 格式，文件应包含以下列：位号、名称、装置名称等</small>
+            </div>
+            <button type="submit" class="btn btn-primary">导入</button>
+            <a href="{{ url_for('valves.list') }}" class="btn btn-secondary">返回</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
