@@ -107,6 +107,97 @@
     </div>
 </div>
 
+<div class="modern-card mb-4">
+    <div class="card-header-custom"><i class="bi bi-paperclip"></i> 附件信息</div>
+    <div class="card-body-custom">
+        <div class="row g-3">
+            {% if valve.attachments %}
+                {% for att in valve.attachments %}
+                <div class="col-md-3">
+                    <div class="p-3" style="border: 1px solid var(--border-color); border-radius: 8px;">
+                        <h6 class="mb-2"><i class="bi bi-gear"></i> {{ att.名称 or att.type }}</h6>
+                        <p class="small text-muted mb-1">类型: {{ att.type or '-' }}</p>
+                        <p class="small text-muted mb-1">型号: {{ att.型号规格 or '-' }}</p>
+                        <p class="small text-muted mb-0">厂家: {{ att.生产厂家 or '-' }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="col-12">
+                <p class="text-muted">暂无附件信息</p>
+            </div>
+            {% endif %}
+        </div>
+        {% if valve.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+        <a href="{{ url_for('valves.attachments', id=valve.id) }}" class="btn btn-sm btn-outline-primary mt-3">
+            <i class="bi bi-plus"></i> 管理附件
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modern-card mb-4">
+    <div class="card-header-custom"><i class="bi bi-camera"></i> 照片</div>
+    <div class="card-body-custom">
+        <div class="row g-3">
+            {% if valve.photos %}
+                {% for photo in valve.photos %}
+                <div class="col-md-2">
+                    <a href="{{ url_for('static', filename='uploads/' + photo.filename) }}" target="_blank">
+                        <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" 
+                             class="img-thumbnail" style="height: 100px; width: 100%; object-fit: cover; border-radius: 8px;">
+                    </a>
+                    <small class="d-block text-muted mt-1">{{ photo.description or '无描述' }}</small>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="col-12">
+                <p class="text-muted">暂无照片</p>
+            </div>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('valves.photos', id=valve.id) }}" class="btn btn-sm btn-outline-primary mt-3">
+            <i class="bi bi-plus"></i> 管理照片
+        </a>
+    </div>
+</div>
+
+<div class="modern-card mb-4">
+    <div class="card-header-custom"><i class="bi bi-wrench"></i> 维护记录</div>
+    <div class="card-body-custom">
+        <a href="{{ url_for('valves.maintenance', id=valve.id) }}" class="btn btn-sm btn-primary mb-3">
+            <i class="bi bi-plus"></i> 添加维护记录
+        </a>
+        {% if valve.maintenance_records %}
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>所属中心</th>
+                    <th>检修时间</th>
+                    <th>检修人员</th>
+                    <th>检修内容</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in valve.maintenance_records[:5] %}
+                <tr>
+                    <td>{{ record.所属中心 or '-' }}</td>
+                    <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>
+                    <td>{{ record.检修人员 or '-' }}</td>
+                    <td>{{ record.检修内容[:30] if record.检修内容 else '-' }}{% if record.检修内容 and record.检修内容|length > 30 %}...{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if valve.maintenance_records|length > 5 %}
+        <a href="{{ url_for('valves.maintenance_list') }}?valve_id={{ valve.id }}" class="btn btn-sm btn-link mt-2">查看全部维护记录</a>
+        {% endif %}
+        {% else %}
+        <p class="text-muted">暂无维护记录</p>
+        {% endif %}
+    </div>
+</div>
+
 <style>
 .detail-section { }
 .detail-title {

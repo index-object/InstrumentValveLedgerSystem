@@ -186,6 +186,7 @@
         </div>
     </a>
     
+{% if current_user.role in ['leader', 'admin'] %}
     <a href="{{ url_for('valves.list') }}" class="stat-card">
         <div class="stat-icon success">
             <i class="bi bi-list-columns"></i>
@@ -196,17 +197,16 @@
         </div>
     </a>
     
-    {% if current_user.role in ['leader', 'admin'] %}
-    <a href="{{ url_for('valves.approvals') }}" class="stat-card">
-        <div class="stat-icon warning">
-            <i class="bi bi-hourglass-split"></i>
+    <div class="stat-card" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#userStatsModal">
+        <div class="stat-icon info">
+            <i class="bi bi-people"></i>
         </div>
         <div class="stat-content">
-            <h3>{{ pending }}</h3>
-            <p>待审批</p>
+            <h3>{{ user_stats|length }}</h3>
+            <p>用户统计</p>
         </div>
-    </a>
-    {% endif %}
+    </div>
+{% else %}
     
     <a href="{{ url_for('valves.maintenance_list') }}" class="stat-card">
         <div class="stat-icon info">

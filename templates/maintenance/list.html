@@ -20,21 +20,21 @@
                 <tr>
                     <th>设备位号</th>
                     <th>设备名称</th>
-                    <th>类型</th>
-                    <th>日期</th>
-                    <th>负责人</th>
-                    <th>内容</th>
+                    <th>所属中心</th>
+                    <th>检修时间</th>
+                    <th>检修人员</th>
+                    <th>检修内容</th>
                 </tr>
             </thead>
             <tbody>
                 {% for record in records %}
                 <tr>
-                    <td><a href="{{ url_for('valves.detail', id=record.valve_id) }}" style="color: var(--primary-color); font-weight: 500;">{{ record.设备位号 }}</a></td>
-                    <td>{{ record.设备名称 }}</td>
-                    <td>{{ record.类型 }}</td>
-                    <td>{{ record.日期.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ record.负责人 }}</td>
-                    <td>{{ record.内容[:50] }}{% if record.内容 and record.内容|length > 50 %}...{% endif %}</td>
+                    <td><a href="{{ url_for('valves.detail', id=record.valve_id) }}" style="color: var(--primary-color); font-weight: 500;">{{ record.设备位号 or '-' }}</a></td>
+                    <td>{{ record.设备名称 or '-' }}</td>
+                    <td>{{ record.所属中心 or '-' }}</td>
+                    <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>
+                    <td>{{ record.检修人员 or '-' }}</td>
+                    <td>{{ record.检修内容[:15] if record.检修内容 else '-' }}{% if record.检修内容 and record.检修内容|length > 15 %}...{% endif %}</td>
                 </tr>
                 {% else %}
                 <tr>

@@ -10,9 +10,15 @@
 <div class="modern-card mb-4">
     <div class="card-header-custom"><i class="bi bi-wrench"></i> 添加维护记录 - {{ valve.位号 }}</div>
     <div class="card-body-custom">
-        <form method="POST">
+        <form method="POST" id="maintenanceForm">
+            <input type="hidden" name="设备位号" value="{{ valve.位号 }}">
+            <input type="hidden" name="设备名称" value="{{ valve.名称 }}">
             <div class="row">
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 所属中心</label>
+                    <input type="text" name="所属中心" class="form-control form-control-modern" required placeholder="请输入所属中心">
+                </div>
+                <div class="col-md-4 mb-3">
                     <label class="form-label" style="font-weight: 500;">类型</label>
                     <select name="类型" class="form-control form-control-modern">
                         <option value="维修">维修</option>
@@ -20,18 +26,20 @@
                         <option value="保养">保养</option>
                     </select>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label" style="font-weight: 500;">日期</label>
-                    <input type="date" name="日期" class="form-control form-control-modern" required>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修时间</label>
+                    <input type="datetime-local" name="检修时间" class="form-control form-control-modern" required>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label" style="font-weight: 500;">负责人</label>
-                    <input type="text" name="负责人" class="form-control form-control-modern">
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" style="font-weight: 500;">检修人员</label>
+                    <input type="text" name="检修人员" class="form-control form-control-modern" placeholder="请输入检修人员">
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label" style="font-weight: 500;">内容</label>
-                <textarea name="内容" class="form-control form-control-modern" rows="3"></textarea>
+                <label class="form-label" style="font-weight: 500;">检修内容</label>
+                <textarea name="检修内容" class="form-control form-control-modern" rows="3" placeholder="请输入检修内容"></textarea>
             </div>
             <button type="submit" class="btn btn-primary-custom"><i class="bi bi-plus-lg"></i> 添加</button>
         </form>
@@ -45,19 +53,21 @@
         <table class="modern-table">
             <thead>
                 <tr>
-                    <th>日期</th>
+                    <th>所属中心</th>
+                    <th>检修时间</th>
                     <th>类型</th>
-                    <th>负责人</th>
-                    <th>内容</th>
+                    <th>检修人员</th>
+                    <th>检修内容</th>
                 </tr>
             </thead>
             <tbody>
                 {% for record in records %}
                 <tr>
-                    <td>{{ record.日期.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ record.类型 }}</td>
-                    <td>{{ record.负责人 }}</td>
-                    <td>{{ record.内容 }}</td>
+                    <td>{{ record.所属中心 or '-' }}</td>
+                    <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>
+                    <td>{{ record.类型 or '-' }}</td>
+                    <td>{{ record.检修人员 or '-' }}</td>
+                    <td>{{ record.检修内容 or '-' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

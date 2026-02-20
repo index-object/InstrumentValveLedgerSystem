@@ -7,23 +7,179 @@
 {% endblock %}
 
 {% block content %}
-<div class="modern-card">
-    <div class="card-header-custom"><i class="bi bi-upload"></i> 导入数据</div>
+<div class="modern-card mb-4">
+    <div class="card-header-custom"><i class="bi bi-upload"></i> 导入数据 - 第1步：选择文件</div>
     <div class="card-body-custom">
-        <form method="POST" enctype="multipart/form-data">
+        <form method="POST" enctype="multipart/form-data" id="importForm">
             <div class="mb-4">
                 <label class="form-label" style="font-weight: 500;">选择 Excel 文件</label>
-                <input type="file" name="file" class="form-control form-control-modern" accept=".xlsx,.xls" required style="padding: 12px;">
+                <input type="file" name="file" id="excelFile" class="form-control form-control-modern" accept=".xlsx,.xls" required style="padding: 12px;">
             </div>
+            
             <div class="mb-4 p-3" style="background: #f8fafc; border-radius: 8px; border-left: 3px solid var(--accent-color);">
                 <small class="text-muted">
                     <i class="bi bi-info-circle"></i> 支持 .xlsx 和 .xls 格式，文件应包含以下列：位号、名称、装置名称等
                 </small>
             </div>
+            
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary-custom"><i class="bi bi-upload"></i> 导入</button>
+                <button type="button" class="btn btn-primary-custom" onclick="previewExcel()">
+                    <i class="bi bi-eye"></i> 预览数据
+                </button>
             </div>
         </form>
     </div>
 </div>
+
+<div id="previewSection" style="display: none;">
+    <div class="modern-card mb-4">
+        <div class="card-header-custom"><i class="bi bi-list-check"></i> 第2步：预览数据</div>
+        <div class="card-body-custom">
+            <div id="previewTableContainer" style="max-height: 400px; overflow-y: auto;">
+                <table class="modern-table" id="previewTable">
+                    <thead>
+                        <tr>
+                            <th>位号</th>
+                            <th>名称</th>
+                            <th>装置名称</th>
+                            <th>设备等级</th>
+                            <th>型号规格</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-3">
+                <span class="badge bg-secondary" id="totalCount">总计: 0 条</span>
+                <span class="badge bg-warning" id="duplicateCount">重复: 0 条</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modern-card mb-4">
+        <div class="card-header-custom"><i class="bi bi-gear"></i> 第3步：冲突处理方式</div>
+        <div class="card-body-custom">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="conflict_mode" id="mode1" value="overwrite" checked>
+                <label class="form-check-label" for="mode1">
+                    <strong>全部覆盖</strong> - 重复位号的数据更新现有数据
+                </label>
+            </div>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="conflict_mode" id="mode2" value="skip">
+                <label class="form-check-label" for="mode2">
+                    <strong>只导入不重复部分</strong> - 跳过重复数据，只导入新数据
+                </label>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="radio" name="conflict_mode" id="mode3" value="cancel">
+                <label class="form-check-label" for="mode3">
+                    <strong>取消</strong> - 取消导入操作
+                </label>
+            </div>
+            <button type="button" class="btn btn-success" onclick="confirmImport()">
+                <i class="bi bi-check-lg"></i> 确认导入
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let previewData = [];
+
+function previewExcel() {
+    const fileInput = document.getElementById('excelFile');
+    if (!fileInput.files.length) {
+        alert('请先选择文件');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('action', 'preview');
+    
+    fetch("{{ url_for('valves.import_data') }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        previewData = data.preview || [];
+        showPreview(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('预览失败，请确保文件格式正确');
+    });
+}
+
+function showPreview(data) {
+    document.getElementById('previewSection').style.display = 'block';
+    
+    const tbody = document.getElementById('previewTableBody');
+    tbody.innerHTML = '';
+    
+    (data.preview || []).forEach(row => {
+        const tr = document.createElement('tr');
+        if (row.is_duplicate) {
+            tr.style.background = '#fff3cd';
+        }
+        tr.innerHTML = `
+            <td>${row.位号 || '-'}</td>
+            <td>${row.名称 || '-'}</td>
+            <td>${row.装置名称 || '-'}</td>
+            <td>${row.设备等级 || '-'}</td>
+            <td>${row.型号规格 || '-'}</td>
+            <td>${row.is_duplicate ? '<span class="badge bg-warning">重复</span>' : '<span class="badge bg-success">新增</span>'}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    document.getElementById('totalCount').textContent = `总计: ${data.total_count || 0} 条`;
+    document.getElementById('duplicateCount').textContent = `重复: ${data.duplicate_count || 0} 条`;
+}
+
+function confirmImport() {
+    if (!previewData.length) {
+        alert('请先预览数据');
+        return;
+    }
+    
+    const conflictMode = document.querySelector('input[name="conflict_mode"]:checked').value;
+    
+    if (conflictMode === 'cancel') {
+        document.getElementById('previewSection').style.display = 'none';
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', document.getElementById('excelFile').files[0]);
+    formData.append('action', 'import');
+    formData.append('conflict_mode', conflictMode);
+    
+    fetch("{{ url_for('valves.import_data') }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.href = "{{ url_for('valves.list') }}";
+        } else {
+            alert(data.error || '导入失败');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('导入失败');
+    });
+}
+</script>
 {% endblock %}

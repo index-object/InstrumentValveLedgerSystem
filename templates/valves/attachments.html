@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block page_title %}附件管理{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('valves.detail', id=valve.id) }}" class="btn" style="background: #e2e8f0; color: #475569;"><i class="bi bi-arrow-left"></i> 返回</a>
+{% endblock %}
+
+{% block content %}
+<div class="modern-card mb-4">
+    <div class="card-header-custom"><i class="bi bi-paperclip"></i> 添加附件 - {{ valve.位号 }}</div>
+    <div class="card-body-custom">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" style="font-weight: 500;">附件类型</label>
+                    <select name="type" class="form-control form-control-modern" required>
+                        <option value="">请选择类型</option>
+                        <option value="定位器">定位器</option>
+                        <option value="过滤减压阀">过滤减压阀</option>
+                        <option value="减压阀">减压阀</option>
+                        <option value="电磁阀">电磁阀</option>
+                        <option value="接近开关">接近开关</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" style="font-weight: 500;">名称</label>
+                    <input type="text" name="名称" class="form-control form-control-modern" placeholder="请输入名称">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" style="font-weight: 500;">设备等级</label>
+                    <input type="text" name="设备等级" class="form-control form-control-modern" placeholder="如：A级、B级">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" style="font-weight: 500;">型号规格</label>
+                    <input type="text" name="型号规格" class="form-control form-control-modern" placeholder="请输入型号规格">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" style="font-weight: 500;">生产厂家</label>
+                    <input type="text" name="生产厂家" class="form-control form-control-modern" placeholder="请输入生产厂家">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary-custom"><i class="bi bi-plus-lg"></i> 添加</button>
+        </form>
+    </div>
+</div>
+
+<div class="modern-card">
+    <div class="card-header-custom"><i class="bi bi-list-ul"></i> 已有附件</div>
+    <div class="card-body-custom">
+        {% if attachments %}
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>类型</th>
+                    <th>名称</th>
+                    <th>设备等级</th>
+                    <th>型号规格</th>
+                    <th>生产厂家</th>
+                    <th style="width: 100px;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for att in attachments %}
+                <tr>
+                    <td>{{ att.type }}</td>
+                    <td>{{ att.名称 or '-' }}</td>
+                    <td>{{ att.设备等级 or '-' }}</td>
+                    <td>{{ att.型号规格 or '-' }}</td>
+                    <td>{{ att.生产厂家 or '-' }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('valves.delete_attachment', valve_id=valve.id, att_id=att.id) }}" style="display:inline;">
+                            <button type="submit" class="btn-action" style="background: #fee2e2; color: #991b1b;" onclick="return confirm('确定删除该附件?')"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-paperclip"></i>
+            <p>暂无附件</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

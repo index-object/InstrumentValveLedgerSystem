@@ -6,8 +6,22 @@
 <form method="get" class="d-flex gap-2">
     <div class="search-box">
         <i class="bi bi-search"></i>
-        <input type="text" name="search" class="form-control form-control-modern" placeholder="搜索位号/名称/装置..." value="{{ request.args.get('search', '') }}">
+        <input type="text" name="search" class="form-control form-control-modern" 
+               placeholder="搜索位号/名称/装置..." value="{{ request.args.get('search', '') }}">
     </div>
+    <select name="status" class="form-control form-control-modern" style="width: 120px;">
+        <option value="">全部状态</option>
+        <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
+        <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
+        <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
+        <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
+    </select>
+    <select name="装置名称" class="form-control form-control-modern" style="width: 150px;">
+        <option value="">全部装置</option>
+        {% for z in 装置列表 %}
+        <option value="{{ z }}" {% if request.args.get('装置名称')==z %}selected{% endif %}>{{ z }}</option>
+        {% endfor %}
+    </select>
     <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
     <a href="{{ url_for('valves.new') }}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> 新增</a>
 </form>
@@ -15,20 +29,35 @@
 
 {% block content %}
 <form method="post" action="{{ url_for('valves.batch_delete') }}" id="batchForm">
-    <div class="modern-card">
+    <div class="modern-card mb-3">
         <div class="d-flex justify-content-between align-items-center p-3" style="border-bottom: 1px solid var(--border-color);">
             <div class="d-flex align-items-center gap-3">
                 <div class="form-check">
                     <input type="checkbox" class="form-check-input" id="selectAll">
                 </div>
-                <button type="button" class="btn btn-sm btn-danger" onclick="batchDelete()">
-                    <i class="bi bi-trash"></i> 批量删除
-                </button>
+                <span style="font-size: 14px;">已选 <span id="selectedCount">0</span> 项</span>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        批量操作
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="batchExport()"><i class="bi bi-download"></i> 导出选中</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="batchDelete()"><i class="bi bi-trash"></i> 批量删除</a></li>
+                        {% if current_user.role in ['leader', 'admin'] %}
+                        <li><a class="dropdown-item" href="#" onclick="batchApprove()"><i class="bi bi-check-lg"></i> 批量审批</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
             </div>
-            <span style="color: var(--text-muted); font-size: 14px;">共 {{ valves|length }} 条记录</span>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('valves.import_data') }}" class="btn btn-sm btn-success"><i class="bi bi-upload"></i> 导入</a>
+                <a href="{{ url_for('valves.export_data') }}" class="btn btn-sm btn-info"><i class="bi bi-download"></i> 导出全部</a>
+            </div>
         </div>
-        
-        <div class="table-responsive">
+    </div>
+
+    <div class="modern-card">
+        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
             <table class="modern-table">
                 <thead>
                     <tr>
@@ -39,18 +68,18 @@
                         <th>装置名称</th>
                         <th>设备等级</th>
                         <th>状态</th>
-                        <th style="width: 160px;">操作</th>
+                        <th style="width: 120px;">操作</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for valve in valves %}
                     <tr>
-                        <td><input type="checkbox" name="ids" value="{{ valve.id }}" class="form-check-input"></td>
-                        <td>{{ valve.序号 }}</td>
+                        <td><input type="checkbox" name="ids" value="{{ valve.id }}" class="form-check-input item-checkbox"></td>
+                        <td>{{ valve.序号 or '-' }}</td>
                         <td><a href="{{ url_for('valves.detail', id=valve.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
-                        <td>{{ valve.名称 }}</td>
-                        <td>{{ valve.装置名称 }}</td>
-                        <td>{{ valve.设备等级 }}</td>
+                        <td>{{ valve.名称 or '-' }}</td>
+                        <td>{{ valve.装置名称 or '-' }}</td>
+                        <td>{{ valve.设备等级 or '-' }}</td>
                         <td>
                             {% if valve.status == 'approved' %}
                             <span class="badge-status badge-approved">已审批</span>
@@ -63,9 +92,9 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{{ url_for('valves.detail', id=valve.id) }}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i> 查看</a>
+                            <a href="{{ url_for('valves.detail', id=valve.id) }}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i></a>
                             {% if valve.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
-                            <a href="{{ url_for('valves.edit', id=valve.id) }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i> 编辑</a>
+                            <a href="{{ url_for('valves.edit', id=valve.id) }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i></a>
                             {% endif %}
                         </td>
                     </tr>
@@ -75,7 +104,6 @@
                             <div class="empty-state">
                                 <i class="bi bi-inbox"></i>
                                 <p>暂无台账数据</p>
-                                <a href="{{ url_for('valves.new') }}" class="btn btn-primary-custom mt-2">新增台账</a>
                             </div>
                         </td>
                     </tr>
@@ -83,21 +111,68 @@
                 </tbody>
             </table>
         </div>
+        
+        {% if pagination %}
+        <div class="p-3 border-top">
+            <nav>
+                <ul class="pagination-custom pagination mb-2">
+                    {% if pagination.has_prev %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for(' page=pagination.prevvalves.list',_num, search=request.args.get('search'), status=request.args.get('status'), 装置名称=request.args.get('装置名称')) }}">上一页</a></li>
+                    {% endif %}
+                    
+                    {% for p in range(1, pagination.pages + 1) %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('valves.list', page=p, search=request.args.get('search'), status=request.args.get('status'), 装置名称=request.args.get('装置名称')) }}">{{ p }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('valves.list', page=pagination.next_num, search=request.args.get('search'), status=request.args.get('status'), 装置名称=request.args.get('装置名称')) }}">下一页</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <small class="text-muted">共 {{ pagination.total }} 条记录，第 {{ pagination.page }}/{{ pagination.pages }} 页</small>
+        </div>
+        {% endif %}
     </div>
 </form>
 
 <script>
 document.getElementById('selectAll').addEventListener('change', function() {
-    document.querySelectorAll('input[name="ids"]').forEach(cb => cb.checked = this.checked);
+    document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
+    updateSelectedCount();
 });
 
+document.querySelectorAll('.item-checkbox').forEach(cb => {
+    cb.addEventListener('change', updateSelectedCount);
+});
+
+function updateSelectedCount() {
+    const count = document.querySelectorAll('.item-checkbox:checked').length;
+    document.getElementById('selectedCount').textContent = count;
+}
+
 function batchDelete() {
-    const checked = document.querySelectorAll('input[name="ids"]:checked');
-    if (checked.length === 0) {
-        alert('请先选择要删除的记录');
-        return;
-    }
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+    if (checked.length === 0) { alert('请先选择要删除的记录'); return; }
     if (confirm('确定要删除选中的 ' + checked.length + ' 条记录吗？')) {
+        document.getElementById('batchForm').action = "{{ url_for('valves.batch_delete') }}";
+        document.getElementById('batchForm').submit();
+    }
+}
+
+function batchExport() {
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+    if (checked.length === 0) { alert('请先选择要导出的记录'); return; }
+    const ids = Array.from(checked).map(cb => cb.value);
+    window.location.href = "{{ url_for('valves.export_data') }}?" + ids.map(id => 'ids=' + id).join('&');
+}
+
+function batchApprove() {
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+    if (checked.length === 0) { alert('请先选择要审批的记录'); return; }
+    if (confirm('确定要审批选中的 ' + checked.length + ' 条记录吗？')) {
+        document.getElementById('batchForm').action = "{{ url_for('valves.batch_approve') }}";
         document.getElementById('batchForm').submit();
     }
 }

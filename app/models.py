@@ -104,15 +104,32 @@ class MaintenanceRecord(db.Model):
     __tablename__ = "maintenance_records"
     id = db.Column(db.Integer, primary_key=True)
     valve_id = db.Column(db.Integer, db.ForeignKey("valves.id"), nullable=False)
-    类型 = db.Column(db.String(50))  # 维修/检定/保养
-    日期 = db.Column(db.Date)
-    内容 = db.Column(db.Text)
-    负责人 = db.Column(db.String(50))
+    所属中心 = db.Column(db.String(100))
+    设备位号 = db.Column(db.String(50))
+    设备名称 = db.Column(db.String(100))
+    检修时间 = db.Column(db.DateTime)
+    检修内容 = db.Column(db.Text)
+    检修人员 = db.Column(db.String(50))
+    类型 = db.Column(db.String(50))
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     valve = db.relationship("Valve", backref="maintenance_records")
     creator = db.relationship("User")
+
+
+class ValveAttachment(db.Model):
+    __tablename__ = "valve_attachments"
+    id = db.Column(db.Integer, primary_key=True)
+    valve_id = db.Column(db.Integer, db.ForeignKey("valves.id"), nullable=False)
+    名称 = db.Column(db.String(100))
+    设备等级 = db.Column(db.String(20))
+    型号规格 = db.Column(db.String(100))
+    生产厂家 = db.Column(db.String(100))
+    type = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    valve = db.relationship("Valve", backref="attachments")
 
 
 class ApprovalLog(db.Model):

@@ -7,9 +7,10 @@ from flask import (
     flash,
     send_from_directory,
     make_response,
+    session,
 )
 from flask_login import login_required, current_user
-from app.models import db, Valve, Setting, ApprovalLog, User
+from app.models import db, Valve, Setting, ApprovalLog, User, ValveAttachment
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
@@ -27,16 +28,47 @@ def allowed_file(filename):
 @login_required
 def list():
     query = Valve.query
+
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+
     search = request.args.get("search")
     if search:
         query = query.filter(
             (Valve.位号.contains(search))
             | (Valve.名称.contains(search))
             | (Valve.装置名称.contains(search))
+            | (Valve.设备编号.contains(search))
         )
 
-    valves_list = query.order_by(Valve.序号).all()
-    return render_template("valves/list.html", valves=valves_list)
+    status = request.args.get("status")
+    if status:
+        query = query.filter(Valve.status == status)
+
+    装置名称 = request.args.get("装置名称")
+    if 装置名称:
+        query = query.filter(Valve.装置名称 == 装置名称)
+
+    filter_type = request.args.get("filter")
+    if filter_type == "mine":
+        query = query.filter(Valve.created_by == current_user.id)
+
+    装置列表 = (
+        db.session.query(Valve.装置名称)
+        .distinct()
+        .filter(Valve.装置名称.isnot(None))
+        .all()
+    )
+    装置列表 = [r[0] for r in 装置列表 if r[0]]
+
+    pagination = query.order_by(Valve.id.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    valves_list = pagination.items
+
+    return render_template(
+        "valves/list.html", valves=valves_list, pagination=pagination, 装置列表=装置列表
+    )
 
 
 @valves.route("/valve/<int:id>")
@@ -170,6 +202,73 @@ def batch_delete():
     db.session.commit()
     flash(f"成功删除 {count} 条记录")
     return redirect(url_for("valves.list"))
+
+
+@valves.route("/valves/batch-approve", methods=["POST"])
+@login_required
+def batch_approve():
+    if current_user.role not in ["leader", "admin"]:
+        flash("需要领导权限")
+        return redirect(url_for("valves.list"))
+
+    ids = request.form.getlist("ids")
+    if not ids:
+        flash("请选择要审批的记录")
+        return redirect(url_for("valves.approvals"))
+
+    count = 0
+    for id in ids:
+        valve = Valve.query.get(int(id))
+        if valve and valve.status == "pending":
+            valve.status = "approved"
+            valve.approved_by = current_user.id
+            valve.approved_at = datetime.utcnow()
+
+            log = ApprovalLog(
+                valve_id=valve.id,
+                action="approve",
+                user_id=current_user.id,
+                comment=request.form.get("comment", ""),
+            )
+            db.session.add(log)
+            count += 1
+
+    db.session.commit()
+    flash(f"成功审批 {count} 条记录")
+    return redirect(url_for("valves.approvals"))
+
+
+@valves.route("/valves/batch-reject", methods=["POST"])
+@login_required
+def batch_reject():
+    if current_user.role not in ["leader", "admin"]:
+        flash("需要领导权限")
+        return redirect(url_for("valves.list"))
+
+    ids = request.form.getlist("ids")
+    if not ids:
+        flash("请选择要驳回的记录")
+        return redirect(url_for("valves.approvals"))
+
+    comment = request.form.get("comment", "")
+    count = 0
+    for id in ids:
+        valve = Valve.query.get(int(id))
+        if valve and valve.status == "pending":
+            valve.status = "rejected"
+
+            log = ApprovalLog(
+                valve_id=valve.id,
+                action="reject",
+                user_id=current_user.id,
+                comment=comment,
+            )
+            db.session.add(log)
+            count += 1
+
+    db.session.commit()
+    flash(f"成功驳回 {count} 条记录")
+    return redirect(url_for("valves.approvals"))
 
 
 @valves.route("/my-applications")
@@ -354,7 +453,11 @@ def import_data():
 def export_data():
     import pandas as pd
 
-    valves = Valve.query.filter_by(status="approved").all()
+    ids = request.args.getlist("ids")
+    if ids:
+        valves = Valve.query.filter(Valve.id.in_(ids)).all()
+    else:
+        valves = Valve.query.filter_by(status="approved").all()
 
     data = []
     for v in valves:
@@ -455,12 +558,26 @@ def maintenance(id):
     valve = Valve.query.get_or_404(id)
 
     if request.method == "POST":
+        检修时间_str = request.form.get("检修时间")
+        检修时间 = None
+        if 检修时间_str:
+            try:
+                检修时间 = datetime.strptime(检修时间_str, "%Y-%m-%dT%H:%M")
+            except:
+                try:
+                    检修时间 = datetime.strptime(检修时间_str, "%Y-%m-%d %H:%M:%S")
+                except:
+                    pass
+
         record = MaintenanceRecord(
             valve_id=valve.id,
+            所属中心=request.form.get("所属中心"),
+            设备位号=request.form.get("设备位号"),
+            设备名称=request.form.get("设备名称"),
+            检修时间=检修时间,
+            检修内容=request.form.get("检修内容"),
+            检修人员=request.form.get("检修人员"),
             类型=request.form.get("类型"),
-            日期=datetime.strptime(request.form.get("日期"), "%Y-%m-%d").date(),
-            内容=request.form.get("内容"),
-            负责人=request.form.get("负责人"),
             created_by=current_user.id,
         )
         db.session.add(record)
@@ -470,7 +587,7 @@ def maintenance(id):
 
     records = (
         MaintenanceRecord.query.filter_by(valve_id=id)
-        .order_by(MaintenanceRecord.日期.desc())
+        .order_by(MaintenanceRecord.检修时间.desc())
         .all()
     )
     return render_template("valves/maintenance.html", valve=valve, records=records)
@@ -485,7 +602,58 @@ def maintenance_list():
 
     search = request.args.get("search")
     if search:
-        query = query.filter(MaintenanceRecord.内容.contains(search))
+        query = query.filter(MaintenanceRecord.检修内容.contains(search))
 
-    records = query.order_by(MaintenanceRecord.日期.desc()).all()
+    valve_id = request.args.get("valve_id")
+    if valve_id:
+        query = query.filter(MaintenanceRecord.valve_id == int(valve_id))
+
+    records = query.order_by(MaintenanceRecord.检修时间.desc()).all()
     return render_template("maintenance/list.html", records=records)
+
+
+@valves.route("/valve/<int:id>/attachments", methods=["GET", "POST"])
+@login_required
+def attachments(id):
+    valve = Valve.query.get_or_404(id)
+
+    if request.method == "POST":
+        attachment = ValveAttachment(
+            valve_id=valve.id,
+            名称=request.form.get("名称"),
+            设备等级=request.form.get("设备等级"),
+            型号规格=request.form.get("型号规格"),
+            生产厂家=request.form.get("生产厂家"),
+            type=request.form.get("type"),
+        )
+        db.session.add(attachment)
+        db.session.commit()
+        flash("附件添加成功")
+        return redirect(url_for("valves.attachments", id=id))
+
+    attachments_list = valve.attachments
+    return render_template(
+        "valves/attachments.html", valve=valve, attachments=attachments_list
+    )
+
+
+@valves.route("/valve/<int:valve_id>/attachment/<int:att_id>/delete", methods=["POST"])
+@login_required
+def delete_attachment(valve_id, att_id):
+    attachment = ValveAttachment.query.get_or_404(att_id)
+    if attachment.valve_id != valve_id:
+        flash("附件不存在")
+        return redirect(url_for("valves.detail", id=valve_id))
+
+    can_edit = attachment.valve.created_by == current_user.id or current_user.role in [
+        "leader",
+        "admin",
+    ]
+    if not can_edit:
+        flash("无权删除")
+        return redirect(url_for("valves.detail", id=valve_id))
+
+    db.session.delete(attachment)
+    db.session.commit()
+    flash("附件删除成功")
+    return redirect(url_for("valves.detail", id=valve_id))

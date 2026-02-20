@@ -3,6 +3,26 @@
 {% block page_title %}审批管理{% endblock %}
 
 {% block content %}
+<form method="post" id="approvalForm">
+    {% if current_status == 'pending' %}
+    <div class="modern-card mb-3">
+        <div class="d-flex justify-content-between align-items-center p-3" style="border-bottom: 1px solid var(--border-color);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="selectAll">
+                </div>
+                <span style="font-size: 14px;">已选 <span id="selectedCount">0</span> 项</span>
+                <button type="button" class="btn btn-sm btn-success" onclick="batchApprove()">
+                    <i class="bi bi-check-lg"></i> 批量通过
+                </button>
+                <button type="button" class="btn btn-sm btn-danger" onclick="batchReject()">
+                    <i class="bi bi-x-lg"></i> 批量驳回
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
 <div class="modern-card">
     <div class="px-4 pt-4">
         <ul class="nav nav-tabs border-0" style="gap: 8px;">
@@ -31,6 +51,9 @@
         <table class="modern-table">
             <thead>
                 <tr>
+                    {% if current_status == 'pending' %}
+                    <th style="width: 40px;"></th>
+                    {% endif %}
                     <th>序号</th>
                     <th>位号</th>
                     <th>名称</th>
@@ -43,10 +66,13 @@
             <tbody>
                 {% for valve in valves %}
                 <tr>
-                    <td>{{ valve.序号 }}</td>
+                    {% if current_status == 'pending' %}
+                    <td><input type="checkbox" name="ids" value="{{ valve.id }}" class="form-check-input item-checkbox"></td>
+                    {% endif %}
+                    <td>{{ valve.序号 or '-' }}</td>
                     <td><a href="{{ url_for('valves.detail', id=valve.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
-                    <td>{{ valve.名称 }}</td>
-                    <td>{{ valve.装置名称 }}</td>
+                    <td>{{ valve.名称 or '-' }}</td>
+                    <td>{{ valve.装置名称 or '-' }}</td>
                     <td>{{ valve.creator.real_name or valve.creator.username if valve.creator else '-' }}</td>
                     <td>{{ valve.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td>
@@ -62,7 +88,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7">
+                    <td colspan="{% if current_status == 'pending' %}8{% else %}7{% endif %}">
                         <div class="empty-state">
                             <i class="bi bi-inbox"></i>
                             <p>暂无数据</p>
@@ -74,8 +100,23 @@
         </table>
     </div>
 </div>
+</form>
 
 <script>
+document.getElementById('selectAll')?.addEventListener('change', function() {
+    document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
+    updateSelectedCount();
+});
+
+document.querySelectorAll('.item-checkbox').forEach(cb => {
+    cb.addEventListener('change', updateSelectedCount);
+});
+
+function updateSelectedCount() {
+    const count = document.querySelectorAll('.item-checkbox:checked').length;
+    document.getElementById('selectedCount').textContent = count;
+}
+
 function rejectValve(id) {
     const comment = prompt('请输入驳回原因:');
     if (comment !== null) {
@@ -91,6 +132,31 @@ function rejectValve(id) {
         form.appendChild(input);
         document.body.appendChild(form);
         form.submit();
+    }
+}
+
+function batchApprove() {
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+    if (checked.length === 0) { alert('请先选择要审批的记录'); return; }
+    if (confirm('确定要审批选中的 ' + checked.length + ' 条记录吗？')) {
+        document.getElementById('approvalForm').action = "{{ url_for('valves.batch_approve') }}";
+        document.getElementById('approvalForm').submit();
+    }
+}
+
+function batchReject() {
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+    if (checked.length === 0) { alert('请先选择要驳回的记录'); return; }
+    const comment = prompt('请输入驳回原因:');
+    if (comment !== null) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'comment';
+        input.value = comment;
+        document.getElementById('approvalForm').appendChild(input);
+        
+        document.getElementById('approvalForm').action = "{{ url_for('valves.batch_reject') }}";
+        document.getElementById('approvalForm').submit();
     }
 }
 </script>
