@@ -16,16 +16,10 @@
         <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
         <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
     </select>
-    <select name="装置名称" class="form-control form-control-modern" style="width: 150px;">
-        <option value="">全部装置</option>
-        {% for z in 装置列表 %}
-        <option value="{{ z }}" {% if request.args.get('装置名称')==z %}selected{% endif %}>{{ z }}</option>
-        {% endfor %}
-    </select>
     <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
-    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#advancedFilterModal">
-        <i class="bi bi-funnel"></i> 高级筛选
-    </button>
+    {% if active_filters %}
+    <a href="{{ url_for('valves.list') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i> 清除筛选</a>
+    {% endif %}
     <a href="{{ url_for('valves.new') }}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> 新增</a>
 </form>
 {% endblock %}
@@ -66,10 +60,10 @@
 
     <div class="modern-card">
         <div class="table-responsive" style="max-height: calc(100vh - 280px); overflow-y: auto; overflow-x: auto;">
-            <table class="modern-table table-sm table-bordered" style="min-width: 2000px;">
+            <table class="modern-table table-sm table-bordered" style="min-width: 2000px; border-spacing: 0;">
                 <thead class="table-light">
                     <tr>
-                        <th rowspan="2" style="width: 50px; min-width: 50px; vertical-align: middle; position: sticky; left: 0; z-index: 3; background: #f8f9fa; border-right: 1px solid #dee2e6;">
+                        <th style="width: 50px; min-width: 50px; vertical-align: middle; position: sticky; left: 0; z-index: 3; background: #f8f9fa; border-right: 1px solid #dee2e6;">
                             <input type="checkbox" class="form-check-input" id="selectAllTop">
                         </th>
                         <th colspan="11" class="text-center table-secondary">基础信息</th>
@@ -77,45 +71,42 @@
                         <th colspan="3" class="text-center table-warning">阀体信息</th>
                         <th colspan="7" class="text-center table-danger">阀内件信息</th>
                         <th colspan="10" class="text-center table-success">执行机构信息</th>
-                        <th rowspan="2" style="vertical-align: middle; min-width: 100px; position: sticky; right: 120px; z-index: 3; background: #f8f9fa; border-left: 1px solid #dee2e6;">状态</th>
-                        <th rowspan="2" style="vertical-align: middle; min-width: 120px; position: sticky; right: 0; z-index: 3; background: #f8f9fa;">操作</th>
+                        <th colspan="2" class="text-center" style="background: #f8f9fa;">操作列</th>
                     </tr>
                     <tr>
-                        <th style="min-width: 60px;">序号</th>
-                        <th style="min-width: 100px;">位号</th>
-                        <th style="min-width: 120px;">名称</th>
-                        <th style="min-width: 100px;">装置名称</th>
-                        <th style="min-width: 70px;">设备等级</th>
-                        <th style="min-width: 100px;">型号规格</th>
-                        <th style="min-width: 100px;">生产厂家</th>
-                        <th style="min-width: 120px;">安装位置</th>
-                        <th style="min-width: 90px;">设备编号</th>
-                        <th style="min-width: 70px;">是否联锁</th>
-                        <th style="min-width: 80px;">备注</th>
-                        <th style="min-width: 80px;">介质名称</th>
-                        <th style="min-width: 80px;">设计温度</th>
-                        <th style="min-width: 80px;">阀前压力</th>
-                        <th style="min-width: 80px;">阀后压力</th>
-                        <th style="min-width: 80px;">公称通径</th>
-                        <th style="min-width: 100px;">连接方式</th>
-                        <th style="min-width: 80px;">阀体材质</th>
-                        <th style="min-width: 80px;">阀座直径</th>
-                        <th style="min-width: 80px;">阀芯材质</th>
-                        <th style="min-width: 80px;">阀座材质</th>
-                        <th style="min-width: 80px;">阀杆材质</th>
-                        <th style="min-width: 80px;">流量特性</th>
-                        <th style="min-width: 80px;">泄露等级</th>
-                        <th style="min-width: 60px;">Cv值</th>
-                        <th style="min-width: 80px;">形式</th>
-                        <th style="min-width: 100px;">型号规格</th>
-                        <th style="min-width: 80px;">厂家</th>
-                        <th style="min-width: 80px;">作用形式</th>
-                        <th style="min-width: 60px;">行程</th>
-                        <th style="min-width: 80px;">弹簧范围</th>
-                        <th style="min-width: 80px;">气源压力</th>
-                        <th style="min-width: 80px;">故障位置</th>
-                        <th style="min-width: 70px;">关阀时间</th>
-                        <th style="min-width: 70px;">开阀时间</th>
+                        <th style="width: 50px; min-width: 50px; position: sticky; left: 0; z-index: 3; background: #f8f9fa; border-right: 1px solid #dee2e6;"></th>
+                        {% set fields = [
+                            ('序号', '序号', 60, ''), ('位号', '位号', 100, ''), ('名称', '名称', 120, ''), ('装置名称', '装置名称', 100, ''),
+                            ('设备等级', '设备等级', 70, ''), ('型号规格', '型号规格', 100, ''), ('生产厂家', '生产厂家', 100, ''),
+                            ('安装位置及用途', '安装位置', 120, ''), ('设备编号', '设备编号', 90, ''), ('是否联锁', '是否联锁', 70, ''), ('备注', '备注', 80, ''),
+                            ('工艺条件_介质名称', '介质名称', 80, ''), ('工艺条件_设计温度', '设计温度', 80, ''),
+                            ('工艺条件_阀前压力', '阀前压力', 80, ''), ('工艺条件_阀后压力', '阀后压力', 80, ''),
+                            ('阀体_公称通径', '公称通径', 80, ''), ('阀体_连接方式及规格', '连接方式', 100, ''), ('阀体_材质', '阀体材质', 80, ''),
+                            ('阀内件_阀座直径', '阀座直径', 80, ''), ('阀内件_阀芯材质', '阀芯材质', 80, ''),
+                            ('阀内件_阀座材质', '阀座材质', 80, ''), ('阀内件_阀杆材质', '阀杆材质', 80, ''),
+                            ('阀内件_流量特性', '流量特性', 80, ''), ('阀内件_泄露等级', '泄露等级', 80, ''), ('阀内件_Cv值', 'Cv值', 60, ''),
+                            ('执行机构_形式', '形式', 80, ''), ('执行机构_型号规格', '型号规格', 100, ''), ('执行机构_厂家', '厂家', 80, ''),
+                            ('执行机构_作用形式', '作用形式', 80, ''), ('执行机构_行程', '行程', 60, ''),
+                            ('执行机构_弹簧范围', '弹簧范围', 80, ''), ('执行机构_气源压力', '气源压力', 80, ''),
+                            ('执行机构_故障位置', '故障位置', 80, ''), ('执行机构_关阀时间', '关阀时间', 70, ''), ('执行机构_开阀时间', '开阀时间', 70, ''),
+                            ('状态', '状态', 100, 'sticky'), ('操作', '操作', 100, 'sticky')
+                        ] %}
+                        {% for field, label, width, style in fields %}
+                        <th {% if style == 'sticky' %}style="min-width: {{ width }}px; position: sticky; right: {{ '120px' if field == '状态' else '0px' }}; z-index: 3; background: #f8f9fa;"{% else %}class="filter-header" data-field="{{ field }}" style="min-width: {{ width }}px; cursor: pointer;" onclick="showFilterDropdown(event, '{{ field }}')"{% endif %}>
+                            {% if style != 'sticky' %}
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span>{{ label }}</span>
+                                {% if active_filters and field in active_filters %}
+                                <i class="bi bi-funnel-fill text-primary ms-1" style="font-size: 10px;"></i>
+                                {% else %}
+                                <i class="bi bi-funnel ms-1" style="font-size: 10px; opacity: 0.5;"></i>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            {{ label }}
+                            {% endif %}
+                        </th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
@@ -260,170 +251,97 @@ function batchApprove() {
         document.getElementById('batchForm').submit();
     }
 }
-</script>
 
-<div class="modal fade" id="advancedFilterModal" tabindex="-1" aria-labelledby="advancedFilterModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="advancedFilterModalLabel">高级筛选</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
-            </div>
-            <div class="modal-body">
-                <form method="get" id="advancedFilterForm">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">序号</label>
-                            <input type="text" name="序号" class="form-control" value="{{ request.args.get('序号', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">位号</label>
-                            <input type="text" name="位号" class="form-control" value="{{ request.args.get('位号', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">名称</label>
-                            <input type="text" name="名称" class="form-control" value="{{ request.args.get('名称', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">装置名称</label>
-                            <input type="text" name="装置名称" class="form-control" value="{{ request.args.get('装置名称', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">设备等级</label>
-                            <input type="text" name="设备等级" class="form-control" value="{{ request.args.get('设备等级', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">型号规格</label>
-                            <input type="text" name="型号规格" class="form-control" value="{{ request.args.get('型号规格', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">生产厂家</label>
-                            <input type="text" name="生产厂家" class="form-control" value="{{ request.args.get('生产厂家', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">安装位置</label>
-                            <input type="text" name="安装位置及用途" class="form-control" value="{{ request.args.get('安装位置及用途', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">设备编号</label>
-                            <input type="text" name="设备编号" class="form-control" value="{{ request.args.get('设备编号', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">是否联锁</label>
-                            <select name="是否联锁" class="form-control">
-                                <option value="">全部</option>
-                                <option value="是" {% if request.args.get('是否联锁')=='是' %}selected{% endif %}>是</option>
-                                <option value="否" {% if request.args.get('是否联锁')=='否' %}selected{% endif %}>否</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">备注</label>
-                            <input type="text" name="备注" class="form-control" value="{{ request.args.get('备注', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">工艺条件_介质名称</label>
-                            <input type="text" name="工艺条件_介质名称" class="form-control" value="{{ request.args.get('工艺条件_介质名称', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">工艺条件_设计温度</label>
-                            <input type="text" name="工艺条件_设计温度" class="form-control" value="{{ request.args.get('工艺条件_设计温度', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">工艺条件_阀前压力</label>
-                            <input type="text" name="工艺条件_阀前压力" class="form-control" value="{{ request.args.get('工艺条件_阀前压力', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">工艺条件_阀后压力</label>
-                            <input type="text" name="工艺条件_阀后压力" class="form-control" value="{{ request.args.get('工艺条件_阀后压力', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">阀体_公称通径</label>
-                            <input type="text" name="阀体_公称通径" class="form-control" value="{{ request.args.get('阀体_公称通径', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">阀体_连接方式</label>
-                            <input type="text" name="阀体_连接方式及规格" class="form-control" value="{{ request.args.get('阀体_连接方式及规格', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">阀体_材质</label>
-                            <input type="text" name="阀体_材质" class="form-control" value="{{ request.args.get('阀体_材质', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">阀内件_阀座直径</label>
-                            <input type="text" name="阀内件_阀座直径" class="form-control" value="{{ request.args.get('阀内件_阀座直径', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">阀内件_阀芯材质</label>
-                            <input type="text" name="阀内件_阀芯材质" class="form-control" value="{{ request.args.get('阀内件_阀芯材质', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">阀内件_阀座材质</label>
-                            <input type="text" name="阀内件_阀座材质" class="form-control" value="{{ request.args.get('阀内件_阀座材质', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">阀内件_阀杆材质</label>
-                            <input type="text" name="阀内件_阀杆材质" class="form-control" value="{{ request.args.get('阀内件_阀杆材质', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">阀内件_流量特性</label>
-                            <input type="text" name="阀内件_流量特性" class="form-control" value="{{ request.args.get('阀内件_流量特性', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">阀内件_泄露等级</label>
-                            <input type="text" name="阀内件_泄露等级" class="form-control" value="{{ request.args.get('阀内件_泄露等级', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">阀内件_Cv值</label>
-                            <input type="text" name="阀内件_Cv值" class="form-control" value="{{ request.args.get('阀内件_Cv值', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">执行机构_形式</label>
-                            <input type="text" name="执行机构_形式" class="form-control" value="{{ request.args.get('执行机构_形式', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">执行机构_型号规格</label>
-                            <input type="text" name="执行机构_型号规格" class="form-control" value="{{ request.args.get('执行机构_型号规格', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">执行机构_厂家</label>
-                            <input type="text" name="执行机构_厂家" class="form-control" value="{{ request.args.get('执行机构_厂家', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">执行机构_作用形式</label>
-                            <input type="text" name="执行机构_作用形式" class="form-control" value="{{ request.args.get('执行机构_作用形式', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">执行机构_行程</label>
-                            <input type="text" name="执行机构_行程" class="form-control" value="{{ request.args.get('执行机构_行程', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">执行机构_弹簧范围</label>
-                            <input type="text" name="执行机构_弹簧范围" class="form-control" value="{{ request.args.get('执行机构_弹簧范围', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">执行机构_气源压力</label>
-                            <input type="text" name="执行机构_气源压力" class="form-control" value="{{ request.args.get('执行机构_气源压力', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">执行机构_故障位置</label>
-                            <input type="text" name="执行机构_故障位置" class="form-control" value="{{ request.args.get('执行机构_故障位置', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">执行机构_关阀时间</label>
-                            <input type="text" name="执行机构_关阀时间" class="form-control" value="{{ request.args.get('执行机构_关阀时间', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">执行机构_开阀时间</label>
-                            <input type="text" name="执行机构_开阀时间" class="form-control" value="{{ request.args.get('执行机构_开阀时间', '') }}">
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="document.getElementById('advancedFilterForm').reset()">重置</button>
-                <button type="button" class="btn btn-primary" onclick="document.getElementById('advancedFilterForm').submit()">应用筛选</button>
-            </div>
-        </div>
+let currentFilterDropdown = null;
+
+function showFilterDropdown(event, field) {
+    event.stopPropagation();
+    
+    const existingDropdown = document.getElementById('filterDropdown');
+    if (existingDropdown) {
+        existingDropdown.remove();
+    }
+    
+    const filterOptions = {{ filter_options | tojson | safe }};
+    const activeFilters = {{ active_filters | tojson | safe }};
+    
+    if (!filterOptions[field] || filterOptions[field].length === 0) {
+        return;
+    }
+    
+    const dropdown = document.createElement('div');
+    dropdown.id = 'filterDropdown';
+    dropdown.className = 'filter-dropdown';
+    dropdown.style.cssText = 'position: absolute; z-index: 9999; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); max-height: 300px; overflow-y: auto; min-width: 200px;';
+    
+    const rect = event.target.getBoundingClientRect();
+    dropdown.style.left = rect.left + 'px';
+    dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+    
+    let html = `<div class="p-2 border-bottom bg-light d-flex justify-content-between align-items-center">
+        <strong>筛选 ${event.target.textContent}</strong>
+        <button type="button" class="btn-close btn-sm" onclick="this.closest('#filterDropdown').remove()"></button>
     </div>
-</div>
+    <div class="p-2">
+        <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input select-all-filter" id="selectAll_${field}" onchange="toggleAllFilter('${field}', this.checked)">
+            <label class="form-check-label" for="selectAll_${field}">全选</label>
+        </div>
+        <div class="filter-options" style="max-height: 200px; overflow-y: auto;">`;
+    
+    const selectedValues = activeFilters[field] || [];
+    
+    filterOptions[field].forEach(value => {
+        const isChecked = selectedValues.includes(value);
+        html += `<div class="form-check">
+            <input type="checkbox" class="form-check-input filter-option" name="${field}" value="${value}" ${isChecked ? 'checked' : ''}>
+            <label class="form-check-label" style="word-break: break-all;">${value}</label>
+        </div>`;
+    });
+    
+    html += `</div></div>
+    <div class="p-2 border-top d-flex gap-2">
+        <button class="btn btn-sm btn-primary flex-grow-1" onclick="applyFilter('${field}')">应用</button>
+        <button class="btn btn-sm btn-secondary" onclick="clearFilter('${field}')">清除</button>
+    </div>`;
+    
+    dropdown.innerHTML = html;
+    document.body.appendChild(dropdown);
+    
+    currentFilterDropdown = dropdown;
+    
+    document.addEventListener('click', function closeDropdown(e) {
+        if (!dropdown.contains(e.target) && !e.target.closest('.filter-header')) {
+            dropdown.remove();
+            document.removeEventListener('click', closeDropdown);
+        }
+    });
+}
+
+function toggleAllFilter(field, checked) {
+    document.querySelectorAll(`.filter-option[name="${field}"]`).forEach(cb => {
+        cb.checked = checked;
+    });
+}
+
+function applyFilter(field) {
+    const checked = document.querySelectorAll(`.filter-option[name="${field}"]:checked`);
+    const values = Array.from(checked).map(cb => cb.value);
+    
+    const url = new URL(window.location.href);
+    
+    const existingParams = url.searchParams.getAll(field);
+    existingParams.forEach(() => url.searchParams.delete(field));
+    
+    values.forEach(v => url.searchParams.append(field, v));
+    
+    window.location.href = url.toString();
+}
+
+function clearFilter(field) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete(field);
+    window.location.href = url.toString();
+}
+</script>
 {% endblock %}

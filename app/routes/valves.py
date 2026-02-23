@@ -85,50 +85,64 @@ def list():
     if filter_type == "mine":
         query = query.filter(Valve.created_by == current_user.id)
 
-    advanced_filter_fields = [
-        "序号",
-        "位号",
-        "名称",
-        "装置名称",
-        "设备等级",
-        "型号规格",
-        "生产厂家",
-        "安装位置及用途",
-        "设备编号",
-        "是否联锁",
-        "备注",
-        "工艺条件_介质名称",
-        "工艺条件_设计温度",
-        "工艺条件_阀前压力",
-        "工艺条件_阀后压力",
-        "阀体_公称通径",
-        "阀体_连接方式及规格",
-        "阀体_材质",
-        "阀内件_阀座直径",
-        "阀内件_阀芯材质",
-        "阀内件_阀座材质",
-        "阀内件_阀杆材质",
-        "阀内件_流量特性",
-        "阀内件_泄露等级",
-        "阀内件_Cv值",
-        "执行机构_形式",
-        "执行机构_型号规格",
-        "执行机构_厂家",
-        "执行机构_作用形式",
-        "执行机构_行程",
-        "执行机构_弹簧范围",
-        "执行机构_气源压力",
-        "执行机构_故障位置",
-        "执行机构_关阀时间",
-        "执行机构_开阀时间",
+    if filter_type == "mine":
+        query = query.filter(Valve.created_by == current_user.id)
+
+    filterable_fields = [
+        ("序号", "序号"),
+        ("位号", "位号"),
+        ("名称", "名称"),
+        ("装置名称", "装置名称"),
+        ("设备等级", "设备等级"),
+        ("型号规格", "型号规格"),
+        ("生产厂家", "生产厂家"),
+        ("安装位置及用途", "安装位置及用途"),
+        ("设备编号", "设备编号"),
+        ("是否联锁", "是否联锁"),
+        ("工艺条件_介质名称", "工艺条件_介质名称"),
+        ("工艺条件_设计温度", "工艺条件_设计温度"),
+        ("工艺条件_阀前压力", "工艺条件_阀前压力"),
+        ("工艺条件_阀后压力", "工艺条件_阀后压力"),
+        ("阀体_公称通径", "阀体_公称通径"),
+        ("阀体_连接方式及规格", "阀体_连接方式及规格"),
+        ("阀体_材质", "阀体_材质"),
+        ("阀内件_阀座直径", "阀内件_阀座直径"),
+        ("阀内件_阀芯材质", "阀内件_阀芯材质"),
+        ("阀内件_阀座材质", "阀内件_阀座材质"),
+        ("阀内件_阀杆材质", "阀内件_阀杆材质"),
+        ("阀内件_流量特性", "阀内件_流量特性"),
+        ("阀内件_泄露等级", "阀内件_泄露等级"),
+        ("阀内件_Cv值", "阀内件_Cv值"),
+        ("执行机构_形式", "执行机构_形式"),
+        ("执行机构_型号规格", "执行机构_型号规格"),
+        ("执行机构_厂家", "执行机构_厂家"),
+        ("执行机构_作用形式", "执行机构_作用形式"),
+        ("执行机构_行程", "执行机构_行程"),
+        ("执行机构_弹簧范围", "执行机构_弹簧范围"),
+        ("执行机构_气源压力", "执行机构_气源压力"),
+        ("执行机构_故障位置", "执行机构_故障位置"),
+        ("执行机构_关阀时间", "执行机构_关阀时间"),
+        ("执行机构_开阀时间", "执行机构_开阀时间"),
     ]
 
-    active_filters = False
-    for field in advanced_filter_fields:
-        value = request.args.get(field)
-        if value and hasattr(Valve, field):
-            query = query.filter(getattr(Valve, field).contains(value))
-            active_filters = True
+    filter_options = {}
+    for label, field in filterable_fields:
+        if hasattr(Valve, field):
+            values = (
+                db.session.query(getattr(Valve, field))
+                .distinct()
+                .filter(getattr(Valve, field).isnot(None), getattr(Valve, field) != "")
+                .all()
+            )
+            filter_options[field] = sorted([v[0] for v in values if v[0]], key=str)
+
+    active_filters = {}
+    for label, field in filterable_fields:
+        values = request.args.getlist(field)
+        if values and hasattr(Valve, field):
+            field_filter = getattr(Valve, field).in_(values)
+            query = query.filter(field_filter)
+            active_filters[field] = values
 
     装置列表 = (
         db.session.query(Valve.装置名称)
@@ -149,6 +163,7 @@ def list():
         pagination=pagination,
         装置列表=装置列表,
         active_filters=active_filters,
+        filter_options=filter_options,
     )
 
 
