@@ -1,3 +1,4 @@
+# coding=utf-8
 def test_index_requires_login(client, init_database):
     response = client.get('/')
     assert response.status_code == 302

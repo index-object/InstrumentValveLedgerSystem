@@ -1,3 +1,4 @@
+# coding=utf-8
 def test_login_page(client, init_database):
     """测试登录页面"""
     response = client.get('/login')
