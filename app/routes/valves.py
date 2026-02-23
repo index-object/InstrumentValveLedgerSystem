@@ -12,6 +12,8 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from app.models import db, Valve, Setting, ApprovalLog, User, ValveAttachment
+from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
@@ -55,12 +57,21 @@ def list():
 
     search = request.args.get("search")
     if search:
-        query = query.filter(
-            (Valve.位号.contains(search))
-            | (Valve.名称.contains(search))
-            | (Valve.装置名称.contains(search))
-            | (Valve.设备编号.contains(search))
-        )
+        search_conditions = []
+        for column in Valve.__table__.columns:
+            if column.name not in [
+                "id",
+                "created_by",
+                "approved_by",
+                "approved_at",
+                "created_at",
+                "updated_at",
+                "status",
+            ]:
+                col = getattr(Valve, column.name)
+                search_conditions.append(col.contains(search))
+        if search_conditions:
+            query = query.filter(or_(*search_conditions))
 
     status = request.args.get("status")
     if status:
@@ -73,6 +84,51 @@ def list():
     filter_type = request.args.get("filter")
     if filter_type == "mine":
         query = query.filter(Valve.created_by == current_user.id)
+
+    advanced_filter_fields = [
+        "序号",
+        "位号",
+        "名称",
+        "装置名称",
+        "设备等级",
+        "型号规格",
+        "生产厂家",
+        "安装位置及用途",
+        "设备编号",
+        "是否联锁",
+        "备注",
+        "工艺条件_介质名称",
+        "工艺条件_设计温度",
+        "工艺条件_阀前压力",
+        "工艺条件_阀后压力",
+        "阀体_公称通径",
+        "阀体_连接方式及规格",
+        "阀体_材质",
+        "阀内件_阀座直径",
+        "阀内件_阀芯材质",
+        "阀内件_阀座材质",
+        "阀内件_阀杆材质",
+        "阀内件_流量特性",
+        "阀内件_泄露等级",
+        "阀内件_Cv值",
+        "执行机构_形式",
+        "执行机构_型号规格",
+        "执行机构_厂家",
+        "执行机构_作用形式",
+        "执行机构_行程",
+        "执行机构_弹簧范围",
+        "执行机构_气源压力",
+        "执行机构_故障位置",
+        "执行机构_关阀时间",
+        "执行机构_开阀时间",
+    ]
+
+    active_filters = False
+    for field in advanced_filter_fields:
+        value = request.args.get(field)
+        if value and hasattr(Valve, field):
+            query = query.filter(getattr(Valve, field).contains(value))
+            active_filters = True
 
     装置列表 = (
         db.session.query(Valve.装置名称)
@@ -88,7 +144,11 @@ def list():
     valves_list = pagination.items
 
     return render_template(
-        "valves/list.html", valves=valves_list, pagination=pagination, 装置列表=装置列表
+        "valves/list.html",
+        valves=valves_list,
+        pagination=pagination,
+        装置列表=装置列表,
+        active_filters=active_filters,
     )
 
 
@@ -103,6 +163,13 @@ def detail(id):
 @login_required
 def new():
     if request.method == "POST":
+        位号 = request.form.get("位号")
+        if 位号:
+            existing = Valve.query.filter_by(位号=位号).first()
+            if existing:
+                flash("位号已存在，请使用其他位号")
+                return redirect(url_for("valves.new"))
+
         valve = Valve()
         for key in request.form:
             if hasattr(valve, key):
@@ -111,8 +178,13 @@ def new():
         valve.created_by = current_user.id
         valve.status = "draft"
 
-        db.session.add(valve)
-        db.session.commit()
+        try:
+            db.session.add(valve)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash("位号已存在，请使用其他位号")
+            return redirect(url_for("valves.new"))
 
         log = ApprovalLog(valve_id=valve.id, action="submit", user_id=current_user.id)
         db.session.add(log)
@@ -186,6 +258,13 @@ def edit(id):
         return redirect(url_for("valves.detail", id=id))
 
     if request.method == "POST":
+        位号 = request.form.get("位号")
+        if 位号:
+            existing = Valve.query.filter(Valve.位号 == 位号, Valve.id != id).first()
+            if existing:
+                flash("位号已存在，请使用其他位号")
+                return redirect(url_for("valves.edit", id=id))
+
         for key in request.form:
             if hasattr(valve, key):
                 setattr(valve, key, request.form.get(key))
