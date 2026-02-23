@@ -92,7 +92,7 @@
                             ('状态', '状态', 100, 'sticky'), ('操作', '操作', 100, 'sticky')
                         ] %}
                         {% for field, label, width, style in fields %}
-                        <th {% if style == 'sticky' %}style="min-width: {{ width }}px; position: sticky; right: {{ '120px' if field == '状态' else '0px' }}; z-index: 3; background: #f8f9fa;"{% else %}class="filter-header" data-field="{{ field }}" style="min-width: {{ width }}px; cursor: pointer;" onclick="showFilterDropdown(event, '{{ field }}')"{% endif %}>
+                        <th {% if style == 'sticky' %}style="min-width: {{ width }}px; position: sticky; right: {{ '100px' if field == '状态' else '0px' }}; z-index: 3; background: #f8f9fa;"{% else %}class="filter-header" data-field="{{ field }}" style="min-width: {{ width }}px; cursor: pointer;" onclick="showFilterDropdown(event, '{{ field }}')"{% endif %}>
                             {% if style != 'sticky' %}
                             <div class="d-flex align-items-center justify-content-between">
                                 <span>{{ label }}</span>
@@ -148,7 +148,7 @@
                         <td>{{ valve.执行机构_故障位置 or '-' }}</td>
                         <td>{{ valve.执行机构_关阀时间 or '-' }}</td>
                         <td>{{ valve.执行机构_开阀时间 or '-' }}</td>
-                        <td style="position: sticky; right: 120px; z-index: 2; background: #fff; border-left: 1px solid #dee2e6;">
+                        <td style="position: sticky; right: 100px; z-index: 2; background: #fff; border-left: 1px solid #dee2e6;">
                             {% if valve.status == 'approved' %}
                             <span class="badge-status badge-approved">已审批</span>
                             {% elif valve.status == 'pending' %}
