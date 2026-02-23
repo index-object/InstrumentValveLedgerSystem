@@ -10,14 +10,28 @@
     </div>
     <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
 </form>
+<div class="d-flex gap-2">
+    <div class="btn-group">
+        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            批量操作
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" onclick="batchExport()"><i class="bi bi-download"></i> 导出选中</a></li>
+            <li><a class="dropdown-item" href="#" onclick="batchDelete()"><i class="bi bi-trash"></i> 删除选中</a></li>
+        </ul>
+    </div>
+    <a href="{{ url_for('valves.maintenance_export') }}" class="btn btn-sm btn-info"><i class="bi bi-download"></i> 导出全部</a>
+</div>
 {% endblock %}
 
 {% block content %}
 <div class="modern-card">
+    <form id="batchForm" method="POST">
     <div class="table-responsive">
         <table class="modern-table">
             <thead>
                 <tr>
+                    <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="selectAll"></th>
                     <th>设备位号</th>
                     <th>设备名称</th>
                     <th>所属中心</th>
@@ -29,6 +43,7 @@
             <tbody>
                 {% for record in records %}
                 <tr>
+                    <td><input type="checkbox" name="ids" value="{{ record.id }}" class="form-check-input item-checkbox"></td>
                     <td><a href="{{ url_for('valves.detail', id=record.valve_id) }}" style="color: var(--primary-color); font-weight: 500;">{{ record.设备位号 or '-' }}</a></td>
                     <td>{{ record.设备名称 or '-' }}</td>
                     <td>{{ record.所属中心 or '-' }}</td>
@@ -38,7 +53,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6">
+                    <td colspan="7">
                         <div class="empty-state">
                             <i class="bi bi-wrench"></i>
                             <p>暂无维护记录</p>
@@ -49,5 +64,53 @@
             </tbody>
         </table>
     </div>
+    </form>
+    
+    {% if pagination %}
+    <div class="p-3 border-top">
+        <nav>
+            <ul class="pagination-custom pagination mb-2">
+                {% if pagination.has_prev %}
+                <li><a href="{{ url_for('valves.maintenance_list', page=pagination.prev_num) }}">&laquo; 上一页</a></li>
+                {% endif %}
+                
+                {% for p in range(1, pagination.pages + 1) %}
+                    {% if p == pagination.page %}
+                    <li class="active"><span>{{ p }}</span></li>
+                    {% else %}
+                    <li><a href="{{ url_for('valves.maintenance_list', page=p) }}">{{ p }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li><a href="{{ url_for('valves.maintenance_list', page=pagination.next_num) }}">下一页 &raquo;</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        <div class="text-muted">共 {{ pagination.total }} 条记录，第 {{ pagination.page }}/{{ pagination.pages }} 页</div>
+    </div>
+    {% endif %}
 </div>
+
+<script>
+document.getElementById('selectAll').addEventListener('change', function() {
+    document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
+});
+
+function batchDelete() {
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+    if (checked.length === 0) { alert('请先选择要删除的记录'); return; }
+    if (confirm('确定要删除选中的 ' + checked.length + ' 条记录吗？')) {
+        document.getElementById('batchForm').action = "{{ url_for('valves.maintenance_batch_delete') }}";
+        document.getElementById('batchForm').submit();
+    }
+}
+
+function batchExport() {
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+    if (checked.length === 0) { alert('请先选择要导出的记录'); return; }
+    const ids = Array.from(checked).map(cb => cb.value);
+    window.location.href = "{{ url_for('valves.maintenance_export') }}?" + ids.map(id => 'ids=' + id).join('&');
+}
+</script>
 {% endblock %}

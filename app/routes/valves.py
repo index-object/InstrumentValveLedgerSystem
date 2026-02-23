@@ -8,6 +8,7 @@ from flask import (
     send_from_directory,
     make_response,
     session,
+    jsonify,
 )
 from flask_login import login_required, current_user
 from app.models import db, Valve, Setting, ApprovalLog, User, ValveAttachment
@@ -22,6 +23,26 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@valves.route("/valve/check-tag")
+@login_required
+def check_tag():
+    tag = request.args.get("位号")
+    if not tag:
+        return jsonify({"valid": True})
+
+    exclude_id = request.args.get("exclude_id", type=int)
+
+    query = Valve.query.filter_by(位号=tag)
+    if exclude_id:
+        query = query.filter(Valve.id != exclude_id)
+
+    exists = query.first() is not None
+
+    if exists:
+        return jsonify({"valid": False, "message": "位号已存在"})
+    return jsonify({"valid": True})
 
 
 @valves.route("/valves")
@@ -110,6 +131,41 @@ def new():
         return redirect(url_for("valves.list"))
 
     return render_template("valves/form.html", valve=None)
+
+
+@valves.route("/valve/draft/save", methods=["POST"])
+@login_required
+def save_draft():
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "message": "无效数据"})
+
+    valve_id = data.get("valve_id")
+
+    if valve_id:
+        valve = Valve.query.get(valve_id)
+        if not valve:
+            return jsonify({"success": False, "message": "台账不存在"})
+
+        can_edit = valve.created_by == current_user.id or current_user.role in [
+            "leader",
+            "admin",
+        ]
+        if not can_edit:
+            return jsonify({"success": False, "message": "无权编辑"})
+    else:
+        valve = Valve()
+        valve.created_by = current_user.id
+        valve.status = "draft"
+        db.session.add(valve)
+
+    for key, value in data.get("formData", {}).items():
+        if hasattr(valve, key):
+            setattr(valve, key, value)
+
+    db.session.commit()
+
+    return jsonify({"success": True, "valve_id": valve.id})
 
 
 @valves.route("/valve/edit/<int:id>", methods=["GET", "POST"])
@@ -410,42 +466,97 @@ def import_data():
                 "备注": "备注",
             }
 
-            new_count = 0
-            update_count = 0
+            conflicts = []
+            new_records = []
+
             for _, row in df.iterrows():
                 if pd.isna(row.get("位号")):
                     continue
 
                 existing = Valve.query.filter_by(位号=row["位号"]).first()
                 if existing:
-                    for excel_col, db_col in column_map.items():
-                        if excel_col in df.columns and pd.notna(row.get(excel_col)):
-                            setattr(existing, db_col, str(row[excel_col]))
-                    update_count += 1
+                    conflicts.append(
+                        {
+                            "位号": row["位号"],
+                            "existing_id": existing.id,
+                            "existing_name": existing.名称,
+                            "new_data": row.to_dict(),
+                        }
+                    )
                 else:
-                    valve = Valve()
-                    for excel_col, db_col in column_map.items():
-                        if excel_col in df.columns and pd.notna(row.get(excel_col)):
-                            setattr(valve, db_col, str(row[excel_col]))
+                    new_records.append(row.to_dict())
 
-                    valve.created_by = current_user.id
+            session["import_preview"] = {
+                "conflicts": conflicts,
+                "new_records": new_records,
+                "filename": file.filename,
+                "column_map": column_map,
+            }
 
-                    auto_approve = Setting.query.get("auto_approval")
-                    if auto_approve and auto_approve.value == "true":
-                        valve.status = "approved"
-                        valve.approved_by = current_user.id
-                        valve.approved_at = datetime.utcnow()
-                    else:
-                        valve.status = "approved"
-
-                    db.session.add(valve)
-                    new_count += 1
-
-            db.session.commit()
-            flash(f"成功导入 {new_count} 条新记录，更新 {update_count} 条现有记录")
-            return redirect(url_for("valves.list"))
+            return render_template(
+                "valves/import_preview.html",
+                conflicts=conflicts,
+                new_records=new_records,
+                total=len(conflicts) + len(new_records),
+            )
 
     return render_template("valves/import.html")
+
+
+@valves.route("/import/execute", methods=["POST"])
+@login_required
+def import_execute():
+    if current_user.role not in ["leader", "admin"]:
+        flash("需要领导权限")
+        return redirect(url_for("valves.list"))
+
+    import pandas as pd
+
+    conflict_mode = request.form.get("conflict_mode", "cancel")
+
+    preview = session.get("import_preview")
+    if not preview:
+        flash("请先上传文件预览")
+        return redirect(url_for("valves.import_data"))
+
+    column_map = preview.get("column_map", {})
+    new_count = 0
+    update_count = 0
+
+    for record in preview["new_records"]:
+        valve = Valve()
+        for key, value in record.items():
+            if hasattr(valve, key) and pd.notna(value):
+                setattr(valve, key, str(value))
+
+        valve.created_by = current_user.id
+
+        auto_approve = Setting.query.get("auto_approval")
+        if auto_approve and auto_approve.value == "true":
+            valve.status = "approved"
+            valve.approved_by = current_user.id
+            valve.approved_at = datetime.utcnow()
+        else:
+            valve.status = "approved"
+
+        db.session.add(valve)
+        new_count += 1
+
+    if conflict_mode == "overwrite":
+        for conflict in preview["conflicts"]:
+            existing = Valve.query.get(conflict["existing_id"])
+            for key, value in conflict["new_data"].items():
+                if hasattr(existing, key) and pd.notna(value):
+                    setattr(existing, key, str(value))
+            update_count += 1
+    elif conflict_mode == "skip":
+        pass
+
+    db.session.commit()
+    session.pop("import_preview", None)
+
+    flash(f"成功导入 {new_count} 条新记录，更新 {update_count} 条现有记录")
+    return redirect(url_for("valves.list"))
 
 
 @valves.route("/export")
@@ -514,6 +625,107 @@ def export_data():
     )
 
     return output
+
+
+@valves.route("/valve/<int:id>/export-pdf")
+@login_required
+def export_valve_pdf(id):
+    valve = Valve.query.get_or_404(id)
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>台账详情 - {valve.位号}</title>
+        <style>
+            body {{ font-family: SimSun, serif; padding: 20px; }}
+            h1 {{ text-align: center; color: #333; }}
+            table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+            th {{ background-color: #f5f5f5; }}
+            .section {{ margin: 20px 0; }}
+            .section-title {{ background-color: #4a90d9; color: white; padding: 10px; font-weight: bold; }}
+        </style>
+    </head>
+    <body>
+        <h1>仪表阀门台账</h1>
+        
+        <div class="section">
+            <div class="section-title">基本信息</div>
+            <table>
+                <tr><th>位号</th><td>{valve.位号 or ""}</td><th>名称</th><td>{valve.名称 or ""}</td></tr>
+                <tr><th>装置名称</th><td>{valve.装置名称 or ""}</td><th>设备等级</th><td>{valve.设备等级 or ""}</td></tr>
+                <tr><th>型号规格</th><td>{valve.型号规格 or ""}</td><th>生产厂家</th><td>{valve.生产厂家 or ""}</td></tr>
+                <tr><th>安装位置</th><td colspan="3">{valve.安装位置及用途 or ""}</td></tr>
+                <tr><th>设备编号</th><td>{valve.设备编号 or ""}</td><th>是否联锁</th><td>{valve.是否联锁 or ""}</td></tr>
+            </table>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">工艺条件</div>
+            <table>
+                <tr><th>介质名称</th><td>{valve.工艺条件_介质名称 or ""}</td><th>设计温度</th><td>{valve.工艺条件_设计温度 or ""}</td></tr>
+                <tr><th>阀前压力</th><td>{valve.工艺条件_阀前压力 or ""}</td><th>阀后压力</th><td>{valve.工艺条件_阀后压力 or ""}</td></tr>
+            </table>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">阀体信息</div>
+            <table>
+                <tr><th>公称通径</th><td>{valve.阀体_公称通径 or ""}</td><th>连接方式</th><td>{valve.阀体_连接方式及规格 or ""}</td></tr>
+                <tr><th>阀体材质</th><td colspan="3">{valve.阀体_材质 or ""}</td></tr>
+            </table>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">阀内件信息</div>
+            <table>
+                <tr><th>阀座直径</th><td>{valve.阀内件_阀座直径 or ""}</td><th>阀芯材质</th><td>{valve.阀内件_阀芯材质 or ""}</td></tr>
+                <tr><th>阀座材质</th><td>{valve.阀内件_阀座材质 or ""}</td><th>阀杆材质</th><td>{valve.阀内件_阀杆材质 or ""}</td></tr>
+                <tr><th>流量特性</th><td>{valve.阀内件_流量特性 or ""}</td><th>泄露等级</th><td>{valve.阀内件_泄露等级 or ""}</td></tr>
+                <tr><th>Cv值</th><td colspan="3">{valve.阀内件_Cv值 or ""}</td></tr>
+            </table>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">执行机构信息</div>
+            <table>
+                <tr><th>形式</th><td>{valve.执行机构_形式 or ""}</td><th>型号规格</th><td>{valve.执行机构_型号规格 or ""}</td></tr>
+                <tr><th>厂家</th><td>{valve.执行机构_厂家 or ""}</td><th>作用形式</th><td>{valve.执行机构_作用形式 or ""}</td></tr>
+                <tr><th>行程</th><td>{valve.执行机构_行程 or ""}</td><th>弹簧范围</th><td>{valve.执行机构_弹簧范围 or ""}</td></tr>
+                <tr><th>气源压力</th><td>{valve.执行机构_气源压力 or ""}</td><th>故障位置</th><td>{valve.执行机构_故障位置 or ""}</td></tr>
+                <tr><th>关阀时间</th><td>{valve.执行机构_关阀时间 or ""}</td><th>开阀时间</th><td>{valve.执行机构_开阀时间 or ""}</td></tr>
+            </table>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">备注</div>
+            <p>{valve.备注 or "无"}</p>
+        </div>
+        
+        <p style="text-align: right; color: #666; margin-top: 30px;">
+            导出时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        </p>
+    </body>
+    </html>
+    """
+
+    try:
+        from weasyprint import HTML
+
+        pdf_buffer = BytesIO()
+        HTML(string=html).write_pdf(pdf_buffer)
+        pdf_buffer.seek(0)
+        output = make_response(pdf_buffer.read())
+        output.headers["Content-Disposition"] = (
+            f"attachment; filename=valve_{valve.位号}.pdf"
+        )
+        output.headers["Content-Type"] = "application/pdf"
+        return output
+    except ImportError:
+        flash("PDF导出需要安装 WeasyPrint: pip install WeasyPrint")
+        return redirect(url_for("valves.detail", id=id))
 
 
 @valves.route("/valve/<int:id>/photos", methods=["GET", "POST"])
@@ -608,8 +820,77 @@ def maintenance_list():
     if valve_id:
         query = query.filter(MaintenanceRecord.valve_id == int(valve_id))
 
-    records = query.order_by(MaintenanceRecord.检修时间.desc()).all()
-    return render_template("maintenance/list.html", records=records)
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+
+    pagination = query.order_by(MaintenanceRecord.检修时间.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+
+    return render_template(
+        "maintenance/list.html", records=pagination.items, pagination=pagination
+    )
+
+
+@valves.route("/maintenance/batch-delete", methods=["POST"])
+@login_required
+def maintenance_batch_delete():
+    from app.models import MaintenanceRecord
+
+    ids = request.form.getlist("ids")
+    if not ids:
+        flash("请选择要删除的记录")
+        return redirect(url_for("valves.maintenance_list"))
+
+    count = MaintenanceRecord.query.filter(MaintenanceRecord.id.in_(ids)).delete(
+        synchronize_session=False
+    )
+    db.session.commit()
+    flash(f"成功删除 {count} 条记录")
+    return redirect(url_for("valves.maintenance_list"))
+
+
+@valves.route("/maintenance/export")
+@login_required
+def maintenance_export():
+    from app.models import MaintenanceRecord
+    import pandas as pd
+
+    ids = request.args.getlist("ids")
+    if ids:
+        records = MaintenanceRecord.query.filter(MaintenanceRecord.id.in_(ids)).all()
+    else:
+        records = MaintenanceRecord.query.order_by(
+            MaintenanceRecord.检修时间.desc()
+        ).all()
+
+    data = []
+    for r in records:
+        data.append(
+            {
+                "设备位号": r.设备位号,
+                "设备名称": r.设备名称,
+                "所属中心": r.所属中心,
+                "检修时间": r.检修时间.strftime("%Y-%m-%d %H:%M") if r.检修时间 else "",
+                "检修人员": r.检修人员,
+                "检修内容": r.检修内容,
+                "类型": r.类型,
+            }
+        )
+
+    df = pd.DataFrame(data)
+    from io import BytesIO
+
+    buffer = BytesIO()
+    df.to_excel(buffer, index=False, engine="openpyxl")
+    buffer.seek(0)
+    output = make_response(buffer.read())
+    output.headers["Content-Disposition"] = "attachment; filename=maintenance.xlsx"
+    output.headers["Content-Type"] = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    return output
 
 
 @valves.route("/valve/<int:id>/attachments", methods=["GET", "POST"])

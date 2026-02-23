@@ -13,12 +13,13 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(
         db.String(20), nullable=False, default="employee"
-    )  # employee/leader
+    )  # employee/leader/admin
     real_name = db.Column(db.String(50))
     dept = db.Column(db.String(50))
     status = db.Column(db.String(20), default="active")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login_at = db.Column(db.DateTime)
+    must_change_password = db.Column(db.Boolean, default=False)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

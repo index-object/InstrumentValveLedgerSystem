@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2>导入预览</h2>
+    
+    <div class="alert alert-info">
+        共 {{ total }} 条记录，其中 {{ conflicts|length }} 条位号冲突，{{ new_records|length }} 条新记录
+    </div>
+    
+    {% if conflicts %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning">位号冲突 ({{ conflicts|length }} 条)</div>
+        <div class="card-body">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>位号</th>
+                        <th>现有设备名称</th>
+                        <th>导入设备名称</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in conflicts %}
+                    <tr>
+                        <td>{{ c.位号 }}</td>
+                        <td>{{ c.existing_name }}</td>
+                        <td>{{ c.new_data.名称 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <form method="POST" action="{{ url_for('valves.import_execute') }}">
+        <div class="mb-3">
+            <label class="form-label">冲突处理方式</label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="conflict_mode" value="cancel" id="modeCancel" checked>
+                <label class="form-check-label" for="modeCancel">取消导入</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="conflict_mode" value="overwrite" id="modeOverwrite">
+                <label class="form-check-label" for="modeOverwrite">全部覆盖（更新现有数据）</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="conflict_mode" value="skip" id="modeSkip">
+                <label class="form-check-label" for="modeSkip">只导入不重复部分（跳过冲突）</label>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">确认导入</button>
+        <a href="{{ url_for('valves.import_data') }}" class="btn btn-secondary">重新选择文件</a>
+    </form>
+</div>
+{% endblock %}

@@ -187,8 +187,21 @@
     </a>
     
 {% if current_user.role in ['leader', 'admin'] %}
+    <a href="{{ url_for('valves.approvals') }}" class="stat-card">
+        <div class="stat-icon success" style="position: relative;">
+            <i class="bi bi-check2-square"></i>
+            {% if pending > 0 %}
+            <span style="position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; background: #ef4444; border-radius: 50%; border: 2px solid white;"></span>
+            {% endif %}
+        </div>
+        <div class="stat-content">
+            <h3>{{ pending }}</h3>
+            <p>待审批</p>
+        </div>
+    </a>
+    
     <a href="{{ url_for('valves.list') }}" class="stat-card">
-        <div class="stat-icon success">
+        <div class="stat-icon info">
             <i class="bi bi-list-columns"></i>
         </div>
         <div class="stat-content">
@@ -198,7 +211,7 @@
     </a>
     
     <div class="stat-card" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#userStatsModal">
-        <div class="stat-icon info">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); color: white;">
             <i class="bi bi-people"></i>
         </div>
         <div class="stat-content">
@@ -217,8 +230,31 @@
         </div>
     </a>
 {% else %}
-    <a href="{{ url_for('valves.maintenance_list') }}" class="stat-card">
+    <a href="{{ url_for('valves.my_applications') }}" class="stat-card">
+        <div class="stat-icon success" style="position: relative;">
+            <i class="bi bi-file-earmark-check"></i>
+            {% if pending > 0 %}
+            <span style="position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; background: #ef4444; border-radius: 50%; border: 2px solid white;"></span>
+            {% endif %}
+        </div>
+        <div class="stat-content">
+            <h3>{{ pending }}</h3>
+            <p>我的申请</p>
+        </div>
+    </a>
+    
+    <a href="{{ url_for('valves.list') }}" class="stat-card">
         <div class="stat-icon info">
+            <i class="bi bi-list-columns"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ total }}</h3>
+            <p>全部台账</p>
+        </div>
+    </a>
+    
+    <a href="{{ url_for('valves.maintenance_list') }}" class="stat-card">
+        <div class="stat-icon warning">
             <i class="bi bi-tools"></i>
         </div>
         <div class="stat-content">

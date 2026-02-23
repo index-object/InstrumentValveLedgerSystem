@@ -55,6 +55,7 @@ def users():
 def reset_password(id):
     user = User.query.get_or_404(id)
     user.set_password("123456")
+    user.must_change_password = True
     db.session.commit()
     flash(f"密码已重置为: 123456")
     return redirect(url_for("admin.users"))
@@ -80,21 +81,21 @@ def delete_user(id):
 @require_admin
 def edit_user(id):
     user = User.query.get_or_404(id)
-    
+
     if request.method == "POST":
         user.username = request.form.get("username")
         user.role = request.form.get("role")
         user.real_name = request.form.get("real_name")
         user.dept = request.form.get("dept")
-        
+
         new_password = request.form.get("new_password")
         if new_password:
             user.set_password(new_password)
-        
+
         db.session.commit()
         flash(f"用户 {user.username} 信息已更新")
         return redirect(url_for("admin.users"))
-    
+
     return render_template("admin/edit_user.html", user=user)
 
 

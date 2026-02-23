@@ -10,12 +10,95 @@
         padding: 32px;
         border-radius: var(--radius-md);
         margin-bottom: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
     }
     .form-page-header h2 { margin: 0; font-size: 24px; font-weight: 600; }
     .form-page-header p { margin: 8px 0 0; opacity: 0.85; font-size: 14px; }
+    
+    .step-wizard {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 32px;
+        padding: 0 40px;
+        position: relative;
+    }
+    .step-wizard::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 60px;
+        right: 60px;
+        height: 3px;
+        background: #e5e7eb;
+        z-index: 0;
+    }
+    .step-wizard-progress {
+        position: absolute;
+        top: 20px;
+        left: 60px;
+        height: 3px;
+        background: var(--primary-color);
+        z-index: 1;
+        transition: width 0.3s ease;
+    }
+    .step-item {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        flex: 1;
+    }
+    .step-item .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #fff;
+        border: 3px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: #9ca3af;
+        transition: all 0.3s ease;
+    }
+    .step-item.active .step-number,
+    .step-item.completed .step-number {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        color: #fff;
+    }
+    .step-item .step-label {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #9ca3af;
+        text-align: center;
+    }
+    .step-item.active .step-label,
+    .step-item.completed .step-label {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    .form-step {
+        display: none;
+    }
+    .form-step.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .step-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e7eb;
+    }
 </style>
 {% endblock %}
 
@@ -33,229 +116,460 @@
     </div>
 </div>
 
-<form method="POST">
-    <div class="form-section" id="basic-info">
-        <div class="form-section-header">
-            <i class="bi bi-id-card"></i>
-            <h5>基本信息</h5>
+<div class="step-wizard">
+    <div class="step-wizard-progress" id="progressBar" style="width: 0%;"></div>
+    <div class="step-item active" data-step="1" onclick="goToStep(1)">
+        <div class="step-number">1</div>
+        <div class="step-label">基本信息</div>
+    </div>
+    <div class="step-item" data-step="2" onclick="goToStep(2)">
+        <div class="step-number">2</div>
+        <div class="step-label">工艺条件</div>
+    </div>
+    <div class="step-item" data-step="3" onclick="goToStep(3)">
+        <div class="step-number">3</div>
+        <div class="step-label">阀体信息</div>
+    </div>
+    <div class="step-item" data-step="4" onclick="goToStep(4)">
+        <div class="step-number">4</div>
+        <div class="step-label">阀内件信息</div>
+    </div>
+    <div class="step-item" data-step="5" onclick="goToStep(5)">
+        <div class="step-number">5</div>
+        <div class="step-label">执行机构</div>
+    </div>
+    <div class="step-item" data-step="6" onclick="goToStep(6)">
+        <div class="step-number">6</div>
+        <div class="step-label">备注信息</div>
+    </div>
+</div>
+
+<form method="POST" id="valveForm">
+    <div class="form-step active" data-step="1">
+        <div class="form-section" id="basic-info">
+            <div class="form-section-header">
+                <i class="bi bi-id-card"></i>
+                <h5>基本信息</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="field-row">
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-hash" style="color: var(--text-muted);"></i> 序号</label>
+                        <input type="text" name="序号" class="form-control form-control-modern" value="{{ valve.序号 or '' }}" placeholder="自动编号">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><span class="required">*</span> <i class="bi bi-upc" style="color: var(--text-muted);"></i> 位号</label>
+                        <input type="text" name="位号" class="form-control form-control-modern" value="{{ valve.位号 or '' }}" required placeholder="请输入位号" id="tagInput">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><span class="required">*</span> <i class="bi bi-tag" style="color: var(--text-muted);"></i> 名称</label>
+                        <input type="text" name="名称" class="form-control form-control-modern" value="{{ valve.名称 or '' }}" required placeholder="请输入设备名称">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-item">
+                        <label class="form-label"><span class="required">*</span> <i class="bi bi-building" style="color: var(--text-muted);"></i> 装置名称</label>
+                        <input type="text" name="装置名称" class="form-control form-control-modern" value="{{ valve.装置名称 or '' }}" required placeholder="请输入装置名称">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-layers" style="color: var(--text-muted);"></i> 设备等级</label>
+                        <input type="text" name="设备等级" class="form-control form-control-modern" value="{{ valve.设备等级 or '' }}" placeholder="如：A级、B级">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-aspect-ratio" style="color: var(--text-muted);"></i> 型号规格</label>
+                        <input type="text" name="型号规格" class="form-control form-control-modern" value="{{ valve.型号规格 or '' }}" placeholder="请输入型号规格">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-factory" style="color: var(--text-muted);"></i> 生产厂家</label>
+                        <input type="text" name="生产厂家" class="form-control form-control-modern" value="{{ valve.生产厂家 or '' }}" placeholder="请输入生产厂家">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-geo-alt" style="color: var(--text-muted);"></i> 安装位置及用途</label>
+                        <input type="text" name="安装位置及用途" class="form-control form-control-modern" value="{{ valve.安装位置及用途 or '' }}" placeholder="请输入安装位置">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-qr-code" style="color: var(--text-muted);"></i> 设备编号</label>
+                        <input type="text" name="设备编号" class="form-control form-control-modern" value="{{ valve.设备编号 or '' }}" placeholder="请输入设备编号">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-item" style="flex: 0 0 300px;">
+                        <label class="form-label"><i class="bi bi-exclamation-triangle" style="color: var(--text-muted);"></i> 是否联锁</label>
+                        <input type="text" name="是否联锁" class="form-control form-control-modern" value="{{ valve.是否联锁 or '' }}" placeholder="是/否">
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="form-section-body">
-            <div class="field-row">
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-hash" style="color: var(--text-muted);"></i> 序号</label>
-                    <input type="text" name="序号" class="form-control form-control-modern" value="{{ valve.序号 or '' }}" placeholder="自动编号">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><span class="required">*</span> <i class="bi bi-upc" style="color: var(--text-muted);"></i> 位号</label>
-                    <input type="text" name="位号" class="form-control form-control-modern" value="{{ valve.位号 or '' }}" required placeholder="请输入位号">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><span class="required">*</span> <i class="bi bi-tag" style="color: var(--text-muted);"></i> 名称</label>
-                    <input type="text" name="名称" class="form-control form-control-modern" value="{{ valve.名称 or '' }}" required placeholder="请输入设备名称">
-                </div>
-            </div>
-            <div class="field-row">
-                <div class="field-item">
-                    <label class="form-label"><span class="required">*</span> <i class="bi bi-building" style="color: var(--text-muted);"></i> 装置名称</label>
-                    <input type="text" name="装置名称" class="form-control form-control-modern" value="{{ valve.装置名称 or '' }}" required placeholder="请输入装置名称">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-layers" style="color: var(--text-muted);"></i> 设备等级</label>
-                    <input type="text" name="设备等级" class="form-control form-control-modern" value="{{ valve.设备等级 or '' }}" placeholder="如：A级、B级">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-aspect-ratio" style="color: var(--text-muted);"></i> 型号规格</label>
-                    <input type="text" name="型号规格" class="form-control form-control-modern" value="{{ valve.型号规格 or '' }}" placeholder="请输入型号规格">
-                </div>
-            </div>
-            <div class="field-row">
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-factory" style="color: var(--text-muted);"></i> 生产厂家</label>
-                    <input type="text" name="生产厂家" class="form-control form-control-modern" value="{{ valve.生产厂家 or '' }}" placeholder="请输入生产厂家">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-geo-alt" style="color: var(--text-muted);"></i> 安装位置及用途</label>
-                    <input type="text" name="安装位置及用途" class="form-control form-control-modern" value="{{ valve.安装位置及用途 or '' }}" placeholder="请输入安装位置">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-qr-code" style="color: var(--text-muted);"></i> 设备编号</label>
-                    <input type="text" name="设备编号" class="form-control form-control-modern" value="{{ valve.设备编号 or '' }}" placeholder="请输入设备编号">
-                </div>
-            </div>
-            <div class="field-row">
-                <div class="field-item" style="flex: 0 0 300px;">
-                    <label class="form-label"><i class="bi bi-exclamation-triangle" style="color: var(--text-muted);"></i> 是否联锁</label>
-                    <input type="text" name="是否联锁" class="form-control form-control-modern" value="{{ valve.是否联锁 or '' }}" placeholder="是/否">
-                </div>
-            </div>
+        <div class="step-actions">
+            <div></div>
+            <button type="button" class="btn-submit" onclick="goToStep(2)">
+                下一步 <i class="bi bi-arrow-right"></i>
+            </button>
         </div>
     </div>
 
-    <div class="form-section" id="process-conditions">
-        <div class="form-section-header" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
-            <i class="bi bi-thermometer-half"></i>
-            <h5>工艺条件</h5>
-        </div>
-        <div class="form-section-body">
-            <div class="field-row">
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-droplet" style="color: var(--text-muted);"></i> 介质名称</label>
-                    <input type="text" name="工艺条件_介质名称" class="form-control form-control-modern" value="{{ valve.工艺条件_介质名称 or '' }}" placeholder="请输入介质名称">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-thermometer" style="color: var(--text-muted);"></i> 设计温度</label>
-                    <input type="text" name="工艺条件_设计温度" class="form-control form-control-modern" value="{{ valve.工艺条件_设计温度 or '' }}" placeholder="如：200℃">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-arrow-left-right" style="color: var(--text-muted);"></i> 阀前压力</label>
-                    <input type="text" name="工艺条件_阀前压力" class="form-control form-control-modern" value="{{ valve.工艺条件_阀前压力 or '' }}" placeholder="如：1.6MPa">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-arrow-right" style="color: var(--text-muted);"></i> 阀后压力</label>
-                    <input type="text" name="工艺条件_阀后压力" class="form-control form-control-modern" value="{{ valve.工艺条件_阀后压力 or '' }}" placeholder="如：0.8MPa">
+    <div class="form-step" data-step="2">
+        <div class="form-section" id="process-conditions">
+            <div class="form-section-header" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
+                <i class="bi bi-thermometer-half"></i>
+                <h5>工艺条件</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="field-row">
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-droplet" style="color: var(--text-muted);"></i> 介质名称</label>
+                        <input type="text" name="工艺条件_介质名称" class="form-control form-control-modern" value="{{ valve.工艺条件_介质名称 or '' }}" placeholder="请输入介质名称">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-thermometer" style="color: var(--text-muted);"></i> 设计温度</label>
+                        <input type="text" name="工艺条件_设计温度" class="form-control form-control-modern" value="{{ valve.工艺条件_设计温度 or '' }}" placeholder="如：200℃">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-arrow-left-right" style="color: var(--text-muted);"></i> 阀前压力</label>
+                        <input type="text" name="工艺条件_阀前压力" class="form-control form-control-modern" value="{{ valve.工艺条件_阀前压力 or '' }}" placeholder="如：1.6MPa">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-arrow-right" style="color: var(--text-muted);"></i> 阀后压力</label>
+                        <input type="text" name="工艺条件_阀后压力" class="form-control form-control-modern" value="{{ valve.工艺条件_阀后压力 or '' }}" placeholder="如：0.8MPa">
+                    </div>
                 </div>
             </div>
+        </div>
+        <div class="step-actions">
+            <button type="button" class="btn-back" onclick="goToStep(1)">
+                <i class="bi bi-arrow-left"></i> 上一步
+            </button>
+            <button type="button" class="btn-submit" onclick="goToStep(3)">
+                下一步 <i class="bi bi-arrow-right"></i>
+            </button>
         </div>
     </div>
 
-    <div class="form-section" id="valve-body">
-        <div class="form-section-header" style="background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);">
-            <i class="bi bi-box-seam"></i>
-            <h5>阀体信息</h5>
-        </div>
-        <div class="form-section-body">
-            <div class="field-row">
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-rulers" style="color: var(--text-muted);"></i> 公称通径</label>
-                    <input type="text" name="阀体_公称通径" class="form-control form-control-modern" value="{{ valve.阀体_公称通径 or '' }}" placeholder="如：DN100">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-link-45deg" style="color: var(--text-muted);"></i> 连接方式及规格</label>
-                    <input type="text" name="阀体_连接方式及规格" class="form-control form-control-modern" value="{{ valve.阀体_连接方式及规格 or '' }}" placeholder="如：法兰连接">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-gem" style="color: var(--text-muted);"></i> 阀体材质</label>
-                    <input type="text" name="阀体_材质" class="form-control form-control-modern" value="{{ valve.阀体_材质 or '' }}" placeholder="请输入阀体材质">
+    <div class="form-step" data-step="3">
+        <div class="form-section" id="valve-body">
+            <div class="form-section-header" style="background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);">
+                <i class="bi bi-box-seam"></i>
+                <h5>阀体信息</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="field-row">
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-rulers" style="color: var(--text-muted);"></i> 公称通径</label>
+                        <input type="text" name="阀体_公称通径" class="form-control form-control-modern" value="{{ valve.阀体_公称通径 or '' }}" placeholder="如：DN100">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-link-45deg" style="color: var(--text-muted);"></i> 连接方式及规格</label>
+                        <input type="text" name="阀体_连接方式及规格" class="form-control form-control-modern" value="{{ valve.阀体_连接方式及规格 or '' }}" placeholder="如：法兰连接">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-gem" style="color: var(--text-muted);"></i> 阀体材质</label>
+                        <input type="text" name="阀体_材质" class="form-control form-control-modern" value="{{ valve.阀体_材质 or '' }}" placeholder="请输入阀体材质">
+                    </div>
                 </div>
             </div>
+        </div>
+        <div class="step-actions">
+            <button type="button" class="btn-back" onclick="goToStep(2)">
+                <i class="bi bi-arrow-left"></i> 上一步
+            </button>
+            <button type="button" class="btn-submit" onclick="goToStep(4)">
+                下一步 <i class="bi bi-arrow-right"></i>
+            </button>
         </div>
     </div>
 
-    <div class="form-section" id="valve-internal">
-        <div class="form-section-header" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
-            <i class="bi bi-sliders"></i>
-            <h5>阀内件信息</h5>
+    <div class="form-step" data-step="4">
+        <div class="form-section" id="valve-internal">
+            <div class="form-section-header" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+                <i class="bi bi-sliders"></i>
+                <h5>阀内件信息</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="field-row">
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-circle" style="color: var(--text-muted);"></i> 阀座直径</label>
+                        <input type="text" name="阀内件_阀座直径" class="form-control form-control-modern" value="{{ valve.阀内件_阀座直径 or '' }}" placeholder="请输入阀座直径">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-gem" style="color: var(--text-muted);"></i> 阀芯材质</label>
+                        <input type="text" name="阀内件_阀芯材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀芯材质 or '' }}" placeholder="请输入阀芯材质">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-gem"></i> 阀座材质</label>
+                        <input type="text" name="阀内件_阀座材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀座材质 or '' }}" placeholder="请输入阀座材质">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-stickies" style="color: var(--text-muted);"></i> 阀杆材质</label>
+                        <input type="text" name="阀内件_阀杆材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀杆材质 or '' }}" placeholder="请输入阀杆材质">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-graph-up" style="color: var(--text-muted);"></i> 流量特性</label>
+                        <input type="text" name="阀内件_流量特性" class="form-control form-control-modern" value="{{ valve.阀内件_流量特性 or '' }}" placeholder="如：线性、等百分比">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-shield-check" style="color: var(--text-muted);"></i> 泄露等级</label>
+                        <input type="text" name="阀内件_泄露等级" class="form-control form-control-modern" value="{{ valve.阀内件_泄露等级 or '' }}" placeholder="如：IV级、V级">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-item" style="flex: 0 0 300px;">
+                        <label class="form-label"><i class="bi bi-calculator" style="color: var(--text-muted);"></i> Cv值</label>
+                        <input type="text" name="阀内件_Cv值" class="form-control form-control-modern" value="{{ valve.阀内件_Cv值 or '' }}" placeholder="请输入Cv值">
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="form-section-body">
-            <div class="field-row">
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-circle" style="color: var(--text-muted);"></i> 阀座直径</label>
-                    <input type="text" name="阀内件_阀座直径" class="form-control form-control-modern" value="{{ valve.阀内件_阀座直径 or '' }}" placeholder="请输入阀座直径">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-gem" style="color: var(--text-muted);"></i> 阀芯材质</label>
-                    <input type="text" name="阀内件_阀芯材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀芯材质 or '' }}" placeholder="请输入阀芯材质">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-gem"></i> 阀座材质</label>
-                    <input type="text" name="阀内件_阀座材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀座材质 or '' }}" placeholder="请输入阀座材质">
-                </div>
-            </div>
-            <div class="field-row">
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-stickies" style="color: var(--text-muted);"></i> 阀杆材质</label>
-                    <input type="text" name="阀内件_阀杆材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀杆材质 or '' }}" placeholder="请输入阀杆材质">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-graph-up" style="color: var(--text-muted);"></i> 流量特性</label>
-                    <input type="text" name="阀内件_流量特性" class="form-control form-control-modern" value="{{ valve.阀内件_流量特性 or '' }}" placeholder="如：线性、等百分比">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-shield-check" style="color: var(--text-muted);"></i> 泄露等级</label>
-                    <input type="text" name="阀内件_泄露等级" class="form-control form-control-modern" value="{{ valve.阀内件_泄露等级 or '' }}" placeholder="如：IV级、V级">
-                </div>
-            </div>
-            <div class="field-row">
-                <div class="field-item" style="flex: 0 0 300px;">
-                    <label class="form-label"><i class="bi bi-calculator" style="color: var(--text-muted);"></i> Cv值</label>
-                    <input type="text" name="阀内件_Cv值" class="form-control form-control-modern" value="{{ valve.阀内件_Cv值 or '' }}" placeholder="请输入Cv值">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="form-section" id="actuator">
-        <div class="form-section-header" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
-            <i class="bi bi-lightning-charge"></i>
-            <h5>执行机构信息</h5>
-        </div>
-        <div class="form-section-body">
-            <div class="field-row">
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-cpu" style="color: var(--text-muted);"></i> 形式</label>
-                    <input type="text" name="执行机构_形式" class="form-control form-control-modern" value="{{ valve.执行机构_形式 or '' }}" placeholder="如：气动薄膜式">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-aspect-ratio" style="color: var(--text-muted);"></i> 型号规格</label>
-                    <input type="text" name="执行机构_型号规格" class="form-control form-control-modern" value="{{ valve.执行机构_型号规格 or '' }}" placeholder="请输入型号规格">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-factory" style="color: var(--text-muted);"></i> 厂家</label>
-                    <input type="text" name="执行机构_厂家" class="form-control form-control-modern" value="{{ valve.执行机构_厂家 or '' }}" placeholder="请输入生产厂家">
-                </div>
-            </div>
-            <div class="field-row">
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-arrow-repeat" style="color: var(--text-muted);"></i> 作用形式</label>
-                    <input type="text" name="执行机构_作用形式" class="form-control form-control-modern" value="{{ valve.执行机构_作用形式 or '' }}" placeholder="如：正作用、反作用">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-arrows-expand" style="color: var(--text-muted);"></i> 行程</label>
-                    <input type="text" name="执行机构_行程" class="form-control form-control-modern" value="{{ valve.执行机构_行程 or '' }}" placeholder="如：30mm">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-bounding-box" style="color: var(--text-muted);"></i> 弹簧范围</label>
-                    <input type="text" name="执行机构_弹簧范围" class="form-control form-control-modern" value="{{ valve.执行机构_弹簧范围 or '' }}" placeholder="如：0.2-0.8MPa">
-                </div>
-            </div>
-            <div class="field-row">
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-wind" style="color: var(--text-muted);"></i> 气源压力</label>
-                    <input type="text" name="执行机构_气源压力" class="form-control form-control-modern" value="{{ valve.执行机构_气源压力 or '' }}" placeholder="如：0.5MPa">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-exclamation-octagon" style="color: var(--text-muted);"></i> 故障位置</label>
-                    <input type="text" name="执行机构_故障位置" class="form-control form-control-modern" value="{{ valve.执行机构_故障位置 or '' }}" placeholder="如：故障关、故障开">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-clock" style="color: var(--text-muted);"></i> 关阀时间</label>
-                    <input type="text" name="执行机构_关阀时间" class="form-control form-control-modern" value="{{ valve.执行机构_关阀时间 or '' }}" placeholder="如：5s">
-                </div>
-                <div class="field-item">
-                    <label class="form-label"><i class="bi bi-clock-history" style="color: var(--text-muted);"></i> 开阀时间</label>
-                    <input type="text" name="执行机构_开阀时间" class="form-control form-control-modern" value="{{ valve.执行机构_开阀时间 or '' }}" placeholder="如：8s">
-                </div>
-            </div>
+        <div class="step-actions">
+            <button type="button" class="btn-back" onclick="goToStep(3)">
+                <i class="bi bi-arrow-left"></i> 上一步
+            </button>
+            <button type="button" class="btn-submit" onclick="goToStep(5)">
+                下一步 <i class="bi bi-arrow-right"></i>
+            </button>
         </div>
     </div>
 
-    <div class="form-section" id="remarks">
-        <div class="form-section-header" style="background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);">
-            <i class="bi bi-chat-text"></i>
-            <h5>备注</h5>
+    <div class="form-step" data-step="5">
+        <div class="form-section" id="actuator">
+            <div class="form-section-header" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
+                <i class="bi bi-lightning-charge"></i>
+                <h5>执行机构信息</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="field-row">
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-cpu" style="color: var(--text-muted);"></i> 形式</label>
+                        <input type="text" name="执行机构_形式" class="form-control form-control-modern" value="{{ valve.执行机构_形式 or '' }}" placeholder="如：气动薄膜式">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-aspect-ratio" style="color: var(--text-muted);"></i> 型号规格</label>
+                        <input type="text" name="执行机构_型号规格" class="form-control form-control-modern" value="{{ valve.执行机构_型号规格 or '' }}" placeholder="请输入型号规格">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-factory" style="color: var(--text-muted);"></i> 厂家</label>
+                        <input type="text" name="执行机构_厂家" class="form-control form-control-modern" value="{{ valve.执行机构_厂家 or '' }}" placeholder="请输入生产厂家">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-arrow-repeat" style="color: var(--text-muted);"></i> 作用形式</label>
+                        <input type="text" name="执行机构_作用形式" class="form-control form-control-modern" value="{{ valve.执行机构_作用形式 or '' }}" placeholder="如：正作用，反作用">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-arrows-expand" style="color: var(--text-muted);"></i> 行程</label>
+                        <input type="text" name="执行机构_行程" class="form-control form-control-modern" value="{{ valve.执行机构_行程 or '' }}" placeholder="如：30mm">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-bounding-box" style="color: var(--text-muted);"></i> 弹簧范围</label>
+                        <input type="text" name="执行机构_弹簧范围" class="form-control form-control-modern" value="{{ valve.执行机构_弹簧范围 or '' }}" placeholder="如：0.2-0.8MPa">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-wind" style="color: var(--text-muted);"></i> 气源压力</label>
+                        <input type="text" name="执行机构_气源压力" class="form-control form-control-modern" value="{{ valve.执行机构_气源压力 or '' }}" placeholder="如：0.5MPa">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-exclamation-octagon" style="color: var(--text-muted);"></i> 故障位置</label>
+                        <input type="text" name="执行机构_故障位置" class="form-control form-control-modern" value="{{ valve.执行机构_故障位置 or '' }}" placeholder="如：故障关、故障开">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-clock" style="color: var(--text-muted);"></i> 关阀时间</label>
+                        <input type="text" name="执行机构_关阀时间" class="form-control form-control-modern" value="{{ valve.执行机构_关阀时间 or '' }}" placeholder="如：5s">
+                    </div>
+                    <div class="field-item">
+                        <label class="form-label"><i class="bi bi-clock-history" style="color: var(--text-muted);"></i> 开阀时间</label>
+                        <input type="text" name="执行机构_开阀时间" class="form-control form-control-modern" value="{{ valve.执行机构_开阀时间 or '' }}" placeholder="如：8s">
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="form-section-body">
-            <textarea name="备注" class="form-control form-control-modern" rows="4" placeholder="请输入其他需要说明的信息...">{{ valve.备注 or '' }}</textarea>
+        <div class="step-actions">
+            <button type="button" class="btn-back" onclick="goToStep(4)">
+                <i class="bi bi-arrow-left"></i> 上一步
+            </button>
+            <button type="button" class="btn-submit" onclick="goToStep(6)">
+                下一步 <i class="bi bi-arrow-right"></i>
+            </button>
         </div>
     </div>
 
-    <div class="d-flex gap-3" style="margin-bottom: 32px;" id="submit-actions">
-        <button type="submit" class="btn-submit">
-            <i class="bi bi-check-circle"></i> 提交审批
-        </button>
-        <a href="{{ url_for('valves.list') }}" class="btn-back">
-            <i class="bi bi-x-circle"></i> 取消
-        </a>
+    <div class="form-step" data-step="6">
+        <div class="form-section" id="remarks">
+            <div class="form-section-header" style="background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);">
+                <i class="bi bi-chat-text"></i>
+                <h5>备注信息</h5>
+            </div>
+            <div class="form-section-body">
+                <textarea name="备注" class="form-control form-control-modern" rows="4" placeholder="请输入其他需要说明的信息...">{{ valve.备注 or '' }}</textarea>
+            </div>
+        </div>
+        <div class="step-actions">
+            <button type="button" class="btn-back" onclick="goToStep(5)">
+                <i class="bi bi-arrow-left"></i> 上一步
+            </button>
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn-submit">
+                    <i class="bi bi-check-circle"></i> 提交审批
+                </button>
+                <a href="{{ url_for('valves.list') }}" class="btn-back">
+                    <i class="bi bi-x-circle"></i> 取消
+                </a>
+            </div>
+        </div>
     </div>
 </form>
+
+<script>
+let currentStep = 1;
+const totalSteps = 6;
+
+function updateProgress() {
+    document.querySelectorAll('.step-item').forEach((item, index) => {
+        const step = index + 1;
+        item.classList.remove('active', 'completed');
+        if (step < currentStep) {
+            item.classList.add('completed');
+        } else if (step === currentStep) {
+            item.classList.add('active');
+        }
+    });
+    
+    const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+    
+    document.querySelectorAll('.form-step').forEach((step, index) => {
+        step.classList.remove('active');
+        if (index + 1 === currentStep) {
+            step.classList.add('active');
+        }
+    });
+}
+
+function goToStep(step) {
+    if (step < 1 || step > totalSteps) return;
+    
+    if (step > currentStep) {
+        const currentStepEl = document.querySelector('.form-step[data-step="' + currentStep + '"]');
+        const requiredFields = currentStepEl ? currentStepEl.querySelectorAll('[required]') : [];
+        let valid = true;
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                valid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        if (!valid) {
+            alert('请填写必填字段');
+            return;
+        }
+    }
+    
+    currentStep = step;
+updateProgress();
+}
+
+let tagCheckTimeout = null;
+const tagInput = document.getElementById('tagInput');
+if (tagInput) {
+    tagInput.addEventListener('blur', function() {
+        const tag = this.value.trim();
+        if (!tag) return;
+        
+        const excludeId = {{ valve.id if valve else 'null' }};
+        
+        fetch("{{ url_for('valves.check_tag') }}?位号=" + encodeURIComponent(tag) + (excludeId ? "&exclude_id=" + excludeId : ""))
+            .then(r => r.json())
+            .then(data => {
+                if (!data.valid) {
+                    this.classList.add('is-invalid');
+                    let feedback = document.getElementById('tagFeedback');
+                    if (!feedback) {
+                        feedback = document.createElement('div');
+                        feedback.id = 'tagFeedback';
+                        feedback.className = 'invalid-feedback';
+                        this.parentNode.appendChild(feedback);
+                    }
+                    feedback.textContent = data.message;
+                    feedback.style.display = 'block';
+                } else {
+                    this.classList.remove('is-invalid');
+                    const feedback = document.getElementById('tagFeedback');
+                    if (feedback) feedback.style.display = 'none';
+                }
+            });
+    });
+}
+
+document.getElementById('valveForm').addEventListener('submit', function(e) {
+    const requiredFields = document.querySelectorAll('[required]');
+    let valid = true;
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            valid = false;
+            field.classList.add('is-invalid');
+        }
+    });
+    if (!valid) {
+        e.preventDefault();
+        alert('请填写所有必填字段');
+    }
+});
+
+document.querySelectorAll('[required]').forEach(field => {
+    field.addEventListener('input', function() {
+        if (this.value.trim()) {
+            this.classList.remove('is-invalid');
+        }
+    });
+});
+
+let autoSaveTimeout = null;
+let currentValveId = {{ valve.id if valve else 'null' }};
+
+function autoSave() {
+    if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+    
+    autoSaveTimeout = setTimeout(function() {
+        const formData = {};
+        document.querySelectorAll('#valveForm input, #valveForm textarea, #valveForm select').forEach(field => {
+            if (field.name) {
+                formData[field.name] = field.value;
+            }
+        });
+        
+        fetch("{{ url_for('valves.save_draft') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                valve_id: currentValveId,
+                formData: formData
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.valve_id) {
+                currentValveId = data.valve_id;
+                console.log('草稿已自动保存');
+            }
+        })
+        .catch(err => console.error('自动保存失败:', err));
+    }, 3000);
+}
+
+document.querySelectorAll('#valveForm input, #valveForm textarea, #valveForm select').forEach(field => {
+    field.addEventListener('change', autoSave);
+    field.addEventListener('keyup', autoSave);
+});
+
+updateProgress();
+</script>
 {% endblock %}
