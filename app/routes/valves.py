@@ -36,7 +36,7 @@ def check_tag():
 
     exclude_id = request.args.get("exclude_id", type=int)
 
-    query = Valve.query.filter_by(位号=tag)
+    query = Valve.query.filter(Valve.位号 == tag, Valve.status != "draft")
     if exclude_id:
         query = query.filter(Valve.id != exclude_id)
 
@@ -180,7 +180,9 @@ def new():
     if request.method == "POST":
         位号 = request.form.get("位号")
         if 位号:
-            existing = Valve.query.filter_by(位号=位号).first()
+            existing = Valve.query.filter(
+                Valve.位号 == 位号, Valve.status != "draft"
+            ).first()
             if existing:
                 flash("位号已存在，请使用其他位号")
                 return redirect(url_for("valves.new"))
@@ -198,8 +200,24 @@ def new():
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            flash("位号已存在，请使用其他位号")
-            return redirect(url_for("valves.new"))
+            draft = Valve.query.filter(
+                Valve.位号 == 位号,
+                Valve.status == "draft",
+                Valve.created_by == current_user.id,
+            ).first()
+            if draft:
+                db.session.delete(draft)
+                db.session.commit()
+                try:
+                    db.session.add(valve)
+                    db.session.commit()
+                except IntegrityError:
+                    db.session.rollback()
+                    flash("位号已存在，请使用其他位号")
+                    return redirect(url_for("valves.new"))
+            else:
+                flash("位号已存在，请使用其他位号")
+                return redirect(url_for("valves.new"))
 
         log = ApprovalLog(valve_id=valve.id, action="submit", user_id=current_user.id)
         db.session.add(log)
