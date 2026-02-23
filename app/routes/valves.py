@@ -189,6 +189,8 @@ def new():
 
         valve = Valve()
         for key in request.form:
+            if key == "attachments":
+                continue
             if hasattr(valve, key):
                 setattr(valve, key, request.form.get(key))
 
