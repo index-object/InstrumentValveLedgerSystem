@@ -140,7 +140,7 @@
     </div>
     <div class="step-item" data-step="6" onclick="goToStep(6)">
         <div class="step-number">6</div>
-        <div class="step-label">备注信息</div>
+        <div class="step-label">附件信息</div>
     </div>
 </div>
 
@@ -399,13 +399,16 @@
     </div>
 
     <div class="form-step" data-step="6">
-        <div class="form-section" id="remarks">
+        <div class="form-section" id="attachments">
             <div class="form-section-header" style="background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);">
-                <i class="bi bi-chat-text"></i>
-                <h5>备注信息</h5>
+                <i class="bi bi-paperclip"></i>
+                <h5>附件信息</h5>
             </div>
             <div class="form-section-body">
-                <textarea name="备注" class="form-control form-control-modern" rows="4" placeholder="请输入其他需要说明的信息...">{{ valve.备注 or '' }}</textarea>
+                <div id="attachments-container"></div>
+                <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addAttachment()">
+                    <i class="bi bi-plus-circle"></i> 添加附件
+                </button>
             </div>
         </div>
         <div class="step-actions">
@@ -424,9 +427,110 @@
     </div>
 </form>
 
+<template id="attachment-row-template">
+    <div class="attachment-row card mb-3 p-3">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label">附件类型</label>
+                <select name="attachment_type" class="form-select form-select-modern">
+                    <option value="">请选择</option>
+                    <option value="定位器">定位器</option>
+                    <option value="过滤减压阀">过滤减压阀</option>
+                    <option value="减压阀">减压阀</option>
+                    <option value="电磁阀">电磁阀</option>
+                    <option value="接近开关">接近开关</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">名称</label>
+                <input type="text" name="attachment_name" class="form-control form-control-modern" placeholder="名称">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">设备等级</label>
+                <select name="attachment_grade" class="form-select form-select-modern">
+                    <option value="">请选择</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">型号规格</label>
+                <input type="text" name="attachment_model" class="form-control form-control-modern" placeholder="型号规格">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">生产厂家</label>
+                <input type="text" name="attachment_manufacturer" class="form-control form-control-modern" placeholder="生产厂家">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAttachment(this)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
 <script>
 let currentStep = 1;
 const totalSteps = 6;
+
+function addAttachment(data = null) {
+    const template = document.getElementById('attachment-row-template');
+    const clone = template.content.cloneNode(true);
+    const container = document.getElementById('attachments-container');
+    container.appendChild(clone);
+    
+    if (data) {
+        const row = container.lastElementChild;
+        row.querySelector('[name="attachment_type"]').value = data.attachment_type || '';
+        row.querySelector('[name="attachment_name"]').value = data.name || '';
+        row.querySelector('[name="attachment_grade"]').value = data['设备等级'] || data.device_grade || '';
+        row.querySelector('[name="attachment_model"]').value = data.model || '';
+        row.querySelector('[name="attachment_manufacturer"]').value = data.manufacturer || '';
+    }
+}
+
+function removeAttachment(btn) {
+    const row = btn.closest('.attachment-row');
+    const container = document.getElementById('attachments-container');
+    
+    row.remove();
+    
+    if (container.querySelectorAll('.attachment-row').length === 0) {
+        addAttachment();
+    }
+}
+
+function collectAttachments() {
+    const container = document.getElementById('attachments-container');
+    const rows = container.querySelectorAll('.attachment-row');
+    const attachments = [];
+    rows.forEach(row => {
+        const type = row.querySelector('[name="attachment_type"]').value;
+        if (type) {
+            attachments.push({
+                attachment_type: type,
+                name: row.querySelector('[name="attachment_name"]').value,
+                device_grade: row.querySelector('[name="attachment_grade"]').value,
+                model: row.querySelector('[name="attachment_model"]').value,
+                manufacturer: row.querySelector('[name="attachment_manufacturer"]').value
+            });
+        }
+    });
+    return JSON.stringify(attachments);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const existingAttachments = {{ valve.attachments|tojson if valve and valve.attachments else '[]' }};
+    if (existingAttachments && existingAttachments.length > 0) {
+        existingAttachments.forEach(att => addAttachment(att));
+    } else {
+        addAttachment();
+    }
+});
 
 function updateProgress() {
     document.querySelectorAll('.step-item').forEach((item, index) => {
@@ -508,6 +612,16 @@ if (tagInput) {
 }
 
 document.getElementById('valveForm').addEventListener('submit', function(e) {
+    let attachmentsInput = document.getElementById('attachments-data');
+    if (!attachmentsInput) {
+        attachmentsInput = document.createElement('input');
+        attachmentsInput.type = 'hidden';
+        attachmentsInput.name = 'attachments';
+        attachmentsInput.id = 'attachments-data';
+        this.appendChild(attachmentsInput);
+    }
+    attachmentsInput.value = collectAttachments();
+    
     const requiredFields = document.querySelectorAll('[required]');
     let valid = true;
     requiredFields.forEach(field => {

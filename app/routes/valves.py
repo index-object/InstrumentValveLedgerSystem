@@ -232,6 +232,29 @@ def new():
             valve.status = "pending"
 
         db.session.commit()
+
+        # 处理附件数据
+        attachments_data = request.form.get("attachments")
+        if attachments_data:
+            import json
+
+            try:
+                attachments = json.loads(attachments_data)
+                for att in attachments:
+                    if att.get("type"):
+                        attachment = ValveAttachment(
+                            valve_id=valve.id,
+                            type=att.get("type"),
+                            名称=att.get("名称", ""),
+                            设备等级=att.get("设备等级", ""),
+                            型号规格=att.get("型号规格", ""),
+                            生产厂家=att.get("生产厂家", ""),
+                        )
+                        db.session.add(attachment)
+                db.session.commit()
+            except json.JSONDecodeError:
+                db.session.rollback()
+
         flash("提交成功")
         return redirect(url_for("valves.list"))
 
@@ -303,6 +326,56 @@ def edit(id):
                 setattr(valve, key, request.form.get(key))
 
         valve.status = "draft"
+
+        # 处理附件数据
+        attachments_data = request.form.get("attachments")
+        if attachments_data:
+            import json
+
+            try:
+                attachments = json.loads(attachments_data)
+
+                existing_ids = {att.id for att in valve.attachments}
+                submitted_ids = set()
+
+                for att in attachments:
+                    if att.get("type"):
+                        att_id = att.get("id")
+                        if att_id:
+                            attachment = ValveAttachment.query.filter(
+                                ValveAttachment.id == att_id,
+                                ValveAttachment.valve_id == valve.id,
+                            ).first()
+                            if attachment:
+                                attachment.type = att.get("type")
+                                attachment.名称 = att.get("名称", "")
+                                attachment.设备等级 = att.get("设备等级", "")
+                                attachment.型号规格 = att.get("型号规格", "")
+                                attachment.生产厂家 = att.get("生产厂家", "")
+                                submitted_ids.add(att_id)
+                        else:
+                            attachment = ValveAttachment(
+                                valve_id=valve.id,
+                                type=att.get("type"),
+                                名称=att.get("名称", ""),
+                                设备等级=att.get("设备等级", ""),
+                                型号规格=att.get("型号规格", ""),
+                                生产厂家=att.get("生产厂家", ""),
+                            )
+                            db.session.add(attachment)
+
+                # 只有有编辑权限的用户才能删除附件
+                if can_edit:
+                    for att_id in existing_ids - submitted_ids:
+                        attachment = ValveAttachment.query.filter(
+                            ValveAttachment.id == att_id,
+                            ValveAttachment.valve_id == valve.id,
+                        ).first()
+                        if attachment:
+                            db.session.delete(attachment)
+            except json.JSONDecodeError:
+                pass
+
         db.session.commit()
 
         log = ApprovalLog(valve_id=valve.id, action="submit", user_id=current_user.id)
