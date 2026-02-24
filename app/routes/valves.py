@@ -324,6 +324,8 @@ def edit(id):
                 return redirect(url_for("valves.edit", id=id))
 
         for key in request.form:
+            if key == "attachments":
+                continue
             if hasattr(valve, key):
                 setattr(valve, key, request.form.get(key))
 
