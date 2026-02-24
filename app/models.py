@@ -37,6 +37,9 @@ class Ledger(db.Model):
 
     status = db.Column(db.String(20), default="draft")
 
+    valve_count = db.Column(db.Integer, default=0)
+    pending_count = db.Column(db.Integer, default=0)
+
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     approved_by = db.Column(db.Integer, db.ForeignKey("users.id"))
     approved_at = db.Column(db.DateTime)
@@ -53,7 +56,7 @@ class Ledger(db.Model):
 class Valve(db.Model):
     __tablename__ = "valves"
     id = db.Column(db.Integer, primary_key=True)
-    ledger_id = db.Column(db.Integer, db.ForeignKey("ledgers.id"))
+    ledger_id = db.Column(db.Integer, db.ForeignKey("ledgers.id"), nullable=False)
     # 基本信息
     序号 = db.Column(db.String(20))
     装置名称 = db.Column(db.String(100))

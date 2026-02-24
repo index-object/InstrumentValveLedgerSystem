@@ -5,6 +5,7 @@ from flask import (
     url_for,
     request,
     flash,
+    jsonify,
 )
 from flask_login import login_required, current_user
 from app.models import db, Ledger, Valve, ApprovalLog, Setting
@@ -65,6 +66,10 @@ def new():
 @login_required
 def detail(id):
     ledger = Ledger.query.get_or_404(id)
+
+    ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
+    ledger.pending_count = Valve.query.filter_by(ledger_id=id, status="pending").count()
+    db.session.commit()
 
     if request.method == "POST":
         if not can_edit_ledger(ledger):
@@ -271,8 +276,20 @@ def submit(id):
         flash("无权操作")
         return redirect(url_for("ledgers.list"))
 
-    draft_valves = Valve.query.filter_by(ledger_id=id, status="draft").all()
-    for valve in draft_valves:
+    valve_ids = request.form.getlist("valve_ids")
+
+    if valve_ids:
+        submit_valves = Valve.query.filter(
+            Valve.id.in_(valve_ids), Valve.ledger_id == id, Valve.status == "draft"
+        ).all()
+    else:
+        submit_valves = Valve.query.filter_by(ledger_id=id, status="draft").all()
+
+    if not submit_valves:
+        flash("没有可提交的台账")
+        return redirect(url_for("ledgers.detail", id=id))
+
+    for valve in submit_valves:
         valve.status = "pending"
         log = ApprovalLog(
             ledger_id=ledger.id,
@@ -281,9 +298,13 @@ def submit(id):
             user_id=current_user.id,
         )
         db.session.add(log)
+
+    ledger.status = "pending"
+    ledger.pending_count = len(submit_valves)
+
     db.session.commit()
 
-    flash(f"已提交 {len(draft_valves)} 项台账内容审批")
+    flash(f"已提交 {len(submit_valves)} 项台账内容审批")
     return redirect(url_for("ledgers.detail", id=id))
 
 
@@ -313,6 +334,7 @@ def approve(id):
     ledger.status = "approved"
     ledger.approved_by = current_user.id
     ledger.approved_at = datetime.utcnow()
+    ledger.pending_count = 0
 
     db.session.commit()
 
@@ -342,6 +364,7 @@ def reject(id):
         db.session.add(log)
 
     ledger.status = "rejected"
+    ledger.pending_count = 0
 
     db.session.commit()
 
@@ -399,6 +422,9 @@ def new_valve(id):
 
         db.session.commit()
 
+        ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
+        db.session.commit()
+
         flash("添加成功")
         return redirect(url_for("ledgers.detail", id=id))
 
@@ -453,6 +479,100 @@ def delete_valve(ledger_id, id):
         return redirect(url_for("ledgers.detail", id=ledger_id))
 
     db.session.delete(valve)
+
+    ledger.valve_count = Valve.query.filter_by(ledger_id=ledger_id).count()
+    ledger.pending_count = Valve.query.filter_by(
+        ledger_id=ledger_id, status="pending"
+    ).count()
+
     db.session.commit()
     flash("删除成功")
     return redirect(url_for("ledgers.detail", id=ledger_id))
+
+
+@ledgers.route("/ledger/<int:id>/valve/batch-save", methods=["POST"])
+@login_required
+def batch_save_valve(id):
+    """批量保存台账（JSON 格式）"""
+    ledger = Ledger.query.get_or_404(id)
+
+    if not can_edit_ledger(ledger):
+        return jsonify({"success": False, "message": "无权操作"}), 403
+
+    if ledger.status != "draft":
+        return jsonify({"success": False, "message": "当前状态无法编辑"}), 400
+
+    data = request.get_json()
+    if not data or not isinstance(data, list):
+        return jsonify({"success": False, "message": "无效数据格式"})
+
+    saved_ids = []
+    errors = []
+
+    for item in data:
+        valve_id = item.get("id")
+        form_data = item.get("data", {})
+
+        if valve_id:
+            valve = Valve.query.get(valve_id)
+            if not valve or valve.ledger_id != id:
+                errors.append({"id": valve_id, "error": "台账不存在"})
+                continue
+
+            if valve.status not in ["draft", "rejected"]:
+                errors.append({"id": valve_id, "error": "当前状态无法编辑"})
+                continue
+        else:
+            valve = Valve()
+            valve.ledger_id = id
+            valve.created_by = current_user.id
+            valve.status = "draft"
+            db.session.add(valve)
+
+        for key, value in form_data.items():
+            if hasattr(valve, key):
+                setattr(valve, key, value)
+
+        saved_ids.append(valve.id)
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
+    db.session.commit()
+
+    return jsonify({"success": True, "saved_ids": saved_ids, "errors": errors})
+
+
+@ledgers.route("/ledger/<int:id>/valve/batch-delete", methods=["POST"])
+@login_required
+def batch_delete_valve(id):
+    ledger = Ledger.query.get_or_404(id)
+
+    if not can_edit_ledger(ledger):
+        flash("无权操作")
+        return redirect(url_for("ledgers.detail", id=id))
+
+    if ledger.status != "draft":
+        flash("当前状态无法删除")
+        return redirect(url_for("ledgers.detail", id=id))
+
+    valve_ids = request.form.getlist("valve_ids")
+    if not valve_ids:
+        flash("请选择要删除的台账")
+        return redirect(url_for("ledgers.detail", id=id))
+
+    deleted_count = Valve.query.filter(
+        Valve.id.in_(valve_ids),
+        Valve.ledger_id == id,
+        Valve.status.in_(["draft", "rejected"]),
+    ).delete(synchronize_session=False)
+
+    ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
+
+    db.session.commit()
+    flash(f"成功删除 {deleted_count} 项台账")
+    return redirect(url_for("ledgers.detail", id=id))
