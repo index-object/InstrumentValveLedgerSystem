@@ -276,19 +276,12 @@
             <a href="{{ url_for('main.index') }}" class="sidebar-menu-item {% if request.endpoint == 'main.index' %}active{% endif %}">
                 <i class="bi bi-house-door"></i><span>首页</span>
             </a>
-            <a href="{{ url_for('valves.list') }}" class="sidebar-menu-item {% if request.endpoint and 'valves' in request.endpoint %}active{% endif %}">
-                <i class="bi bi-list-ul"></i><span>台账列表</span>
-            </a>
-            <a href="{{ url_for('valves.new') }}" class="sidebar-menu-item {% if request.endpoint == 'valves.new' %}active{% endif %}">
-                <i class="bi bi-plus-circle"></i><span>录入申请</span>
-            </a>
-            <a href="{{ url_for('valves.my_applications') }}" class="sidebar-menu-item {% if request.endpoint == 'valves.my_applications' %}active{% endif %}">
-                <i class="bi bi-file-earmark-text"></i><span>我的申请</span>
+            <a href="{{ url_for('ledgers.list') }}" class="sidebar-menu-item {% if request.endpoint and 'ledgers' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-collection"></i><span>台账集合</span>
             </a>
             {% if current_user.role in ['leader', 'admin'] %}
-            <a href="{{ url_for('valves.approvals') }}" class="sidebar-menu-item {% if request.endpoint == 'valves.approvals' %}active{% endif %}">
-                <i class="bi bi-check2-square"></i><span>审批管理</span>
-                {% if pending_count and pending_count > 0 %}<span class="badge bg-warning ms-auto" style="font-size:11px;">{{ pending_count }}</span>{% endif %}
+            <a href="{{ url_for('valves.list') }}" class="sidebar-menu-item {% if request.endpoint == 'valves.list' %}active{% endif %}">
+                <i class="bi bi-list-ul"></i><span>所有台账</span>
             </a>
             <a href="{{ url_for('admin.index') }}" class="sidebar-menu-item {% if request.endpoint and 'admin' in request.endpoint %}active{% endif %}">
                 <i class="bi bi-sliders"></i><span>后台管理</span>

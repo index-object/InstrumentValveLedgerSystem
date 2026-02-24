@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block page_title %}台账集合{% endblock %}
+
+{% block header_actions %}
+<form method="get" class="d-flex gap-2 flex-wrap">
+    <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input type="text" name="search" class="form-control form-control-modern" 
+               placeholder="搜索集合名称..." value="{{ request.args.get('search', '') }}">
+    </div>
+    <select name="status" class="form-control form-control-modern" style="width: 120px;">
+        <option value="">全部状态</option>
+        <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
+        <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
+        <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
+        <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
+    </select>
+    <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
+    <a href="{{ url_for('ledgers.new') }}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> 新建集合</a>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="modern-card">
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>集合名称</th>
+                    <th>台账数量</th>
+                    <th>状态</th>
+                    <th>创建人</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ledger in ledgers %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" style="color: var(--primary-color); font-weight: 500;">
+                            {{ ledger.名称 }}
+                        </a>
+                    </td>
+                    <td>{{ ledger.valve_count }}</td>
+                    <td>
+                        {% if ledger.status == 'approved' %}
+                        <span class="badge-status badge-approved">已审批</span>
+                        {% elif ledger.status == 'pending' %}
+                        <span class="badge-status badge-pending">待审批</span>
+                        {% elif ledger.status == 'rejected' %}
+                        <span class="badge-status badge-rejected">已驳回</span>
+                        {% else %}
+                        <span class="badge-status badge-draft">草稿</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ ledger.creator.real_name or ledger.creator.username }}</td>
+                    <td>{{ ledger.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-action" style="background: #e2e8f0; color: #475569;">
+                            <i class="bi bi-eye"></i> 查看
+                        </a>
+                        {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+                        <a href="{{ url_for('ledgers.edit', id=ledger.id) }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
+                            <i class="bi bi-pencil"></i> 编辑
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <p>暂无台账集合</p>
+                            <a href="{{ url_for('ledgers.new') }}" class="btn btn-accent">创建第一个台账集合</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

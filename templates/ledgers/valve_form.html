@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .form-page-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        color: white;
+        padding: 24px;
+        border-radius: var(--radius-md);
+        margin-bottom: 24px;
+    }
+    .form-page-header h2 { margin: 0; font-size: 20px; font-weight: 600; }
+    
+    .step-wizard {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        padding: 0 20px;
+        position: relative;
+    }
+    .step-wizard::before {
+        content: '';
+        position: absolute;
+        top: 16px;
+        left: 40px;
+        right: 40px;
+        height: 2px;
+        background: #e5e7eb;
+        z-index: 0;
+    }
+    .step-wizard-progress {
+        position: absolute;
+        top: 16px;
+        left: 40px;
+        height: 2px;
+        background: var(--primary-color);
+        z-index: 1;
+        transition: width 0.3s ease;
+    }
+    .step-item {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        flex: 1;
+    }
+    .step-item .step-number {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        color: #9ca3af;
+        transition: all 0.3s ease;
+    }
+    .step-item.active .step-number,
+    .step-item.completed .step-number {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        color: #fff;
+    }
+    .step-item .step-label {
+        margin-top: 6px;
+        font-size: 12px;
+        color: #9ca3af;
+        text-align: center;
+    }
+    .step-item.active .step-label,
+    .step-item.completed .step-label {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    .form-step { display: none; }
+    .form-step.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .step-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+</style>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-back">
+    <i class="bi bi-arrow-left"></i> 返回
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="form-page-header">
+    <div>
+        <h2><i class="bi bi-{% if valve %}pencil-square{% else %}plus-circle{% endif %}"></i> {% if valve %}编辑{% else %}新增{% endif %}台账 - {{ ledger.名称 }}</h2>
+    </div>
+</div>
+
+<div class="step-wizard">
+    <div class="step-wizard-progress" id="progressBar" style="width: 0%;"></div>
+    <div class="step-item active" data-step="1" onclick="goToStep(1)">
+        <div class="step-number">1</div>
+        <div class="step-label">基本信息</div>
+    </div>
+    <div class="step-item" data-step="2" onclick="goToStep(2)">
+        <div class="step-number">2</div>
+        <div class="step-label">工艺条件</div>
+    </div>
+    <div class="step-item" data-step="3" onclick="goToStep(3)">
+        <div class="step-number">3</div>
+        <div class="step-label">阀体信息</div>
+    </div>
+    <div class="step-item" data-step="4" onclick="goToStep(4)">
+        <div class="step-number">4</div>
+        <div class="step-label">阀内件</div>
+    </div>
+    <div class="step-item" data-step="5" onclick="goToStep(5)">
+        <div class="step-number">5</div>
+        <div class="step-label">执行机构</div>
+    </div>
+</div>
+
+<form method="POST" id="valveForm">
+    <div class="form-step active" data-step="1">
+        <div class="modern-card">
+            <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-info-circle"></i> 基本信息</h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">序号</label>
+                    <input type="text" name="序号" class="form-control form-control-modern" value="{{ valve.序号 or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">位号 <span class="text-danger">*</span></label>
+                    <input type="text" name="位号" class="form-control form-control-modern" value="{{ valve.位号 or '' }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">名称 <span class="text-danger">*</span></label>
+                    <input type="text" name="名称" class="form-control form-control-modern" value="{{ valve.名称 or '' }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">装置名称 <span class="text-danger">*</span></label>
+                    <input type="text" name="装置名称" class="form-control form-control-modern" value="{{ valve.装置名称 or '' }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">设备等级</label>
+                    <input type="text" name="设备等级" class="form-control form-control-modern" value="{{ valve.设备等级 or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">型号规格</label>
+                    <input type="text" name="型号规格" class="form-control form-control-modern" value="{{ valve.型号规格 or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">生产厂家</label>
+                    <input type="text" name="生产厂家" class="form-control form-control-modern" value="{{ valve.生产厂家 or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">安装位置及用途</label>
+                    <input type="text" name="安装位置及用途" class="form-control form-control-modern" value="{{ valve.安装位置及用途 or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">设备编号</label>
+                    <input type="text" name="设备编号" class="form-control form-control-modern" value="{{ valve.设备编号 or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">是否联锁</label>
+                    <input type="text" name="是否联锁" class="form-control form-control-modern" value="{{ valve.是否联锁 or '' }}">
+                </div>
+            </div>
+        </div>
+        <div class="step-actions">
+            <div></div>
+            <button type="button" class="btn btn-primary-custom" onclick="goToStep(2)">下一步 <i class="bi bi-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <div class="form-step" data-step="2">
+        <div class="modern-card">
+            <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-thermometer-half"></i> 工艺条件</h6>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">介质名称</label>
+                    <input type="text" name="工艺条件_介质名称" class="form-control form-control-modern" value="{{ valve.工艺条件_介质名称 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">设计温度</label>
+                    <input type="text" name="工艺条件_设计温度" class="form-control form-control-modern" value="{{ valve.工艺条件_设计温度 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">阀前压力</label>
+                    <input type="text" name="工艺条件_阀前压力" class="form-control form-control-modern" value="{{ valve.工艺条件_阀前压力 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">阀后压力</label>
+                    <input type="text" name="工艺条件_阀后压力" class="form-control form-control-modern" value="{{ valve.工艺条件_阀后压力 or '' }}">
+                </div>
+            </div>
+        </div>
+        <div class="step-actions">
+            <button type="button" class="btn btn-outline-secondary" onclick="goToStep(1)"><i class="bi bi-arrow-left"></i> 上一步</button>
+            <button type="button" class="btn btn-primary-custom" onclick="goToStep(3)">下一步 <i class="bi bi-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <div class="form-step" data-step="3">
+        <div class="modern-card">
+            <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-box-seam"></i> 阀体信息</h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">公称通径</label>
+                    <input type="text" name="阀体_公称通径" class="form-control form-control-modern" value="{{ valve.阀体_公称通径 or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">连接方式及规格</label>
+                    <input type="text" name="阀体_连接方式及规格" class="form-control form-control-modern" value="{{ valve.阀体_连接方式及规格 or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">材质</label>
+                    <input type="text" name="阀体_材质" class="form-control form-control-modern" value="{{ valve.阀体_材质 or '' }}">
+                </div>
+            </div>
+        </div>
+        <div class="step-actions">
+            <button type="button" class="btn btn-outline-secondary" onclick="goToStep(2)"><i class="bi bi-arrow-left"></i> 上一步</button>
+            <button type="button" class="btn btn-primary-custom" onclick="goToStep(4)">下一步 <i class="bi bi-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <div class="form-step" data-step="4">
+        <div class="modern-card">
+            <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-gear"></i> 阀内件信息</h6>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">阀座直径</label>
+                    <input type="text" name="阀内件_阀座直径" class="form-control form-control-modern" value="{{ valve.阀内件_阀座直径 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">阀芯材质</label>
+                    <input type="text" name="阀内件_阀芯材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀芯材质 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">阀座材质</label>
+                    <input type="text" name="阀内件_阀座材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀座材质 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">阀杆材质</label>
+                    <input type="text" name="阀内件_阀杆材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀杆材质 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">流量特性</label>
+                    <input type="text" name="阀内件_流量特性" class="form-control form-control-modern" value="{{ valve.阀内件_流量特性 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">泄露等级</label>
+                    <input type="text" name="阀内件_泄露等级" class="form-control form-control-modern" value="{{ valve.阀内件_泄露等级 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Cv值</label>
+                    <input type="text" name="阀内件_Cv值" class="form-control form-control-modern" value="{{ valve.阀内件_Cv值 or '' }}">
+                </div>
+            </div>
+        </div>
+        <div class="step-actions">
+            <button type="button" class="btn btn-outline-secondary" onclick="goToStep(3)"><i class="bi bi-arrow-left"></i> 上一步</button>
+            <button type="button" class="btn btn-primary-custom" onclick="goToStep(5)">下一步 <i class="bi bi-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <div class="form-step" data-step="5">
+        <div class="modern-card">
+            <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-lightning-charge"></i> 执行机构信息</h6>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">形式</label>
+                    <input type="text" name="执行机构_形式" class="form-control form-control-modern" value="{{ valve.执行机构_形式 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">型号规格</label>
+                    <input type="text" name="执行机构_型号规格" class="form-control form-control-modern" value="{{ valve.执行机构_型号规格 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">厂家</label>
+                    <input type="text" name="执行机构_厂家" class="form-control form-control-modern" value="{{ valve.执行机构_厂家 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">作用形式</label>
+                    <input type="text" name="执行机构_作用形式" class="form-control form-control-modern" value="{{ valve.执行机构_作用形式 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">行程</label>
+                    <input type="text" name="执行机构_行程" class="form-control form-control-modern" value="{{ valve.执行机构_行程 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">弹簧范围</label>
+                    <input type="text" name="执行机构_弹簧范围" class="form-control form-control-modern" value="{{ valve.执行机构_弹簧范围 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">气源压力</label>
+                    <input type="text" name="执行机构_气源压力" class="form-control form-control-modern" value="{{ valve.执行机构_气源压力 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">故障位置</label>
+                    <input type="text" name="执行机构_故障位置" class="form-control form-control-modern" value="{{ valve.执行机构_故障位置 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">关阀时间</label>
+                    <input type="text" name="执行机构_关阀时间" class="form-control form-control-modern" value="{{ valve.执行机构_关阀时间 or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">开阀时间</label>
+                    <input type="text" name="执行机构_开阀时间" class="form-control form-control-modern" value="{{ valve.执行机构_开阀时间 or '' }}">
+                </div>
+            </div>
+        </div>
+        <div class="step-actions">
+            <button type="button" class="btn btn-outline-secondary" onclick="goToStep(4)"><i class="bi bi-arrow-left"></i> 上一步</button>
+            <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> 保存</button>
+        </div>
+    </div>
+</form>
+
+<script>
+function goToStep(step) {
+    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.step-item').forEach(s => s.classList.remove('active', 'completed'));
+    
+    document.querySelector(`.form-step[data-step="${step}"]`).classList.add('active');
+    
+    for (let i = 1; i < step; i++) {
+        document.querySelector(`.step-item[data-step="${i}"]`).classList.add('completed');
+    }
+    document.querySelector(`.step-item[data-step="${step}"]`).classList.add('active');
+    
+    const progress = (step - 1) / 4 * 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+}
+
+goToStep(1);
+</script>
+{% endblock %}

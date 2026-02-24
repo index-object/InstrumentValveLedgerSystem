@@ -103,15 +103,21 @@
 {% endblock %}
 
 {% block header_actions %}
+{% if ledger %}
+<a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-back">
+    <i class="bi bi-arrow-left"></i> 返回
+</a>
+{% else %}
 <a href="{{ url_for('valves.list') }}" class="btn-back">
     <i class="bi bi-arrow-left"></i> 返回列表
 </a>
+{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="form-page-header">
     <div>
-        <h2><i class="bi bi-{% if valve %}pencil-square{% else %}plus-circle{% endif %}"></i> {% if valve %}编辑{% else %}新建{% endif %}台账</h2>
+        <h2><i class="bi bi-{% if valve %}pencil-square{% else %}plus-circle{% endif %}"></i> {% if valve %}编辑{% else %}新建{% endif %}台账{% if ledger %} - {{ ledger.名称 }}{% endif %}</h2>
         <p>填写仪表阀门详细信息，提交后等待审批</p>
     </div>
 </div>

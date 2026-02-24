@@ -1,8 +1,36 @@
 {% extends "base.html" %}
 
-{% block page_title %}台账列表{% endblock %}
+{% set page_title_val = ledger.名称 ~ ' - 台账列表' if ledger else '台账列表' %}
+
+{% block page_title %}{{ page_title_val }}{% endblock %}
 
 {% block header_actions %}
+{% if ledger %}
+<div class="d-flex gap-2">
+    <a href="{{ url_for('ledgers.list') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回集合
+    </a>
+    {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+    <a href="{{ url_for('ledgers.edit', id=ledger.id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-pencil"></i> 编辑集合
+    </a>
+    {% if ledger.status == 'draft' %}
+    <form method="post" action="{{ url_for('ledgers.submit', id=ledger.id) }}" style="display:inline;">
+        <button type="submit" class="btn btn-primary-custom">
+            <i class="bi bi-send"></i> 提交审批
+        </button>
+    </form>
+    {% endif %}
+    {% if current_user.role in ['leader', 'admin'] and ledger.status == 'pending' %}
+    <form method="post" action="{{ url_for('ledgers.approve', id=ledger.id) }}" style="display:inline;" onsubmit="return confirm('确定要审批通过所有台账内容吗？')">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-lg"></i> 批量审批
+        </button>
+    </form>
+    {% endif %}
+    {% endif %}
+</div>
+{% else %}
 <form method="get" class="d-flex gap-2 flex-wrap">
     <div class="search-box">
         <i class="bi bi-search"></i>
@@ -22,10 +50,12 @@
     {% endif %}
     <a href="{{ url_for('valves.new') }}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> 新增</a>
 </form>
+{% endif %}
 {% endblock %}
 
 {% block content %}
-<form method="post" action="{{ url_for('valves.batch_delete') }}" id="batchForm">
+<form method="post" action="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.batch_delete') }}{% endif %}" id="batchForm">
+    <input type="hidden" name="action" id="batchAction" value="">
     <div class="modern-card mb-3">
         <div class="d-flex justify-content-between align-items-center p-3" style="border-bottom: 1px solid var(--border-color);">
             <div class="d-flex align-items-center gap-3">
@@ -33,6 +63,16 @@
                     <input type="checkbox" class="form-check-input" id="selectAll">
                 </div>
                 <span style="font-size: 14px;">已选 <span id="selectedCount">0</span> 项</span>
+                {% if ledger %}
+                {% if current_user.role in ['leader', 'admin'] and ledger.status == 'pending' %}
+                <button type="button" class="btn btn-sm btn-success" onclick="submitBatchAction('batch_approve')">
+                    <i class="bi bi-check-lg"></i> 批量审批
+                </button>
+                <button type="button" class="btn btn-sm btn-danger" onclick="submitBatchAction('batch_reject')">
+                    <i class="bi bi-x-lg"></i> 批量驳回
+                </button>
+                {% endif %}
+                {% else %}
                 <div class="dropdown">
                     <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         批量操作
@@ -48,12 +88,18 @@
                         <li><a class="dropdown-item" href="{{ url_for('valves.export_data') }}"><i class="bi bi-download"></i> 导出全部</a></li>
                     </ul>
                 </div>
+                {% endif %}
             </div>
             {% if active_filters %}
             <div class="d-flex gap-2 align-items-center">
                 <span class="badge bg-info">有筛选条件</span>
-                <a href="{{ url_for('valves.list') }}" class="btn btn-sm btn-outline-secondary">清除筛选</a>
+                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="btn btn-sm btn-outline-secondary">清除筛选</a>
             </div>
+            {% endif %}
+            {% if ledger and (ledger.created_by == current_user.id or current_user.role in ['leader', 'admin']) %}
+            <a href="{{ url_for('ledgers.new_valve', id=ledger.id) }}" class="btn btn-accent">
+                <i class="bi bi-plus-lg"></i> 新增台账
+            </a>
             {% endif %}
         </div>
     </div>
@@ -114,7 +160,7 @@
                     <tr>
                         <td style="position: sticky; left: 0; z-index: 2; background: #fff; border-right: 1px solid #dee2e6;"><input type="checkbox" name="ids" value="{{ valve.id }}" class="form-check-input item-checkbox"></td>
                         <td>{{ valve.序号 or '-' }}</td>
-                        <td><a href="{{ url_for('valves.detail', id=valve.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
+                        <td><a href="{% if ledger %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
                         <td>{{ valve.名称 or '-' }}</td>
                         <td>{{ valve.装置名称 or '-' }}</td>
                         <td>{{ valve.设备等级 or '-' }}</td>
@@ -160,9 +206,9 @@
                             {% endif %}
                         </td>
                         <td style="position: sticky; right: 0; z-index: 2; background: #fff;">
-                            <a href="{{ url_for('valves.detail', id=valve.id) }}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i></a>
-                            {% if valve.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
-                            <a href="{{ url_for('valves.edit', id=valve.id) }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i></a>
+                            <a href="{% if ledger %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i></a>
+                            {% if (ledger and (ledger.created_by == current_user.id or current_user.role in ['leader', 'admin']) and valve.status in ['draft', 'rejected', 'approved']) or (not ledger and (valve.created_by == current_user.id or current_user.role in ['leader', 'admin'])) %}
+                            <a href="{% if ledger %}{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i></a>
                             {% endif %}
                         </td>
                     </tr>
@@ -185,17 +231,17 @@
             <nav>
                 <ul class="pagination-custom pagination mb-2">
                     {% if pagination.has_prev %}
-                    <li class="page-item"><a class="page-link" href="{{ url_for('valves.list', page=pagination.prev_num, search=request.args.get('search'), status=request.args.get('status'), 装置名称=request.args.get('装置名称'), 序号=request.args.get('序号'), 位号=request.args.get('位号'), 名称=request.args.get('名称'), 设备等级=request.args.get('设备等级'), 型号规格=request.args.get('型号规格'), 生产厂家=request.args.get('生产厂家'), 安装位置及用途=request.args.get('安装位置及用途'), 设备编号=request.args.get('设备编号'), 是否联锁=request.args.get('是否联锁'), 工艺条件_介质名称=request.args.get('工艺条件_介质名称'), 工艺条件_设计温度=request.args.get('工艺条件_设计温度'), 工艺条件_阀前压力=request.args.get('工艺条件_阀前压力'), 工艺条件_阀后压力=request.args.get('工艺条件_阀后压力'), 阀体_公称通径=request.args.get('阀体_公称通径'), 阀体_连接方式及规格=request.args.get('阀体_连接方式及规格'), 阀体_材质=request.args.get('阀体_材质'), 阀内件_阀座直径=request.args.get('阀内件_阀座直径'), 阀内件_阀芯材质=request.args.get('阀内件_阀芯材质'), 阀内件_阀座材质=request.args.get('阀内件_阀座材质'), 阀内件_阀杆材质=request.args.get('阀内件_阀杆材质'), 阀内件_流量特性=request.args.get('阀内件_流量特性'), 阀内件_泄露等级=request.args.get('阀内件_泄露等级'), 阀内件_Cv值=request.args.get('阀内件_Cv值'), 执行机构_形式=request.args.get('执行机构_形式'), 执行机构_型号规格=request.args.get('执行机构_型号规格'), 执行机构_厂家=request.args.get('执行机构_厂家'), 执行机构_作用形式=request.args.get('执行机构_作用形式'), 执行机构_行程=request.args.get('执行机构_行程'), 执行机构_弹簧范围=request.args.get('执行机构_弹簧范围'), 执行机构_气源压力=request.args.get('执行机构_气源压力'), 执行机构_故障位置=request.args.get('执行机构_故障位置'), 执行机构_关阀时间=request.args.get('执行机构_关阀时间'), 执行机构_开阀时间=request.args.get('执行机构_开阀时间')) }}">上一页</a></li>
+                    <li class="page-item"><a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}{% else %}{{ url_for('valves.list', page=pagination.prev_num) }}{% endif %}">上一页</a></li>
                     {% endif %}
                     
                     {% for p in range(1, pagination.pages + 1) %}
                     <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('valves.list', page=p, search=request.args.get('search'), status=request.args.get('status'), 装置名称=request.args.get('装置名称'), 序号=request.args.get('序号'), 位号=request.args.get('位号'), 名称=request.args.get('名称'), 设备等级=request.args.get('设备等级'), 型号规格=request.args.get('型号规格'), 生产厂家=request.args.get('生产厂家'), 安装位置及用途=request.args.get('安装位置及用途'), 设备编号=request.args.get('设备编号'), 是否联锁=request.args.get('是否联锁'), 工艺条件_介质名称=request.args.get('工艺条件_介质名称'), 工艺条件_设计温度=request.args.get('工艺条件_设计温度'), 工艺条件_阀前压力=request.args.get('工艺条件_阀前压力'), 工艺条件_阀后压力=request.args.get('工艺条件_阀后压力'), 阀体_公称通径=request.args.get('阀体_公称通径'), 阀体_连接方式及规格=request.args.get('阀体_连接方式及规格'), 阀体_材质=request.args.get('阀体_材质'), 阀内件_阀座直径=request.args.get('阀内件_阀座直径'), 阀内件_阀芯材质=request.args.get('阀内件_阀芯材质'), 阀内件_阀座材质=request.args.get('阀内件_阀座材质'), 阀内件_阀杆材质=request.args.get('阀内件_阀杆材质'), 阀内件_流量特性=request.args.get('阀内件_流量特性'), 阀内件_泄露等级=request.args.get('阀内件_泄露等级'), 阀内件_Cv值=request.args.get('阀内件_Cv值'), 执行机构_形式=request.args.get('执行机构_形式'), 执行机构_型号规格=request.args.get('执行机构_型号规格'), 执行机构_厂家=request.args.get('执行机构_厂家'), 执行机构_作用形式=request.args.get('执行机构_作用形式'), 执行机构_行程=request.args.get('执行机构_行程'), 执行机构_弹簧范围=request.args.get('执行机构_弹簧范围'), 执行机构_气源压力=request.args.get('执行机构_气源压力'), 执行机构_故障位置=request.args.get('执行机构_故障位置'), 执行机构_关阀时间=request.args.get('执行机构_关阀时间'), 执行机构_开阀时间=request.args.get('执行机构_开阀时间')) }}">{{ p }}</a>
+                        <a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=p) }}{% else %}{{ url_for('valves.list', page=p) }}{% endif %}">{{ p }}</a>
                     </li>
                     {% endfor %}
                     
                     {% if pagination.has_next %}
-                    <li class="page-item"><a class="page-link" href="{{ url_for('valves.list', page=pagination.next_num, search=request.args.get('search'), status=request.args.get('status'), 装置名称=request.args.get('装置名称'), 序号=request.args.get('序号'), 位号=request.args.get('位号'), 名称=request.args.get('名称'), 设备等级=request.args.get('设备等级'), 型号规格=request.args.get('型号规格'), 生产厂家=request.args.get('生产厂家'), 安装位置及用途=request.args.get('安装位置及用途'), 设备编号=request.args.get('设备编号'), 是否联锁=request.args.get('是否联锁'), 工艺条件_介质名称=request.args.get('工艺条件_介质名称'), 工艺条件_设计温度=request.args.get('工艺条件_设计温度'), 工艺条件_阀前压力=request.args.get('工艺条件_阀前压力'), 工艺条件_阀后压力=request.args.get('工艺条件_阀后压力'), 阀体_公称通径=request.args.get('阀体_公称通径'), 阀体_连接方式及规格=request.args.get('阀体_连接方式及规格'), 阀体_材质=request.args.get('阀体_材质'), 阀内件_阀座直径=request.args.get('阀内件_阀座直径'), 阀内件_阀芯材质=request.args.get('阀内件_阀芯材质'), 阀内件_阀座材质=request.args.get('阀内件_阀座材质'), 阀内件_阀杆材质=request.args.get('阀内件_阀杆材质'), 阀内件_流量特性=request.args.get('阀内件_流量特性'), 阀内件_泄露等级=request.args.get('阀内件_泄露等级'), 阀内件_Cv值=request.args.get('阀内件_Cv值'), 执行机构_形式=request.args.get('执行机构_形式'), 执行机构_型号规格=request.args.get('执行机构_型号规格'), 执行机构_厂家=request.args.get('执行机构_厂家'), 执行机构_作用形式=request.args.get('执行机构_作用形式'), 执行机构_行程=request.args.get('执行机构_行程'), 执行机构_弹簧范围=request.args.get('执行机构_弹簧范围'), 执行机构_气源压力=request.args.get('执行机构_气源压力'), 执行机构_故障位置=request.args.get('执行机构_故障位置'), 执行机构_关阀时间=request.args.get('执行机构_关阀时间'), 执行机构_开阀时间=request.args.get('执行机构_开阀时间')) }}">下一页</a></li>
+                    <li class="page-item"><a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num) }}{% else %}{{ url_for('valves.list', page=pagination.next_num) }}{% endif %}">下一页</a></li>
                     {% endif %}
                 </ul>
             </nav>
@@ -342,6 +388,20 @@ function clearFilter(field) {
     const url = new URL(window.location.href);
     url.searchParams.delete(field);
     window.location.href = url.toString();
+}
+
+function submitBatchAction(action) {
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+    if (checked.length === 0) {
+        alert('请先选择要操作的记录');
+        return;
+    }
+    
+    const confirmMsg = action === 'batch_approve' ? '确定要审批选中的 ' + checked.length + ' 条记录吗？' : '确定要驳回选中的 ' + checked.length + ' 条记录吗？';
+    if (!confirm(confirmMsg)) return;
+    
+    document.getElementById('batchAction').value = action;
+    document.getElementById('batchForm').submit();
 }
 </script>
 {% endblock %}

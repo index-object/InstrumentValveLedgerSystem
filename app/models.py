@@ -28,9 +28,32 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
 
 
+class Ledger(db.Model):
+    __tablename__ = "ledgers"
+    id = db.Column(db.Integer, primary_key=True)
+
+    名称 = db.Column(db.String(100), nullable=False)
+    描述 = db.Column(db.Text)
+
+    status = db.Column(db.String(20), default="draft")
+
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    approved_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    approved_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    creator = db.relationship("User", foreign_keys=[created_by])
+    approver = db.relationship("User", foreign_keys=[approved_by])
+    valves = db.relationship("Valve", backref="ledger", lazy="dynamic")
+
+
 class Valve(db.Model):
     __tablename__ = "valves"
     id = db.Column(db.Integer, primary_key=True)
+    ledger_id = db.Column(db.Integer, db.ForeignKey("ledgers.id"))
     # 基本信息
     序号 = db.Column(db.String(20))
     装置名称 = db.Column(db.String(100))
@@ -136,12 +159,14 @@ class ValveAttachment(db.Model):
 class ApprovalLog(db.Model):
     __tablename__ = "approval_logs"
     id = db.Column(db.Integer, primary_key=True)
+    ledger_id = db.Column(db.Integer, db.ForeignKey("ledgers.id"))
     valve_id = db.Column(db.Integer, db.ForeignKey("valves.id"), nullable=False)
     action = db.Column(db.String(20))  # submit/approve/reject
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     comment = db.Column(db.String(500))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+    ledger = db.relationship("Ledger", backref="approval_logs")
     valve = db.relationship("Valve", backref="approval_logs")
     user = db.relationship("User")
 
