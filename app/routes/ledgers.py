@@ -472,7 +472,9 @@ def new_valve(id):
         flash("添加成功，内容已保存为草稿，请在台账集合详情页提交审批")
         return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
-    return render_template("valves/form.html", valve=None, ledger=ledger)
+    return render_template(
+        "valves/form.html", valve=None, ledger=ledger, from_param=from_param
+    )
 
 
 @ledgers.route("/ledger/<int:ledger_id>/valve/edit/<int:id>", methods=["GET", "POST"])
@@ -499,7 +501,9 @@ def edit_valve(ledger_id, id):
         flash("更新成功")
         return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
-    return render_template("valves/form.html", valve=valve, ledger=ledger)
+    return render_template(
+        "valves/form.html", valve=valve, ledger=ledger, from_param=from_param
+    )
 
 
 @ledgers.route("/ledger/<int:ledger_id>/valve/<int:id>")

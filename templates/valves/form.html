@@ -103,8 +103,9 @@
 {% endblock %}
 
 {% block header_actions %}
+{% set from_param = from_param|default('all') %}
 {% if ledger %}
-<a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-back">
+<a href="{{ url_for('ledgers.detail', id=ledger.id, from=from_param) }}" class="btn-back">
     <i class="bi bi-arrow-left"></i> 返回
 </a>
 {% else %}
@@ -421,7 +422,7 @@
                 <button type="submit" class="btn-submit">
                     <i class="bi bi-check-circle"></i> {% if ledger %}保存{% else %}提交审批{% endif %}
                 </button>
-                <a href="{{ url_for('ledgers.detail', id=ledger.id) if ledger else url_for('valves.list') }}" class="btn-back">
+                <a href="{{ url_for('ledgers.detail', id=ledger.id, from=from_param) if ledger else url_for('valves.list') }}" class="btn-back">
                     <i class="bi bi-x-circle"></i> 取消
                 </a>
             </div>
