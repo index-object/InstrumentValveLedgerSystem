@@ -21,24 +21,25 @@
     </a>
 </div>
 {% else %}
-<form method="get" class="d-flex gap-2 flex-wrap">
-    <div class="search-box">
+<form method="get" class="d-flex gap-2 flex-wrap" style="align-items: center;">
+    <div class="search-box" style="position: relative;">
         <i class="bi bi-search"></i>
         <input type="text" name="search" class="form-control form-control-modern" 
-               placeholder="搜索所有字段..." value="{{ request.args.get('search', '') }}">
+               placeholder="搜索所有字段..." value="{{ request.args.get('search', '') }}"
+               style="height: 36px; padding-left: 32px; width: 180px;">
     </div>
-    <select name="status" class="form-control form-control-modern" style="width: 120px;">
+    <select name="status" class="form-control form-control-modern" style="width: 110px; height: 36px; font-size: 13px;">
         <option value="">全部状态</option>
         <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
         <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
         <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
         <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
     </select>
-    <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
+    <button type="submit" class="btn btn-primary-custom" style="height: 36px; padding: 0 12px;"><i class="bi bi-search"></i></button>
     {% if active_filters %}
-    <a href="{{ url_for('valves.list') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i> 清除筛选</a>
+    <a href="{{ url_for('valves.list') }}" class="btn btn-outline-secondary" style="height: 36px; padding: 0 10px;"><i class="bi bi-x-lg"></i></a>
     {% endif %}
-    <a href="{{ url_for('valves.new') }}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> 新增</a>
+    <a href="{{ url_for('valves.new') }}" class="btn btn-accent" style="height: 36px; padding: 0 14px; font-size: 13px;"><i class="bi bi-plus-lg"></i> 新增</a>
 </form>
 {% endif %}
 {% endblock %}
@@ -46,25 +47,25 @@
 {% block content %}
 <form method="post" action="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.batch_delete') }}{% endif %}" id="batchForm">
     <input type="hidden" name="action" id="batchAction" value="">
-    <div class="modern-card mb-3">
-        <div class="d-flex justify-content-between align-items-center p-3" style="border-bottom: 1px solid var(--border-color);">
-            <div class="d-flex align-items-center gap-3">
+    <div class="modern-card mb-2">
+        <div class="d-flex justify-content-between align-items-center p-2" style="border-bottom: 1px solid var(--border-color);">
+            <div class="d-flex align-items-center gap-2">
                 <div class="form-check">
                     <input type="checkbox" class="form-check-input" id="selectAll">
                 </div>
-                <span style="font-size: 14px;">已选 <span id="selectedCount">0</span> 项</span>
+                <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
                 {% if ledger %}
                 {% if current_user.role in ['leader', 'admin'] and ledger.status == 'pending' %}
-                <button type="button" class="btn btn-sm btn-success" onclick="submitBatchAction('batch_approve')">
+                <button type="button" class="btn btn-sm btn-success" style="padding: 3px 10px; font-size: 12px;" onclick="submitBatchAction('batch_approve')">
                     <i class="bi bi-check-lg"></i> 批量审批
                 </button>
-                <button type="button" class="btn btn-sm btn-danger" onclick="submitBatchAction('batch_reject')">
+                <button type="button" class="btn btn-sm btn-danger" style="padding: 3px 10px; font-size: 12px;" onclick="submitBatchAction('batch_reject')">
                     <i class="bi bi-x-lg"></i> 批量驳回
                 </button>
                 {% endif %}
                 {% else %}
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <button class="btn btn-sm btn-secondary dropdown-toggle" style="padding: 3px 10px; font-size: 12px;" type="button" data-bs-toggle="dropdown">
                         批量操作
                     </button>
                     <ul class="dropdown-menu">
@@ -79,15 +80,15 @@
                     </ul>
                 </div>
                 {% endif %}
+                {% if active_filters %}
+                <span class="text-muted" style="border-left: 1px solid #dee2e6; padding-left: 8px; margin-left: 4px; font-size: 12px;">
+                    <i class="bi bi-funnel-fill text-info"></i> 筛选中
+                    <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" style="margin-left: 4px; color: var(--text-muted);"><i class="bi bi-x-lg"></i></a>
+                </span>
+                {% endif %}
             </div>
-            {% if active_filters %}
-            <div class="d-flex gap-2 align-items-center">
-                <span class="badge bg-info">有筛选条件</span>
-                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="btn btn-sm btn-outline-secondary">清除筛选</a>
-            </div>
-            {% endif %}
             {% if ledger and (ledger.created_by == current_user.id or current_user.role in ['leader', 'admin']) %}
-            <a href="{{ url_for('ledgers.new_valve', id=ledger.id) }}" class="btn btn-accent">
+            <a href="{{ url_for('ledgers.new_valve', id=ledger.id) }}" class="btn btn-accent" style="height: 36px; padding: 0 14px; font-size: 13px;">
                 <i class="bi bi-plus-lg"></i> 新增台账
             </a>
             {% endif %}
@@ -95,7 +96,7 @@
     </div>
 
     <div class="modern-card">
-        <div class="table-responsive" style="max-height: calc(100vh - 280px); overflow-y: auto; overflow-x: auto;">
+        <div class="table-responsive" style="height: calc(100vh - 180px); overflow-y: auto; overflow-x: auto;">
             <table class="modern-table table-sm table-bordered" style="min-width: 2000px; border-spacing: 0;">
                 <thead class="table-light">
                     <tr>
@@ -217,25 +218,26 @@
         </div>
         
         {% if pagination %}
-        <div class="p-3 border-top">
+        <div class="d-flex justify-content-between align-items-center p-2" style="border-top: 1px solid var(--border-color);">
+            <small class="text-muted">共 {{ pagination.total }} 条记录，第 {{ pagination.page }}/{{ pagination.pages }} 页</small>
             <nav>
-                <ul class="pagination-custom pagination mb-2">
+                <ul class="pagination-custom pagination mb-0" style="gap: 4px;">
                     {% if pagination.has_prev %}
-                    <li class="page-item"><a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}{% else %}{{ url_for('valves.list', page=pagination.prev_num) }}{% endif %}">上一页</a></li>
-                    {% endif %}
-                    
-                    {% for p in range(1, pagination.pages + 1) %}
-                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                        <a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=p) }}{% else %}{{ url_for('valves.list', page=p) }}{% endif %}">{{ p }}</a>
+                    <li class="page-item">
+                        <a class="page-link" style="padding: 4px 10px;" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}{% else %}{{ url_for('valves.list', page=pagination.prev_num) }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i> 上一页
+                        </a>
                     </li>
-                    {% endfor %}
-                    
+                    {% endif %}
                     {% if pagination.has_next %}
-                    <li class="page-item"><a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num) }}{% else %}{{ url_for('valves.list', page=pagination.next_num) }}{% endif %}">下一页</a></li>
+                    <li class="page-item">
+                        <a class="page-link" style="padding: 4px 10px;" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num) }}{% else %}{{ url_for('valves.list', page=pagination.next_num) }}{% endif %}">
+                            下一页 <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
                     {% endif %}
                 </ul>
             </nav>
-            <small class="text-muted">共 {{ pagination.total }} 条记录，第 {{ pagination.page }}/{{ pagination.pages }} 页</small>
         </div>
         {% endif %}
     </div>
