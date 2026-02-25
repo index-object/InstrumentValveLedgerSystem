@@ -20,7 +20,7 @@
             <tbody>
                 {% for valve in valves %}
                 <tr>
-                    <td>{{ valve.序号 }}</td>
+                    <td>{{ loop.index }}</td>
                     <td><a href="{{ url_for('valves.detail', id=valve.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
                     <td>{{ valve.名称 }}</td>
                     <td>{{ valve.装置名称 }}</td>

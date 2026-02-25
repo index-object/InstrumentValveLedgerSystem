@@ -89,7 +89,6 @@ def list():
         query = query.filter(Valve.created_by == current_user.id)
 
     filterable_fields = [
-        ("序号", "序号"),
         ("位号", "位号"),
         ("名称", "名称"),
         ("装置名称", "装置名称"),
@@ -318,7 +317,9 @@ def edit(id):
     if request.method == "POST":
         位号 = request.form.get("位号")
         if 位号:
-            existing = Valve.query.filter(Valve.位号 == 位号, Valve.id != id).first()
+            existing = Valve.query.filter(
+                Valve.位号 == 位号, Valve.status != "draft", Valve.id != id
+            ).first()
             if existing:
                 flash("位号已存在，请使用其他位号")
                 return redirect(url_for("valves.edit", id=id))
@@ -618,7 +619,6 @@ def import_data():
             df = pd.read_excel(file)
 
             column_map = {
-                "序号": "序号",
                 "装置名称": "装置名称",
                 "位号": "位号",
                 "名称": "名称",
@@ -763,7 +763,6 @@ def export_data():
     for v in valves:
         data.append(
             {
-                "序号": v.序号,
                 "装置名称": v.装置名称,
                 "位号": v.位号,
                 "名称": v.名称,

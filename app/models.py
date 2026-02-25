@@ -56,9 +56,8 @@ class Ledger(db.Model):
 class Valve(db.Model):
     __tablename__ = "valves"
     id = db.Column(db.Integer, primary_key=True)
-    ledger_id = db.Column(db.Integer, db.ForeignKey("ledgers.id"), nullable=False)
+    ledger_id = db.Column(db.Integer, db.ForeignKey("ledgers.id"), nullable=True)
     # 基本信息
-    序号 = db.Column(db.String(20))
     装置名称 = db.Column(db.String(100))
     位号 = db.Column(db.String(50), unique=True)
     名称 = db.Column(db.String(100))

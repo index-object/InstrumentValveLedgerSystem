@@ -39,6 +39,29 @@ def list():
 
     for ledger in ledgers_list:
         ledger.valve_count = Valve.query.filter_by(ledger_id=ledger.id).count()
+        ledger.pending_count = Valve.query.filter_by(
+            ledger_id=ledger.id, status="pending"
+        ).count()
+        ledger.rejected_count = Valve.query.filter_by(
+            ledger_id=ledger.id, status="rejected"
+        ).count()
+        ledger.approved_count = Valve.query.filter_by(
+            ledger_id=ledger.id, status="approved"
+        ).count()
+        ledger.draft_count = Valve.query.filter_by(
+            ledger_id=ledger.id, status="draft"
+        ).count()
+
+        if ledger.pending_count > 0:
+            ledger.display_status = "pending"
+        elif ledger.rejected_count > 0:
+            ledger.display_status = "rejected"
+        elif ledger.approved_count > 0 and ledger.approved_count == ledger.valve_count:
+            ledger.display_status = "approved"
+        elif ledger.valve_count > 0:
+            ledger.display_status = "draft"
+        else:
+            ledger.display_status = "draft"
 
     return render_template("ledgers/list.html", ledgers=ledgers_list)
 
@@ -69,6 +92,25 @@ def detail(id):
 
     ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
     ledger.pending_count = Valve.query.filter_by(ledger_id=id, status="pending").count()
+    ledger.rejected_count = Valve.query.filter_by(
+        ledger_id=id, status="rejected"
+    ).count()
+    ledger.approved_count = Valve.query.filter_by(
+        ledger_id=id, status="approved"
+    ).count()
+    ledger.draft_count = Valve.query.filter_by(ledger_id=id, status="draft").count()
+
+    if ledger.pending_count > 0:
+        ledger.display_status = "pending"
+    elif ledger.rejected_count > 0:
+        ledger.display_status = "rejected"
+    elif ledger.approved_count > 0 and ledger.approved_count == ledger.valve_count:
+        ledger.display_status = "approved"
+    elif ledger.valve_count > 0:
+        ledger.display_status = "draft"
+    else:
+        ledger.display_status = "draft"
+
     db.session.commit()
 
     if request.method == "POST":
@@ -169,7 +211,6 @@ def detail(id):
     per_page = request.args.get("per_page", 20, type=int)
 
     filterable_fields = [
-        ("序号", "序号"),
         ("位号", "位号"),
         ("名称", "名称"),
         ("装置名称", "装置名称"),
@@ -299,9 +340,6 @@ def submit(id):
         )
         db.session.add(log)
 
-    ledger.status = "pending"
-    ledger.pending_count = len(submit_valves)
-
     db.session.commit()
 
     flash(f"已提交 {len(submit_valves)} 项台账内容审批")
@@ -331,11 +369,6 @@ def approve(id):
         )
         db.session.add(log)
 
-    ledger.status = "approved"
-    ledger.approved_by = current_user.id
-    ledger.approved_at = datetime.utcnow()
-    ledger.pending_count = 0
-
     db.session.commit()
 
     flash(f"已审批通过，共 {len(pending_valves)} 项台账内容")
@@ -362,9 +395,6 @@ def reject(id):
             comment=request.form.get("comment", ""),
         )
         db.session.add(log)
-
-    ledger.status = "rejected"
-    ledger.pending_count = 0
 
     db.session.commit()
 
@@ -413,19 +443,12 @@ def new_valve(id):
         log = ApprovalLog(valve_id=valve.id, action="submit", user_id=current_user.id)
         db.session.add(log)
 
-        auto_approve = Setting.query.get("auto_approval")
-        if auto_approve and auto_approve.value == "true":
-            valve.status = "approved"
-            valve.approved_by = current_user.id
-            valve.approved_at = datetime.utcnow()
-            log.action = "approve"
-
+        valve.status = "draft"
         db.session.commit()
 
         ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
         db.session.commit()
-
-        flash("添加成功")
+        flash("添加成功，内容已保存为草稿，请在台账集合详情页提交审批")
         return redirect(url_for("ledgers.detail", id=id))
 
     return render_template("valves/form.html", valve=None, ledger=ledger)

@@ -69,7 +69,7 @@
                     {% if current_status == 'pending' %}
                     <td><input type="checkbox" name="ids" value="{{ valve.id }}" class="form-check-input item-checkbox"></td>
                     {% endif %}
-                    <td>{{ valve.序号 or '-' }}</td>
+                    <td>{{ loop.index }}</td>
                     <td><a href="{{ url_for('valves.detail', id=valve.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
                     <td>{{ valve.名称 or '-' }}</td>
                     <td>{{ valve.装置名称 or '-' }}</td>

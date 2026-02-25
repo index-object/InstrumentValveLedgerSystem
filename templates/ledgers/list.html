@@ -29,6 +29,7 @@
                 <tr>
                     <th>集合名称</th>
                     <th>台账数量</th>
+                    <th>待审批</th>
                     <th>状态</th>
                     <th>创建人</th>
                     <th>创建时间</th>
@@ -45,11 +46,18 @@
                     </td>
                     <td>{{ ledger.valve_count }}</td>
                     <td>
-                        {% if ledger.status == 'approved' %}
+                        {% if ledger.pending_count > 0 %}
+                        <span class="badge-status badge-pending">{{ ledger.pending_count }}</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ledger.display_status == 'approved' %}
                         <span class="badge-status badge-approved">已审批</span>
-                        {% elif ledger.status == 'pending' %}
+                        {% elif ledger.display_status == 'pending' %}
                         <span class="badge-status badge-pending">待审批</span>
-                        {% elif ledger.status == 'rejected' %}
+                        {% elif ledger.display_status == 'rejected' %}
                         <span class="badge-status badge-rejected">已驳回</span>
                         {% else %}
                         <span class="badge-status badge-draft">草稿</span>
@@ -66,11 +74,31 @@
                             <i class="bi bi-pencil"></i> 编辑
                         </a>
                         {% endif %}
+                        {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+                        {% if ledger.display_status != 'approved' %}
+                        {% if ledger.draft_count > 0 %}
+                        <form method="post" action="{{ url_for('ledgers.submit', id=ledger.id) }}" style="display:inline;">
+                            <button type="submit" class="btn-action" style="background: var(--primary-color); color: white;">
+                                <i class="bi bi-send"></i> 提交
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% endif %}
+                        {% endif %}
+                        {% if current_user.role in ['leader', 'admin'] %}
+                        {% if ledger.display_status == 'pending' %}
+                        <form method="post" action="{{ url_for('ledgers.approve', id=ledger.id) }}" style="display:inline;" onsubmit="return confirm('确定要审批通过该台账集合吗？')">
+                            <button type="submit" class="btn-action" style="background: #10b981; color: white;">
+                                <i class="bi bi-check-lg"></i> 审批
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% endif %}
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6">
+                    <td colspan="7">
                         <div class="empty-state">
                             <i class="bi bi-inbox"></i>
                             <p>暂无台账集合</p>

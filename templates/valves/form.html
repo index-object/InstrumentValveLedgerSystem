@@ -118,7 +118,7 @@
 <div class="form-page-header">
     <div>
         <h2><i class="bi bi-{% if valve %}pencil-square{% else %}plus-circle{% endif %}"></i> {% if valve %}编辑{% else %}新建{% endif %}台账{% if ledger %} - {{ ledger.名称 }}{% endif %}</h2>
-        <p>填写仪表阀门详细信息，提交后等待审批</p>
+        <p>填写仪表阀门详细信息{% if ledger %}，保存后在台账集合详情页提交审批{% else %}，保存后等待审批{% endif %}</p>
     </div>
 </div>
 
@@ -159,10 +159,6 @@
             </div>
             <div class="form-section-body">
                 <div class="field-row">
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-hash" style="color: var(--text-muted);"></i> 序号</label>
-                        <input type="text" name="序号" class="form-control form-control-modern" value="{{ valve.序号 or '' }}" placeholder="自动编号">
-                    </div>
                     <div class="field-item">
                         <label class="form-label"><span class="required">*</span> <i class="bi bi-upc" style="color: var(--text-muted);"></i> 位号</label>
                         <input type="text" name="位号" class="form-control form-control-modern" value="{{ valve.位号 or '' }}" required placeholder="请输入位号" id="tagInput">
@@ -423,9 +419,9 @@
             </button>
             <div class="d-flex gap-3">
                 <button type="submit" class="btn-submit">
-                    <i class="bi bi-check-circle"></i> 提交审批
+                    <i class="bi bi-check-circle"></i> {% if ledger %}保存{% else %}提交审批{% endif %}
                 </button>
-                <a href="{{ url_for('valves.list') }}" class="btn-back">
+                <a href="{{ url_for('ledgers.detail', id=ledger.id) if ledger else url_for('valves.list') }}" class="btn-back">
                     <i class="bi bi-x-circle"></i> 取消
                 </a>
             </div>
