@@ -44,7 +44,7 @@ def index():
             )
 
     return render_template(
-        "index.html",
+        f"index_{current_user.role}.html",
         total_ledgers=total_ledgers,
         total_valves=total_valves,
         my_ledger_count=my_ledger_count,

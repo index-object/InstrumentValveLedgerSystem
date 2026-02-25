@@ -13,20 +13,7 @@
         padding: 24px 32px 32px;
         border-bottom: 1px solid var(--border-color);
     }
-    .welcome-section h4 {
-        color: var(--text-muted);
-        font-size: 13px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin: 0;
-    }
-    .welcome-section h2 {
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--text-dark);
-        margin: 4px 0 0;
-    }
+    
     .welcome-section .user-avatar-small {
         width: 56px;
         height: 56px;
@@ -142,22 +129,6 @@
         color: #6b7280;
         font-weight: 500;
     }
-    .stat-content .sub-text {
-        font-size: 12px;
-        color: var(--text-muted);
-        margin-top: 4px;
-    }
-    
-    .section-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .section-title i { color: var(--primary-color); }
 </style>
 {% endblock %}
 
@@ -178,92 +149,47 @@
                     <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #4b5563; background: #f3f4f6; padding: 4px 12px; border-radius: 20px;">
                         <i class="bi bi-people"></i>{{ current_user.dept or '未设置班组' }}
                     </span>
-                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #1e3a5f; background: #e0e7ff; padding: 4px 12px; border-radius: 20px; font-weight: 500;">
-                        <i class="bi bi-person-badge"></i>
-                        {% if current_user.role == 'admin' %}管理员
-                        {% elif current_user.role == 'leader' %}领导
-                        {% else %}员工{% endif %}
+                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #7c3aed; background: #f5f3ff; padding: 4px 12px; border-radius: 20px; font-weight: 500;">
+                        <i class="bi bi-person-badge"></i>领导
                     </span>
                 </div>
             </div>
         </div>
     </div>
 
-<div class="stats-grid">
-{% if current_user.role in ['leader', 'admin'] %}
-    <a href="{{ url_for('ledgers.list') }}" class="stat-card info">
-        <div class="stat-icon info">
-            <i class="bi bi-list-columns"></i>
+    <div class="stats-grid">
+        <a href="{{ url_for('ledgers.list') }}" class="stat-card info">
+            <div class="stat-icon info">
+                <i class="bi bi-list-columns"></i>
+            </div>
+            <div class="stat-content">
+                <h3>全部台账</h3>
+                <p><span class="stat-value">{{ total_ledgers }}</span> 个合集 · 共 {{ total_valves }} 条记录</p>
+            </div>
+        </a>
+        
+        <div class="stat-card purple" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#userStatsModal">
+            <div class="stat-icon purple">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-content">
+                <h3>用户统计</h3>
+                <p><span class="stat-value">{{ user_stats|length }}</span> 位用户</p>
+            </div>
         </div>
-        <div class="stat-content">
-            <h3>全部台账</h3>
-            <p><span class="stat-value">{{ total_ledgers }}</span> 个合集 · 共 {{ total_valves }} 条记录</p>
-        </div>
-    </a>
-    
-    <div class="stat-card purple" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#userStatsModal">
-        <div class="stat-icon purple">
-            <i class="bi bi-people-fill"></i>
-        </div>
-        <div class="stat-content">
-            <h3>用户统计</h3>
-            <p><span class="stat-value">{{ user_stats|length }}</span> 位用户</p>
-        </div>
+        
+        <a href="{{ url_for('valves.maintenance_list') }}" class="stat-card warning">
+            <div class="stat-icon warning">
+                <i class="bi bi-tools"></i>
+            </div>
+            <div class="stat-content">
+                <h3>维护记录</h3>
+                <p><span class="stat-value">{{ maintenance_count or 0 }}</span> 条记录</p>
+            </div>
+        </a>
     </div>
-    
-    <a href="{{ url_for('valves.maintenance_list') }}" class="stat-card warning">
-        <div class="stat-icon warning">
-            <i class="bi bi-tools"></i>
-        </div>
-        <div class="stat-content">
-            <h3>维护记录</h3>
-            <p><span class="stat-value">{{ maintenance_count or 0 }}</span> 条记录</p>
-        </div>
-    </a>
-{% else %}
-    <a href="{{ url_for('valves.my_ledgers') }}" class="stat-card primary">
-        <div class="stat-icon primary">
-            <i class="bi bi-bookmark-heart-fill"></i>
-        </div>
-        <div class="stat-content">
-            <h3>我的台账</h3>
-            <p><span class="stat-value">{{ my_ledger_count }}</span> 个合集 · 共 {{ my_valve_count }} 条记录</p>
-        </div>
-    </a>
-    
-    <a href="{{ url_for('valves.my_ledger_applications') }}" class="stat-card {% if my_pending_ledgers > 0 %}danger{% else %}success{% endif %}">
-        <div class="stat-icon {% if my_pending_ledgers > 0 %}danger{% else %}success{% endif %}">
-            <i class="bi bi-file-earmark-check-fill"></i>
-        </div>
-        <div class="stat-content">
-            <h3>我的申请</h3>
-            <p><span class="stat-value">{{ my_pending_ledgers }}</span> 个待审批</p>
-        </div>
-    </a>
-    
-    <a href="{{ url_for('ledgers.list') }}" class="stat-card info">
-        <div class="stat-icon info">
-            <i class="bi bi-list-columns"></i>
-        </div>
-        <div class="stat-content">
-            <h3>全部台账</h3>
-            <p><span class="stat-value">{{ total_ledgers }}</span> 个合集 · 共 {{ total_valves }} 条记录</p>
-        </div>
-    </a>
-    
-    <a href="{{ url_for('valves.maintenance_list') }}" class="stat-card warning">
-        <div class="stat-icon warning">
-            <i class="bi bi-tools"></i>
-        </div>
-        <div class="stat-content">
-            <h3>维护记录</h3>
-            <p><span class="stat-value">{{ maintenance_count or 0 }}</span> 条记录</p>
-        </div>
-    </a>
-{% endif %}
-</div>
 
-{% if current_user.role in ['leader', 'admin'] and user_stats %}
+{% if user_stats %}
 <div class="modal fade" id="userStatsModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -290,4 +216,5 @@
     </div>
 </div>
 {% endif %}
+</div>
 {% endblock %}
