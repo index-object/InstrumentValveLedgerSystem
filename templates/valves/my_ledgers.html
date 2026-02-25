@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block page_title %}我的台账合集{% endblock %}
+
+{% block header_actions %}
+<form method="get" class="d-flex gap-2 flex-wrap">
+    <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input type="text" name="search" class="form-control form-control-modern" 
+               placeholder="搜索合集名称..." value="{{ request.args.get('search', '') }}">
+    </div>
+    <select name="status" class="form-control form-control-modern" style="width: 120px;">
+        <option value="">全部状态</option>
+        <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
+        <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
+        <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
+        <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
+    </select>
+    <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
+    <a href="{{ url_for('ledgers.new') }}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> 新建合集</a>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="modern-card">
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>合集名称</th>
+                    <th>台账数量</th>
+                    <th>待审批</th>
+                    <th>已通过</th>
+                    <th>草稿</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ledger in ledgers %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" style="color: var(--primary-color); font-weight: 500;">
+                            {{ ledger.名称 }}
+                        </a>
+                    </td>
+                    <td>{{ ledger.valve_count }}</td>
+                    <td>
+                        {% if ledger.pending_count > 0 %}
+                        <span class="badge-status badge-pending">{{ ledger.pending_count }}</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ledger.approved_count > 0 %}
+                        <span class="badge-status badge-approved">{{ ledger.approved_count }}</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ledger.draft_count > 0 %}
+                        <span class="badge-status badge-draft">{{ ledger.draft_count }}</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ledger.display_status == 'approved' %}
+                        <span class="badge-status badge-approved">已审批</span>
+                        {% elif ledger.display_status == 'pending' %}
+                        <span class="badge-status badge-pending">待审批</span>
+                        {% elif ledger.display_status == 'rejected' %}
+                        <span class="badge-status badge-rejected">已驳回</span>
+                        {% else %}
+                        <span class="badge-status badge-draft">草稿</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ ledger.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-action" style="background: #e2e8f0; color: #475569;">
+                            <i class="bi bi-eye"></i> 查看
+                        </a>
+                        {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+                        <a href="{{ url_for('ledgers.edit', id=ledger.id) }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
+                            <i class="bi bi-pencil"></i> 编辑
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <p>暂无台账合集</p>
+                            <a href="{{ url_for('ledgers.new') }}" class="btn btn-accent">创建第一个合集</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

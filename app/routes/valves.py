@@ -11,7 +11,7 @@ from flask import (
     jsonify,
 )
 from flask_login import login_required, current_user
-from app.models import db, Valve, Setting, ApprovalLog, User, ValveAttachment
+from app.models import db, Valve, Setting, ApprovalLog, User, ValveAttachment, Ledger
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
@@ -1126,3 +1126,68 @@ def delete_attachment(valve_id, att_id):
     db.session.commit()
     flash("附件删除成功")
     return redirect(url_for("valves.detail", id=valve_id))
+
+
+@valves.route("/my-ledgers")
+@login_required
+def my_ledgers():
+    """我的台账合集列表"""
+    query = Ledger.query.filter_by(created_by=current_user.id)
+
+    search = request.args.get("search")
+    if search:
+        query = query.filter(Ledger.名称.contains(search))
+
+    status = request.args.get("status")
+    if status:
+        query = query.filter(Ledger.status == status)
+
+    ledgers_list = query.order_by(Ledger.created_at.desc()).all()
+
+    for ledger in ledgers_list:
+        ledger.valve_count = Valve.query.filter_by(ledger_id=ledger.id).count()
+        ledger.pending_count = Valve.query.filter_by(
+            ledger_id=ledger.id, status="pending"
+        ).count()
+        ledger.rejected_count = Valve.query.filter_by(
+            ledger_id=ledger.id, status="rejected"
+        ).count()
+        ledger.approved_count = Valve.query.filter_by(
+            ledger_id=ledger.id, status="approved"
+        ).count()
+        ledger.draft_count = Valve.query.filter_by(
+            ledger_id=ledger.id, status="draft"
+        ).count()
+
+        if ledger.pending_count > 0:
+            ledger.display_status = "pending"
+        elif ledger.rejected_count > 0:
+            ledger.display_status = "rejected"
+        elif ledger.approved_count > 0 and ledger.approved_count == ledger.valve_count:
+            ledger.display_status = "approved"
+        elif ledger.valve_count > 0:
+            ledger.display_status = "draft"
+        else:
+            ledger.display_status = "draft"
+
+    return render_template("valves/my_ledgers.html", ledgers=ledgers_list)
+
+
+@valves.route("/my-ledger-applications")
+@login_required
+def my_ledger_applications():
+    """我的审批申请 - 按合集显示"""
+    ledgers = (
+        Ledger.query.join(Valve, Ledger.id == Valve.ledger_id)
+        .filter(Ledger.created_by == current_user.id, Valve.status == "pending")
+        .distinct()
+        .all()
+    )
+
+    for ledger in ledgers:
+        ledger.pending_count = Valve.query.filter_by(
+            ledger_id=ledger.id, status="pending"
+        ).count()
+        ledger.total_count = Valve.query.filter_by(ledger_id=ledger.id).count()
+
+    return render_template("valves/my_ledger_applications.html", ledgers=ledgers)

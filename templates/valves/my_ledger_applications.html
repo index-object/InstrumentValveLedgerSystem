@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block page_title %}我的申请{% endblock %}
+
+{% block content %}
+<div class="modern-card">
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>合集名称</th>
+                    <th>总记录数</th>
+                    <th>待审批</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ledger in ledgers %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" style="color: var(--primary-color); font-weight: 500;">
+                            {{ ledger.名称 }}
+                        </a>
+                    </td>
+                    <td>{{ ledger.total_count }}</td>
+                    <td>
+                        {% if ledger.pending_count > 0 %}
+                        <span class="badge-status badge-pending">{{ ledger.pending_count }}</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge-status badge-pending">待审批</span>
+                    </td>
+                    <td>{{ ledger.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-action" style="background: #e2e8f0; color: #475569;">
+                            <i class="bi bi-eye"></i> 查看详情
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="bi bi-check-circle" style="font-size: 48px; color: #86efac;"></i>
+                            <p>暂无待审批的申请</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
