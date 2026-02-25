@@ -50,7 +50,7 @@ def check_tag():
 @valves.route("/valves")
 @login_required
 def list():
-    query = Valve.query
+    return redirect(url_for("ledgers.list"))
 
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
