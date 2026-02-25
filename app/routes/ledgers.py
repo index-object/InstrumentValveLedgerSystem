@@ -15,6 +15,12 @@ from datetime import datetime
 ledgers = Blueprint("ledgers", __name__)
 
 
+def get_back_url(from_param):
+    if from_param == "mine":
+        return url_for("valves.my_ledgers")
+    return url_for("ledgers.list")
+
+
 def can_edit_ledger(ledger):
     return ledger.created_by == current_user.id or current_user.role in [
         "leader",
@@ -69,6 +75,7 @@ def list():
 @ledgers.route("/ledger/new", methods=["GET", "POST"])
 @login_required
 def new():
+    from_param = request.args.get("from", "all")
     if request.method == "POST":
         ledger = Ledger()
         ledger.名称 = request.form.get("名称")
@@ -80,7 +87,7 @@ def new():
         db.session.commit()
 
         flash("台账集合创建成功")
-        return redirect(url_for("ledgers.list"))
+        return redirect(get_back_url(from_param))
 
     return render_template("ledgers/form.html", ledger=None)
 
@@ -88,6 +95,7 @@ def new():
 @ledgers.route("/ledger/<int:id>", methods=["GET", "POST"])
 @login_required
 def detail(id):
+    from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)
 
     ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
@@ -116,7 +124,7 @@ def detail(id):
     if request.method == "POST":
         if not can_edit_ledger(ledger):
             flash("无权操作")
-            return redirect(url_for("ledgers.detail", id=id))
+            return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
         action = request.form.get("action")
         valve_ids = request.form.getlist("valve_ids")
@@ -136,12 +144,14 @@ def detail(id):
                 db.session.add(log)
             db.session.commit()
             flash(f"已提交 {len(draft_valves)} 项台账内容审批")
-            return redirect(url_for("ledgers.detail", id=id))
+            return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
         elif action == "batch_approve":
             if current_user.role not in ["leader", "admin"]:
                 flash("需要领导权限")
-                return redirect(url_for("ledgers.detail", id=id))
+                return redirect(
+                    url_for("ledgers.detail", id=id, **{"from": from_param})
+                )
 
             for valve_id in valve_ids:
                 valve = Valve.query.get(int(valve_id))
@@ -159,12 +169,14 @@ def detail(id):
                     db.session.add(log)
             db.session.commit()
             flash(f"已审批 {len(valve_ids)} 项台账内容")
-            return redirect(url_for("ledgers.detail", id=id))
+            return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
         elif action == "batch_reject":
             if current_user.role not in ["leader", "admin"]:
                 flash("需要领导权限")
-                return redirect(url_for("ledgers.detail", id=id))
+                return redirect(
+                    url_for("ledgers.detail", id=id, **{"from": from_param})
+                )
 
             for valve_id in valve_ids:
                 valve = Valve.query.get(int(valve_id))
@@ -180,7 +192,7 @@ def detail(id):
                     db.session.add(log)
             db.session.commit()
             flash(f"已驳回 {len(valve_ids)} 项台账内容")
-            return redirect(url_for("ledgers.detail", id=id))
+            return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     query = Valve.query.filter_by(ledger_id=id)
 
@@ -266,24 +278,26 @@ def detail(id):
         装置列表=装置列表,
         active_filters=active_filters,
         filter_options=filter_options,
+        from_param=from_param,
     )
 
 
 @ledgers.route("/ledger/<int:id>/edit", methods=["GET", "POST"])
 @login_required
 def edit(id):
+    from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)
 
     if not can_edit_ledger(ledger):
         flash("无权编辑")
-        return redirect(url_for("ledgers.list"))
+        return redirect(get_back_url(from_param))
 
     if request.method == "POST":
         ledger.名称 = request.form.get("名称")
         ledger.描述 = request.form.get("描述")
         db.session.commit()
         flash("更新成功")
-        return redirect(url_for("ledgers.detail", id=id))
+        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     return render_template("ledgers/form.html", ledger=ledger)
 
@@ -291,31 +305,33 @@ def edit(id):
 @ledgers.route("/ledger/<int:id>/delete", methods=["POST"])
 @login_required
 def delete(id):
+    from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)
 
     if not can_edit_ledger(ledger):
         flash("无权删除")
-        return redirect(url_for("ledgers.list"))
+        return redirect(get_back_url(from_param))
 
     if ledger.status not in ["draft"]:
         flash("当前状态无法删除")
-        return redirect(url_for("ledgers.list"))
+        return redirect(get_back_url(from_param))
 
     Valve.query.filter_by(ledger_id=id).delete()
     db.session.delete(ledger)
     db.session.commit()
     flash("删除成功")
-    return redirect(url_for("ledgers.list"))
+    return redirect(get_back_url(from_param))
 
 
 @ledgers.route("/ledger/<int:id>/submit", methods=["POST"])
 @login_required
 def submit(id):
+    from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)
 
     if not can_edit_ledger(ledger):
         flash("无权操作")
-        return redirect(url_for("ledgers.list"))
+        return redirect(get_back_url(from_param))
 
     valve_ids = request.form.getlist("valve_ids")
 
@@ -328,7 +344,7 @@ def submit(id):
 
     if not submit_valves:
         flash("没有可提交的台账")
-        return redirect(url_for("ledgers.detail", id=id))
+        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     for valve in submit_valves:
         valve.status = "pending"
@@ -343,15 +359,16 @@ def submit(id):
     db.session.commit()
 
     flash(f"已提交 {len(submit_valves)} 项台账内容审批")
-    return redirect(url_for("ledgers.detail", id=id))
+    return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
 
 @ledgers.route("/ledger/<int:id>/approve", methods=["POST"])
 @login_required
 def approve(id):
+    from_param = request.args.get("from", "all")
     if current_user.role not in ["leader", "admin"]:
         flash("需要领导权限")
-        return redirect(url_for("ledgers.list"))
+        return redirect(get_back_url(from_param))
 
     ledger = Ledger.query.get_or_404(id)
 
@@ -372,15 +389,16 @@ def approve(id):
     db.session.commit()
 
     flash(f"已审批通过，共 {len(pending_valves)} 项台账内容")
-    return redirect(url_for("ledgers.detail", id=id))
+    return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
 
 @ledgers.route("/ledger/<int:id>/reject", methods=["POST"])
 @login_required
 def reject(id):
+    from_param = request.args.get("from", "all")
     if current_user.role not in ["leader", "admin"]:
         flash("需要领导权限")
-        return redirect(url_for("ledgers.list"))
+        return redirect(get_back_url(from_param))
 
     ledger = Ledger.query.get_or_404(id)
 
@@ -399,17 +417,18 @@ def reject(id):
     db.session.commit()
 
     flash(f"已驳回，共 {len(pending_valves)} 项台账内容")
-    return redirect(url_for("ledgers.detail", id=id))
+    return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
 
 @ledgers.route("/ledger/<int:id>/valve/new", methods=["GET", "POST"])
 @login_required
 def new_valve(id):
+    from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)
 
     if not can_edit_ledger(ledger):
         flash("无权操作")
-        return redirect(url_for("ledgers.detail", id=id))
+        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     if request.method == "POST":
         位号 = request.form.get("位号")
@@ -419,7 +438,9 @@ def new_valve(id):
             ).first()
             if existing:
                 flash("位号已存在，请使用其他位号")
-                return redirect(url_for("ledgers.new_valve", id=id))
+                return redirect(
+                    url_for("ledgers.new_valve", id=id, **{"from": from_param})
+                )
 
         valve = Valve()
         for key in request.form:
@@ -438,7 +459,7 @@ def new_valve(id):
         except:
             db.session.rollback()
             flash("位号已存在，请使用其他位号")
-            return redirect(url_for("ledgers.new_valve", id=id))
+            return redirect(url_for("ledgers.new_valve", id=id, **{"from": from_param}))
 
         log = ApprovalLog(valve_id=valve.id, action="submit", user_id=current_user.id)
         db.session.add(log)
@@ -449,7 +470,7 @@ def new_valve(id):
         ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
         db.session.commit()
         flash("添加成功，内容已保存为草稿，请在台账集合详情页提交审批")
-        return redirect(url_for("ledgers.detail", id=id))
+        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     return render_template("valves/form.html", valve=None, ledger=ledger)
 
@@ -457,16 +478,17 @@ def new_valve(id):
 @ledgers.route("/ledger/<int:ledger_id>/valve/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def edit_valve(ledger_id, id):
+    from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(ledger_id)
     valve = Valve.query.get_or_404(id)
 
     if not can_edit_ledger(ledger):
         flash("无权编辑")
-        return redirect(url_for("ledgers.detail", id=ledger_id))
+        return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
     if valve.status not in ["draft", "rejected", "approved"]:
         flash("当前状态无法编辑")
-        return redirect(url_for("ledgers.detail", id=ledger_id))
+        return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
     if request.method == "POST":
         for key in request.form:
@@ -475,7 +497,7 @@ def edit_valve(ledger_id, id):
 
         db.session.commit()
         flash("更新成功")
-        return redirect(url_for("ledgers.detail", id=ledger_id))
+        return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
     return render_template("valves/form.html", valve=valve, ledger=ledger)
 
@@ -490,16 +512,17 @@ def valve_detail(ledger_id, id):
 @ledgers.route("/ledger/<int:ledger_id>/valve/delete/<int:id>", methods=["POST"])
 @login_required
 def delete_valve(ledger_id, id):
+    from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(ledger_id)
     valve = Valve.query.get_or_404(id)
 
     if not can_edit_ledger(ledger):
         flash("无权删除")
-        return redirect(url_for("ledgers.detail", id=ledger_id))
+        return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
     if valve.status not in ["draft", "rejected"]:
         flash("当前状态无法删除")
-        return redirect(url_for("ledgers.detail", id=ledger_id))
+        return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
     db.session.delete(valve)
 
@@ -510,7 +533,7 @@ def delete_valve(ledger_id, id):
 
     db.session.commit()
     flash("删除成功")
-    return redirect(url_for("ledgers.detail", id=ledger_id))
+    return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
 
 @ledgers.route("/ledger/<int:id>/valve/batch-save", methods=["POST"])
@@ -573,20 +596,30 @@ def batch_save_valve(id):
 @ledgers.route("/ledger/<int:id>/valve/batch-delete", methods=["POST"])
 @login_required
 def batch_delete_valve(id):
+    from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)
 
     if not can_edit_ledger(ledger):
         flash("无权操作")
-        return redirect(url_for("ledgers.detail", id=id))
+        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     if ledger.status != "draft":
         flash("当前状态无法删除")
-        return redirect(url_for("ledgers.detail", id=id))
+        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     valve_ids = request.form.getlist("valve_ids")
     if not valve_ids:
         flash("请选择要删除的台账")
-        return redirect(url_for("ledgers.detail", id=id))
+        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
+
+    if ledger.status != "draft":
+        flash("当前状态无法删除")
+        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
+
+    valve_ids = request.form.getlist("valve_ids")
+    if not valve_ids:
+        flash("请选择要删除的台账")
+        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     deleted_count = Valve.query.filter(
         Valve.id.in_(valve_ids),
@@ -598,4 +631,4 @@ def batch_delete_valve(id):
 
     db.session.commit()
     flash(f"成功删除 {deleted_count} 项台账")
-    return redirect(url_for("ledgers.detail", id=id))
+    return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))

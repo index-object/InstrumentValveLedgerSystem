@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block page_title %}我的台账合集{% endblock %}
+{% block page_title %}我的台账{% endblock %}
 
 {% block header_actions %}
 <form method="get" class="d-flex gap-2 flex-wrap">
@@ -17,7 +17,7 @@
         <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
     </select>
     <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
-    <a href="{{ url_for('ledgers.new') }}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> 新建合集</a>
+    <a href="{{ url_for('ledgers.new', from='mine') }}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> 新建合集</a>
 </form>
 {% endblock %}
 
@@ -41,7 +41,7 @@
                 {% for ledger in ledgers %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" style="color: var(--primary-color); font-weight: 500;">
+                        <a href="{{ url_for('ledgers.detail', id=ledger.id, from='mine') }}" style="color: var(--primary-color); font-weight: 500;">
                             {{ ledger.名称 }}
                         </a>
                     </td>
@@ -80,11 +80,11 @@
                     </td>
                     <td>{{ ledger.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td>
-                        <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-action" style="background: #e2e8f0; color: #475569;">
+                        <a href="{{ url_for('ledgers.detail', id=ledger.id, from='mine') }}" class="btn-action" style="background: #e2e8f0; color: #475569;">
                             <i class="bi bi-eye"></i> 查看
                         </a>
                         {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
-                        <a href="{{ url_for('ledgers.edit', id=ledger.id) }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
+                        <a href="{{ url_for('ledgers.edit', id=ledger.id, from='mine') }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
                             <i class="bi bi-pencil"></i> 编辑
                         </a>
                         {% endif %}
@@ -96,7 +96,7 @@
                         <div class="empty-state">
                             <i class="bi bi-inbox"></i>
                             <p>暂无台账合集</p>
-                            <a href="{{ url_for('ledgers.new') }}" class="btn btn-accent">创建第一个合集</a>
+                            <a href="{{ url_for('ledgers.new', from='mine') }}" class="btn btn-accent">创建第一个合集</a>
                         </div>
                     </td>
                 </tr>

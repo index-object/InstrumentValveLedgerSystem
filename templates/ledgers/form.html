@@ -23,7 +23,11 @@
                 <button type="submit" class="btn btn-primary-custom">
                     <i class="bi bi-check-lg"></i> 保存
                 </button>
+                {% if request.args.get('from') == 'mine' %}
+                <a href="{{ url_for('valves.my_ledgers') }}" class="btn btn-outline-secondary">取消</a>
+                {% else %}
                 <a href="{{ url_for('ledgers.list') }}" class="btn btn-outline-secondary">取消</a>
+                {% endif %}
             </div>
         </form>
     </div>

@@ -1,19 +1,4 @@
-{% extends "base.html" %}
-
-{% block page_title %}{{ ledger.名称 }} - 台账集合{% endblock %}
-
-{% block header_actions %}
-<div class="d-flex gap-2">
-    {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
-    <a href="{{ url_for('ledgers.edit', id=ledger.id) }}" class="btn btn-outline-secondary">
-        <i class="bi bi-pencil"></i> 编辑集合
-    </a>
-    {% endif %}
-    <a href="{{ url_for('ledgers.list') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> 返回
-    </a>
-</div>
-{% endblock %}
+{% extends "valves/list.html" %}
 
 {% block content %}
 <div class="modern-card mb-3">
@@ -81,7 +66,7 @@
                 {% endif %}
             </div>
             {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
-            <a href="{{ url_for('ledgers.new_valve', id=ledger.id) }}" class="btn btn-accent">
+            <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=request.args.get('from', 'all')) }}" class="btn btn-accent">
                 <i class="bi bi-plus-lg"></i> 新增台账
             </a>
             {% endif %}
@@ -195,7 +180,7 @@
                                 <i class="bi bi-inbox"></i>
                                 <p>暂无台账内容</p>
                                 {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
-                                <a href="{{ url_for('ledgers.new_valve', id=ledger.id) }}" class="btn btn-accent">添加第一个台账</a>
+                                <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=request.args.get('from', 'all')) }}" class="btn btn-accent">添加第一个台账</a>
                                 {% endif %}
                             </div>
                         </td>
@@ -210,15 +195,15 @@
             <nav>
                 <ul class="pagination-custom pagination mb-2">
                     {% if pagination.has_prev %}
-                    <li class="page-item"><a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}">上一页</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num, from=request.args.get('from', 'all')) }}">上一页</a></li>
                     {% endif %}
                     {% for p in range(1, pagination.pages + 1) %}
                     <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=p) }}">{{ p }}</a>
+                        <a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=p, from=request.args.get('from', 'all')) }}">{{ p }}</a>
                     </li>
                     {% endfor %}
                     {% if pagination.has_next %}
-                    <li class="page-item"><a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num) }}">下一页</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num, from=request.args.get('from', 'all')) }}">下一页</a></li>
                     {% endif %}
                 </ul>
             </nav>

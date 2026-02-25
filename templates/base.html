@@ -277,7 +277,7 @@
                 <i class="bi bi-house-door"></i><span>首页</span>
             </a>
             <a href="{{ url_for('ledgers.list') }}" class="sidebar-menu-item {% if request.endpoint and 'ledgers' in request.endpoint %}active{% endif %}">
-                <i class="bi bi-collection"></i><span>台账集合</span>
+                <i class="bi bi-collection"></i><span>全部台账</span>
             </a>
             {% if current_user.role in ['leader', 'admin'] %}
             <a href="{{ url_for('valves.list') }}" class="sidebar-menu-item {% if request.endpoint == 'valves.list' %}active{% endif %}">

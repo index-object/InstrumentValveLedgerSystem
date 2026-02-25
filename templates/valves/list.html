@@ -7,10 +7,16 @@
 {% block header_actions %}
 {% if ledger %}
 <div class="d-flex gap-2">
-    <a href="{{ url_for('ledgers.list') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> 返回集合
+    {% if from_param == 'mine' %}
+    <a href="{{ url_for('valves.my_ledgers') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回
     </a>
-    <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn btn-outline-secondary">
+    {% else %}
+    <a href="{{ url_for('ledgers.list') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回
+    </a>
+    {% endif %}
+    <a href="{{ url_for('ledgers.detail', id=ledger.id, from=from_param) }}" class="btn btn-outline-secondary">
         <i class="bi bi-info-circle"></i> 集合详情
     </a>
 </div>
