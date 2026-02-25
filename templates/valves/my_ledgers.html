@@ -2,23 +2,147 @@
 
 {% block page_title %}我的台账{% endblock %}
 
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .page-title-text {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-dark);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .page-title-text i { color: var(--accent-color); }
+    
+    .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .search-filter {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .search-box {
+        position: relative;
+    }
+    .search-box i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+    .search-box input {
+        padding-left: 36px;
+        width: 220px;
+        height: 40px;
+    }
+    .filter-select {
+        padding: 8px 32px 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 12px center;
+        appearance: none;
+        font-size: 14px;
+        cursor: pointer;
+        height: 40px;
+    }
+    .filter-select:focus {
+        border-color: var(--primary-color);
+        outline: none;
+    }
+    
+    .folder-icon {
+        font-size: 18px;
+        vertical-align: middle;
+        margin-right: 2px;
+    }
+    .ledger-name-link {
+        color: var(--primary-color);
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        margin: -4px -8px;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+    .ledger-name-link:hover {
+        background: rgba(30, 58, 95, 0.08);
+        color: var(--primary-light);
+    }
+    
+    .action-btns {
+        display: flex;
+        gap: 6px;
+        flex-wrap: nowrap;
+        align-items: center;
+    }
+    
+    .btn-new {
+        background: linear-gradient(135deg, var(--accent-color) 0%, #2dd4bf 100%);
+        border: none;
+        color: white;
+        padding: 0 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(56,178,172,0.3);
+        font-size: 14px;
+        height: 40px;
+    }
+    .btn-new:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(56,178,172,0.4);
+        color: white;
+    }
+    .btn-new i { font-size: 16px; }
+    
+    .count-cell {
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
 {% block header_actions %}
-<form method="get" class="d-flex gap-2 flex-wrap">
-    <div class="search-box">
-        <i class="bi bi-search"></i>
-        <input type="text" name="search" class="form-control form-control-modern" 
-               placeholder="搜索合集名称..." value="{{ request.args.get('search', '') }}">
+<div class="toolbar">
+    <div class="search-filter">
+        <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" name="search" class="form-control form-control-modern" 
+                   placeholder="搜索合集名称..." value="{{ request.args.get('search', '') }}">
+        </div>
+        <select name="status" class="filter-select">
+            <option value="">全部状态</option>
+            <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
+            <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
+            <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
+            <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
+        </select>
+        <button type="submit" class="btn btn-primary-custom" style="height: 40px; padding: 0 16px;"><i class="bi bi-search"></i></button>
     </div>
-    <select name="status" class="form-control form-control-modern" style="width: 120px;">
-        <option value="">全部状态</option>
-        <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
-        <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
-        <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
-        <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
-    </select>
-    <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
-    <a href="{{ url_for('ledgers.new', from='mine') }}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> 新建合集</a>
-</form>
+    <a href="{{ url_for('ledgers.new', from='mine') }}" class="btn-new">
+        <i class="bi bi-plus-circle-fill"></i> 新建合集
+    </a>
+</div>
 {% endblock %}
 
 {% block content %}
@@ -27,25 +151,25 @@
         <table class="modern-table">
             <thead>
                 <tr>
-                    <th>合集名称</th>
-                    <th>台账数量</th>
-                    <th>待审批</th>
-                    <th>已通过</th>
-                    <th>草稿</th>
-                    <th>状态</th>
-                    <th>创建时间</th>
-                    <th>操作</th>
+                    <th style="width: 22%;">合集名称</th>
+                    <th style="9%;">台账</th>
+                    <th style="9%;">待审批</th>
+                    <th style="9%;">已通过</th>
+                    <th style="9%;">草稿</th>
+                    <th style="10%;">状态</th>
+                    <th style="12%;">创建时间</th>
+                    <th style="20%;">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for ledger in ledgers %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('ledgers.detail', id=ledger.id, from='mine') }}" style="color: var(--primary-color); font-weight: 500;">
-                            {{ ledger.名称 }}
+                        <a href="{{ url_for('ledgers.detail', id=ledger.id, from='mine') }}" class="ledger-name-link">
+                            <i class="bi bi-folder2-open folder-icon"></i>{{ ledger.名称 }}
                         </a>
                     </td>
-                    <td>{{ ledger.valve_count }}</td>
+                    <td><span class="count-cell">{{ ledger.valve_count }}</span></td>
                     <td>
                         {% if ledger.pending_count > 0 %}
                         <span class="badge-status badge-pending">{{ ledger.pending_count }}</span>
@@ -78,16 +202,18 @@
                         <span class="badge-status badge-draft">草稿</span>
                         {% endif %}
                     </td>
-                    <td>{{ ledger.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>
-                        <a href="{{ url_for('ledgers.detail', id=ledger.id, from='mine') }}" class="btn-action" style="background: #e2e8f0; color: #475569;">
-                            <i class="bi bi-eye"></i> 查看
-                        </a>
-                        {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
-                        <a href="{{ url_for('ledgers.edit', id=ledger.id, from='mine') }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
-                            <i class="bi bi-pencil"></i> 编辑
-                        </a>
-                        {% endif %}
+                    <td style="color: var(--text-muted); font-size: 13px;">{{ ledger.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td style="white-space: nowrap;">
+                        <div class="action-btns">
+                            <a href="{{ url_for('ledgers.detail', id=ledger.id, from='mine') }}" class="btn-action" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px;">
+                                <i class="bi bi-eye"></i><span>查看</span>
+                            </a>
+                            {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+                            <a href="{{ url_for('ledgers.edit', id=ledger.id, from='mine') }}" class="btn-action" style="background: rgba(56,178,172,0.15); color: var(--accent-color); border: 1px solid rgba(56,178,172,0.3); border-radius: 6px;">
+                                <i class="bi bi-pencil"></i><span>编辑</span>
+                            </a>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% else %}
@@ -96,7 +222,7 @@
                         <div class="empty-state">
                             <i class="bi bi-inbox"></i>
                             <p>暂无台账合集</p>
-                            <a href="{{ url_for('ledgers.new', from='mine') }}" class="btn btn-accent">创建第一个合集</a>
+                            <a href="{{ url_for('ledgers.new', from='mine') }}" class="btn-new">创建第一个合集</a>
                         </div>
                     </td>
                 </tr>
