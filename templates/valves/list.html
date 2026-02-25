@@ -56,12 +56,18 @@
                 <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
                 {% if ledger %}
                 {% if current_user.role in ['leader', 'admin'] and ledger.status == 'pending' %}
-                <button type="button" class="btn btn-sm btn-success" style="padding: 3px 10px; font-size: 12px;" onclick="submitBatchAction('batch_approve')">
+                <button type="button" class="btn btn-sm btn-success" style="padding: 4px 12px; font-size: 12px;" onclick="submitBatchAction('batch_approve')">
                     <i class="bi bi-check-lg"></i> 批量审批
                 </button>
-                <button type="button" class="btn btn-sm btn-danger" style="padding: 3px 10px; font-size: 12px;" onclick="submitBatchAction('batch_reject')">
+                <button type="button" class="btn btn-sm btn-danger" style="padding: 4px 12px; font-size: 12px;" onclick="submitBatchAction('batch_reject')">
                     <i class="bi bi-x-lg"></i> 批量驳回
                 </button>
+                {% else %}
+                <div class="d-flex align-items-center gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-danger" style="padding: 4px 12px; font-size: 12px;" onclick="batchDelete()" title="批量删除">
+                        <i class="bi bi-trash"></i> 删除
+                    </button>
+                </div>
                 {% endif %}
                 {% else %}
                 <div class="d-flex align-items-center gap-1">
