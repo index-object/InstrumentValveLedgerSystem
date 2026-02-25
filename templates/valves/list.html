@@ -16,9 +16,6 @@
         <i class="bi bi-arrow-left"></i> 返回
     </a>
     {% endif %}
-    <a href="{{ url_for('ledgers.detail', id=ledger.id, from=from_param) }}" class="btn btn-outline-secondary">
-        <i class="bi bi-info-circle"></i> 集合详情
-    </a>
 </div>
 {% else %}
 <form method="get" class="d-flex gap-2 flex-wrap" style="align-items: center;">
