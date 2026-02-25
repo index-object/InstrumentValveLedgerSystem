@@ -77,7 +77,7 @@
                         {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
                         {% if ledger.display_status != 'approved' %}
                         {% if ledger.draft_count > 0 %}
-                        <form method="post" action="{{ url_for('ledgers.submit', id=ledger.id) }}" style="display:inline;">
+                        <form method="post" action="{{ url_for('ledgers.submit', id=ledger.id) }}" style="display:inline;" onsubmit="return handleListFormSubmit(this)">
                             <button type="submit" class="btn-action" style="background: var(--primary-color); color: white;">
                                 <i class="bi bi-send"></i> 提交
                             </button>
@@ -87,7 +87,7 @@
                         {% endif %}
                         {% if current_user.role in ['leader', 'admin'] %}
                         {% if ledger.display_status == 'pending' %}
-                        <form method="post" action="{{ url_for('ledgers.approve', id=ledger.id) }}" style="display:inline;" onsubmit="return confirm('确定要审批通过该台账集合吗？')">
+                        <form method="post" action="{{ url_for('ledgers.approve', id=ledger.id) }}" style="display:inline;" onsubmit="return handleListFormSubmit(this)">
                             <button type="submit" class="btn-action" style="background: #10b981; color: white;">
                                 <i class="bi bi-check-lg"></i> 审批
                             </button>
@@ -111,4 +111,22 @@
         </table>
     </div>
 </div>
+
+<script>
+function handleListFormSubmit(form) {
+    if (form.action.includes('reject') && !confirm('确定要驳回吗？')) {
+        return false;
+    }
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new FormData(form)
+    }).then(response => {
+        window.location.reload();
+    });
+    return false;
+}
+</script>
 {% endblock %}
