@@ -442,6 +442,7 @@ def batch_delete():
                 "admin",
             ]
             if can_delete:
+                ApprovalLog.query.filter_by(valve_id=valve.id).delete()
                 db.session.delete(valve)
                 count += 1
 
