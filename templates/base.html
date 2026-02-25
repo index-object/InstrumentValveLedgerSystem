@@ -388,13 +388,15 @@
             <a href="{{ url_for('main.index') }}" class="sidebar-menu-item {% if request.endpoint == 'main.index' %}active{% endif %}">
                 <i class="bi bi-house-door"></i><span>首页</span>
             </a>
-            <a href="{{ url_for('ledgers.list') }}" class="sidebar-menu-item {% if request.endpoint and 'ledgers' in request.endpoint %}active{% endif %}">
+            {% if current_user.role == 'employee' %}
+            <a href="{{ url_for('valves.my_ledgers') }}" class="sidebar-menu-item {% if request.endpoint == 'valves.my_ledgers' %}active{% endif %}">
+                <i class="bi bi-journal-text"></i><span>我的台账</span>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('ledgers.list') }}" class="sidebar-menu-item {% if request.endpoint == 'ledgers.list' %}active{% endif %}">
                 <i class="bi bi-collection"></i><span>全部台账</span>
             </a>
             {% if current_user.role in ['leader', 'admin'] %}
-            <a href="{{ url_for('valves.list') }}" class="sidebar-menu-item {% if request.endpoint == 'valves.list' %}active{% endif %}">
-                <i class="bi bi-list-ul"></i><span>所有台账</span>
-            </a>
             <a href="{{ url_for('admin.index') }}" class="sidebar-menu-item {% if request.endpoint and 'admin' in request.endpoint %}active{% endif %}">
                 <i class="bi bi-sliders"></i><span>后台管理</span>
             </a>
