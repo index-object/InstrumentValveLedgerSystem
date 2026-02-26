@@ -53,7 +53,7 @@
                 </div>
                 <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
                 {% if ledger %}
-                {% if current_user.role in ['leader', 'admin'] and ledger.status == 'pending' %}
+                {% if current_user.role in ['leader', 'admin'] and ledger.display_status == 'pending' %}
                 <button type="button" class="btn btn-sm btn-success" style="padding: 4px 12px; font-size: 12px;" onclick="submitBatchAction('batch_approve')">
                     <i class="bi bi-check-lg"></i> 批量审批
                 </button>
@@ -62,14 +62,14 @@
                 </button>
                 {% endif %}
                 <div class="d-flex align-items-center gap-1">
-                    {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+                    {% if (ledger.created_by == current_user.id or current_user.role in ['leader', 'admin']) and ledger.display_status != 'pending' %}
                     <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=from_param) }}" class="btn btn-sm btn-primary" style="padding: 4px 12px; font-size: 12px;" title="新增台账">
                         <i class="bi bi-plus-lg"></i> 新增
                     </a>
-                    {% endif %}
                     <button type="button" class="btn btn-sm btn-outline-danger" style="padding: 4px 12px; font-size: 12px;" onclick="batchDelete()" title="批量删除">
                         <i class="bi bi-trash"></i> 删除
                     </button>
+                    {% endif %}
                     {% if current_user.role in ['leader', 'admin'] %}
                     <a href="{{ url_for('valves.import_data') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
                         <i class="bi bi-upload"></i> 导入
@@ -219,7 +219,7 @@
                         </td>
 <td style="position: sticky; right: 0; z-index: 2; background: #fff;">
                             <a href="{% if ledger %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ from_param|default(request.args.get('from', 'all')) }}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i></a>
-                            {% if (ledger and (ledger.created_by == current_user.id or current_user.role in ['leader', 'admin']) and valve.status in ['draft', 'rejected', 'approved']) or (not ledger and (valve.created_by == current_user.id or current_user.role in ['leader', 'admin'])) %}
+                            {% if (valve.created_by == current_user.id or current_user.role in ['leader', 'admin']) and valve.status in ['draft', 'rejected', 'approved'] %}
                             <a href="{% if ledger %}{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i></a>
                             {% endif %}
                         </td>

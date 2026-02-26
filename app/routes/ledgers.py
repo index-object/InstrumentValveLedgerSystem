@@ -28,6 +28,17 @@ def can_edit_ledger(ledger):
     ]
 
 
+def can_edit_valve(valve):
+    return valve.created_by == current_user.id or current_user.role in [
+        "leader",
+        "admin",
+    ]
+
+
+def can_delete_valve(valve):
+    return can_edit_valve(valve)
+
+
 @ledgers.route("/ledgers")
 @login_required
 def list():
@@ -153,9 +164,10 @@ def detail(id):
                     url_for("ledgers.detail", id=id, **{"from": from_param})
                 )
 
+            approved_count = 0
             for valve_id in valve_ids:
                 valve = Valve.query.get(int(valve_id))
-                if valve and valve.status == "pending":
+                if valve and valve.ledger_id == ledger.id and valve.status == "pending":
                     valve.status = "approved"
                     valve.approved_by = current_user.id
                     valve.approved_at = datetime.utcnow()
@@ -167,8 +179,9 @@ def detail(id):
                         comment=request.form.get("comment", ""),
                     )
                     db.session.add(log)
+                    approved_count += 1
             db.session.commit()
-            flash(f"已审批 {len(valve_ids)} 项台账内容")
+            flash(f"已审批 {approved_count} 项台账内容")
             return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
         elif action == "batch_reject":
@@ -178,9 +191,10 @@ def detail(id):
                     url_for("ledgers.detail", id=id, **{"from": from_param})
                 )
 
+            rejected_count = 0
             for valve_id in valve_ids:
                 valve = Valve.query.get(int(valve_id))
-                if valve and valve.status == "pending":
+                if valve and valve.ledger_id == ledger.id and valve.status == "pending":
                     valve.status = "rejected"
                     log = ApprovalLog(
                         ledger_id=ledger.id,
@@ -190,8 +204,9 @@ def detail(id):
                         comment=request.form.get("comment", ""),
                     )
                     db.session.add(log)
+                    rejected_count += 1
             db.session.commit()
-            flash(f"已驳回 {len(valve_ids)} 项台账内容")
+            flash(f"已驳回 {rejected_count} 项台账内容")
             return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     query = Valve.query.filter_by(ledger_id=id)
@@ -312,8 +327,9 @@ def delete(id):
         flash("无权删除")
         return redirect(get_back_url(from_param))
 
-    if ledger.status not in ["draft"]:
-        flash("当前状态无法删除")
+    pending_count = Valve.query.filter_by(ledger_id=id, status="pending").count()
+    if pending_count > 0:
+        flash(f"当前有 {pending_count} 条待审批记录，无法删除")
         return redirect(get_back_url(from_param))
 
     Valve.query.filter_by(ledger_id=id).delete()
@@ -461,12 +477,6 @@ def new_valve(id):
             flash("位号已存在，请使用其他位号")
             return redirect(url_for("ledgers.new_valve", id=id, **{"from": from_param}))
 
-        log = ApprovalLog(valve_id=valve.id, action="submit", user_id=current_user.id)
-        db.session.add(log)
-
-        valve.status = "draft"
-        db.session.commit()
-
         ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
         db.session.commit()
         flash("添加成功，内容已保存为草稿，请在台账集合详情页提交审批")
@@ -484,7 +494,7 @@ def edit_valve(ledger_id, id):
     ledger = Ledger.query.get_or_404(ledger_id)
     valve = Valve.query.get_or_404(id)
 
-    if not can_edit_ledger(ledger):
+    if not can_edit_valve(valve):
         flash("无权编辑")
         return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
@@ -523,7 +533,7 @@ def delete_valve(ledger_id, id):
     ledger = Ledger.query.get_or_404(ledger_id)
     valve = Valve.query.get_or_404(id)
 
-    if not can_edit_ledger(ledger):
+    if not can_delete_valve(valve):
         flash("无权删除")
         return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
@@ -552,8 +562,9 @@ def batch_save_valve(id):
     if not can_edit_ledger(ledger):
         return jsonify({"success": False, "message": "无权操作"}), 403
 
-    if ledger.status != "draft":
-        return jsonify({"success": False, "message": "当前状态无法编辑"}), 400
+    pending_count = Valve.query.filter_by(ledger_id=id, status="pending").count()
+    if pending_count > 0:
+        return jsonify({"success": False, "message": "当前有待审批记录，无法编辑"}), 400
 
     data = request.get_json()
     if not data or not isinstance(data, list):
@@ -610,17 +621,9 @@ def batch_delete_valve(id):
         flash("无权操作")
         return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
-    if ledger.status != "draft":
-        flash("当前状态无法删除")
-        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
-
-    valve_ids = request.form.getlist("valve_ids")
-    if not valve_ids:
-        flash("请选择要删除的台账")
-        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
-
-    if ledger.status != "draft":
-        flash("当前状态无法删除")
+    pending_count = Valve.query.filter_by(ledger_id=id, status="pending").count()
+    if pending_count > 0:
+        flash(f"当前有 {pending_count} 条待审批记录，无法删除")
         return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     valve_ids = request.form.getlist("valve_ids")

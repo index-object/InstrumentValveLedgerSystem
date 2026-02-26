@@ -4,7 +4,7 @@
 
 {% block header_actions %}
 <div class="d-flex gap-2">
-    {% if valve.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+    {% if (valve.created_by == current_user.id or current_user.role in ['leader', 'admin']) and valve.status in ['draft', 'rejected', 'approved'] %}
     <a href="{{ url_for('valves.edit', id=valve.id) }}" class="btn btn-primary-custom"><i class="bi bi-pencil"></i> 编辑</a>
     {% endif %}
     {% if from_param == 'mine' %}

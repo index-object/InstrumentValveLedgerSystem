@@ -20,7 +20,7 @@
             </div>
             {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
             <div class="d-flex gap-2">
-                {% if ledger.display_status != 'approved' and ledger.draft_count > 0 %}
+                {% if ledger.display_status != 'approved' and ledger.draft_count > 0 and ledger.display_status != 'pending' %}
                 <form method="post" action="{{ url_for('ledgers.submit', id=ledger.id) }}" style="display:inline;" onsubmit="return handleFormSubmit(this)">
                     <button type="submit" class="btn btn-primary-custom">
                         <i class="bi bi-send"></i> 提交审批
@@ -56,7 +56,7 @@
                     <input type="checkbox" class="form-check-input" id="selectAll">
                 </div>
                 <span style="font-size: 14px;">已选 <span id="selectedCount">0</span> 项</span>
-                {% if current_user.role in ['leader', 'admin'] and ledger.status == 'pending' %}
+                {% if current_user.role in ['leader', 'admin'] and ledger.display_status == 'pending' %}
                 <button type="button" class="btn btn-sm btn-success" onclick="submitBatchAction('batch_approve')">
                     <i class="bi bi-check-lg"></i> 批量审批
                 </button>
@@ -66,9 +66,11 @@
                 {% endif %}
             </div>
             {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+            {% if ledger.display_status != 'pending' %}
             <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=request.args.get('from', 'all')) }}" class="btn btn-accent">
                 <i class="bi bi-plus-lg"></i> 新增台账
             </a>
+            {% endif %}
             {% endif %}
         </div>
     </div>
@@ -164,12 +166,10 @@
                             <a href="{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ request.args.get('from', 'all') }}" class="btn-action" style="background: #e2e8f0; color: #475569;">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
-                            {% if valve.status in ['draft', 'rejected', 'approved'] %}
+                            {% if (valve.created_by == current_user.id or current_user.role in ['leader', 'admin']) and valve.status in ['draft', 'rejected', 'approved'] %}
                             <a href="{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            {% endif %}
                             {% endif %}
                         </td>
                     </tr>
