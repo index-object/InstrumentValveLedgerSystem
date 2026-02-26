@@ -56,4 +56,5 @@ def index():
     )
 
 
-from app.routes import auth, valves, admin
+from app.routes import auth, admin
+from app.routes.valves import valves

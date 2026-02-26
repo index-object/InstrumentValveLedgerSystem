@@ -17,225 +17,934 @@
 
 {% block content %}
 <div class="modern-card mb-4">
-    <div class="p-4" style="border-bottom: 1px solid var(--border-color);">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h3 style="font-weight: 600; margin-bottom: 8px;">{{ valve.位号 }} - {{ valve.名称 }}</h3>
-                <span class="text-muted">装置: {{ valve.装置名称 }}</span>
+    <div class="detail-header">
+        <div class="detail-header-main">
+            <div class="detail-icon">
+                <i class="bi bi-gear-wide-connected"></i>
             </div>
-            <div>
-                {% if valve.status == 'approved' %}
-                <span class="badge-status badge-approved">已审批</span>
-                {% elif valve.status == 'pending' %}
-                <span class="badge-status badge-pending">待审批</span>
-                {% elif valve.status == 'rejected' %}
-                <span class="badge-status badge-rejected">已驳回</span>
-                {% else %}
-                <span class="badge-status badge-draft">草稿</span>
-                {% endif %}
+            <div class="detail-header-info">
+                <h2 class="detail-title-text">
+                    <span class="valve-tag">{{ valve.位号 }}</span>
+                    <span class="valve-name">{{ valve.名称 or '-' }}</span>
+                </h2>
+                <div class="detail-meta">
+                    <span><i class="bi bi-building"></i> {{ valve.装置名称 or '-' }}</span>
+                    <span class="meta-divider">|</span>
+                    <span><i class="bi bi-award"></i> {{ valve.设备等级 or '-' }}</span>
+                    <span class="meta-divider">|</span>
+                    <span><i class="bi bi-box-seam"></i> {{ valve.生产厂家 or '-' }}</span>
+                </div>
             </div>
+        </div>
+        <div class="detail-header-status">
+            {% if valve.status == 'approved' %}
+            <span class="badge-status badge-approved"><i class="bi bi-check-circle"></i> 已审批</span>
+            {% elif valve.status == 'pending' %}
+            <span class="badge-status badge-pending"><i class="bi bi-clock"></i> 待审批</span>
+            {% elif valve.status == 'rejected' %}
+            <span class="badge-status badge-rejected"><i class="bi bi-x-circle"></i> 已驳回</span>
+            {% else %}
+            <span class="badge-status badge-draft"><i class="bi bi-file-earmark"></i> 草稿</span>
+            {% endif %}
         </div>
     </div>
+</div>
+
+<div class="modern-card">
+    <ul class="nav nav-tabs detail-tabs" id="detailTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-panel" type="button" role="tab">
+                <i class="bi bi-clipboard-data"></i> 数据详情
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="media-tab" data-bs-toggle="tab" data-bs-target="#media-panel" type="button" role="tab">
+                <i class="bi bi-images"></i> 照片与维护
+                {% if valve.photos or valve.maintenance_records %}
+                <span class="tab-badge">{{ (valve.photos|length if valve.photos else 0) + (valve.maintenance_records|length if valve.maintenance_records else 0) }}</span>
+                {% endif %}
+            </button>
+        </li>
+    </ul>
     
-    <div class="card-body-custom">
-        <div class="detail-section mb-4">
-            <h5 class="detail-title"><i class="bi bi-info-circle"></i> 基础信息</h5>
-            <div class="detail-grid">
-                <div class="detail-item"><span class="detail-label">位号</span><span class="detail-value">{{ valve.位号 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">名称</span><span class="detail-value">{{ valve.名称 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">装置名称</span><span class="detail-value">{{ valve.装置名称 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">设备等级</span><span class="detail-value">{{ valve.设备等级 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">型号规格</span><span class="detail-value">{{ valve.型号规格 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">生产厂家</span><span class="detail-value">{{ valve.生产厂家 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">安装位置</span><span class="detail-value">{{ valve.安装位置及用途 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">设备编号</span><span class="detail-value">{{ valve.设备编号 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">是否联锁</span><span class="detail-value">{{ valve.是否联锁 or '-' }}</span></div>
-            </div>
-        </div>
-        
-        {% if valve.attachments %}
-        <div class="detail-section mb-4">
-            <h5 class="detail-title"><i class="bi bi-paperclip"></i> 附件信息</h5>
-            <div class="row g-3">
-                {% for att in valve.attachments %}
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h6 class="card-title">
-                                <span class="badge bg-secondary">{{ att.type }}</span>
-                            </h6>
-                            <p class="card-text mb-1">
-                                <strong>名称：</strong>{{ att.名称 or '-' }}
-                            </p>
-                            <p class="card-text mb-1">
-                                <strong>设备等级：</strong>{{ att.设备等级 or '-' }}
-                            </p>
-                            <p class="card-text mb-1">
-                                <strong>型号规格：</strong>{{ att.型号规格 or '-' }}
-                            </p>
-                            <p class="card-text">
-                                <strong>生产厂家：</strong>{{ att.生产厂家 or '-' }}
-                            </p>
+    <div class="tab-content detail-tab-content" id="detailTabContent">
+        <div class="tab-pane fade show active" id="data-panel" role="tabpanel">
+            <div class="detail-grid-layout">
+                <div class="detail-column">
+                    <div class="info-section">
+                        <div class="section-header">
+                            <i class="bi bi-info-circle"></i>
+                            <span>基础参数</span>
+                            <span class="section-count">9项</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-hash"></i> 位号</span>
+                                <span class="info-value">{{ valve.位号 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-tag"></i> 名称</span>
+                                <span class="info-value">{{ valve.名称 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-building"></i> 装置名称</span>
+                                <span class="info-value">{{ valve.装置名称 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-star"></i> 设备等级</span>
+                                <span class="info-value">{{ valve.设备等级 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-box"></i> 型号规格</span>
+                                <span class="info-value">{{ valve.型号规格 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-building"></i> 生产厂家</span>
+                                <span class="info-value">{{ valve.生产厂家 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-geo-alt"></i> 安装位置</span>
+                                <span class="info-value">{{ valve.安装位置及用途 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-upc-scan"></i> 设备编号</span>
+                                <span class="info-value">{{ valve.设备编号 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-link-45deg"></i> 是否联锁</span>
+                                <span class="info-value">{{ valve.是否联锁 or '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <div class="section-header section-header-red">
+                            <i class="bi bi-gear"></i>
+                            <span>阀内件信息</span>
+                            <span class="section-count">7项</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-circle"></i> 阀座直径</span>
+                                <span class="info-value">{{ valve.阀内件_阀座直径 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-gem"></i> 阀芯材质</span>
+                                <span class="info-value">{{ valve.阀内件_阀芯材质 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-gem"></i> 阀座材质</span>
+                                <span class="info-value">{{ valve.阀内件_阀座材质 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-gem"></i> 阀杆材质</span>
+                                <span class="info-value">{{ valve.阀内件_阀杆材质 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-graph-up"></i> 流量特性</span>
+                                <span class="info-value">{{ valve.阀内件_流量特性 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-droplet-half"></i> 泄露等级</span>
+                                <span class="info-value">{{ valve.阀内件_泄露等级 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-speedometer2"></i> Cv值</span>
+                                <span class="info-value">{{ valve.阀内件_Cv值 or '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if valve.备注 %}
+                    <div class="info-section info-section-compact">
+                        <div class="section-header section-header-gray">
+                            <i class="bi bi-chat-left-text"></i>
+                            <span>备注</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-row info-row-full">
+                                <span class="info-value">{{ valve.备注 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="detail-column">
+                    <div class="info-section info-section-half">
+                        <div class="section-header section-header-cyan">
+                            <i class="bi bi-thermometer-half"></i>
+                            <span>工艺条件</span>
+                            <span class="section-count">4项</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-droplet"></i> 介质名称</span>
+                                <span class="info-value">{{ valve.工艺条件_介质名称 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-thermometer-sun"></i> 设计温度</span>
+                                <span class="info-value">{{ valve.工艺条件_设计温度 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-arrow-up-circle"></i> 阀前压力</span>
+                                <span class="info-value">{{ valve.工艺条件_阀前压力 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-arrow-down-circle"></i> 阀后压力</span>
+                                <span class="info-value">{{ valve.工艺条件_阀后压力 or '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section info-section-half">
+                        <div class="section-header section-header-orange">
+                            <i class="bi bi-box-seam"></i>
+                            <span>阀体信息</span>
+                            <span class="section-count">3项</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-arrows-angle-expand"></i> 公称通径</span>
+                                <span class="info-value">{{ valve.阀体_公称通径 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-plug"></i> 连接方式</span>
+                                <span class="info-value">{{ valve.阀体_连接方式及规格 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-gem"></i> 阀体材质</span>
+                                <span class="info-value">{{ valve.阀体_材质 or '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <div class="section-header section-header-green">
+                            <i class="bi bi-lightning-charge"></i>
+                            <span>执行机构</span>
+                            <span class="section-count">10项</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-cpu"></i> 形式</span>
+                                <span class="info-value">{{ valve.执行机构_形式 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-box"></i> 型号规格</span>
+                                <span class="info-value">{{ valve.执行机构_型号规格 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-building"></i> 厂家</span>
+                                <span class="info-value">{{ valve.执行机构_厂家 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-arrow-left-right"></i> 作用形式</span>
+                                <span class="info-value">{{ valve.执行机构_作用形式 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-rulers"></i> 行程</span>
+                                <span class="info-value">{{ valve.执行机构_行程 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-arrows-expand"></i> 弹簧范围</span>
+                                <span class="info-value">{{ valve.执行机构_弹簧范围 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-wind"></i> 气源压力</span>
+                                <span class="info-value">{{ valve.执行机构_气源压力 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-exclamation-triangle"></i> 故障位置</span>
+                                <span class="info-value">{{ valve.执行机构_故障位置 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-stopwatch"></i> 关阀时间</span>
+                                <span class="info-value">{{ valve.执行机构_关阀时间 or '-' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label"><i class="bi bi-stopwatch"></i> 开阀时间</span>
+                                <span class="info-value">{{ valve.执行机构_开阀时间 or '-' }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
             </div>
-        </div>
-        {% endif %}
-        
-        <div class="detail-section mb-4">
-            <h5 class="detail-title"><i class="bi bi-gear"></i> 工艺条件</h5>
-            <div class="detail-grid">
-                <div class="detail-item"><span class="detail-label">介质名称</span><span class="detail-value">{{ valve.工艺条件_介质名称 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">设计温度</span><span class="detail-value">{{ valve.工艺条件_设计温度 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">阀前压力</span><span class="detail-value">{{ valve.工艺条件_阀前压力 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">阀后压力</span><span class="detail-value">{{ valve.工艺条件_阀后压力 or '-' }}</span></div>
-            </div>
-        </div>
-        
-        <div class="detail-section mb-4">
-            <h5 class="detail-title"><i class="bi bi-box"></i> 阀体信息</h5>
-            <div class="detail-grid">
-                <div class="detail-item"><span class="detail-label">公称通径</span><span class="detail-value">{{ valve.阀体_公称通径 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">连接方式</span><span class="detail-value">{{ valve.阀体_连接方式及规格 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">材质</span><span class="detail-value">{{ valve.阀体_材质 or '-' }}</span></div>
-            </div>
-        </div>
-        
-        <div class="detail-section mb-4">
-            <h5 class="detail-title"><i class="bi bi-sliders"></i> 阀内件信息</h5>
-            <div class="detail-grid">
-                <div class="detail-item"><span class="detail-label">阀座直径</span><span class="detail-value">{{ valve.阀内件_阀座直径 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">阀芯材质</span><span class="detail-value">{{ valve.阀内件_阀芯材质 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">阀座材质</span><span class="detail-value">{{ valve.阀内件_阀座材质 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">阀杆材质</span><span class="detail-value">{{ valve.阀内件_阀杆材质 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">流量特性</span><span class="detail-value">{{ valve.阀内件_流量特性 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">泄露等级</span><span class="detail-value">{{ valve.阀内件_泄露等级 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">Cv值</span><span class="detail-value">{{ valve.阀内件_Cv值 or '-' }}</span></div>
-            </div>
-        </div>
-        
-        <div class="detail-section mb-4">
-            <h5 class="detail-title"><i class="bi bi-lightning"></i> 执行机构信息</h5>
-            <div class="detail-grid">
-                <div class="detail-item"><span class="detail-label">形式</span><span class="detail-value">{{ valve.执行机构_形式 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">型号规格</span><span class="detail-value">{{ valve.执行机构_型号规格 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">厂家</span><span class="detail-value">{{ valve.执行机构_厂家 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">作用形式</span><span class="detail-value">{{ valve.执行机构_作用形式 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">行程</span><span class="detail-value">{{ valve.执行机构_行程 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">弹簧范围</span><span class="detail-value">{{ valve.执行机构_弹簧范围 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">气源压力</span><span class="detail-value">{{ valve.执行机构_气源压力 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">故障位置</span><span class="detail-value">{{ valve.执行机构_故障位置 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">关阀时间</span><span class="detail-value">{{ valve.执行机构_关阀时间 or '-' }}</span></div>
-                <div class="detail-item"><span class="detail-label">开阀时间</span><span class="detail-value">{{ valve.执行机构_开阀时间 or '-' }}</span></div>
-            </div>
-        </div>
-        
-        {% if valve.备注 %}
-        <div class="detail-section">
-            <h5 class="detail-title"><i class="bi bi-chat-left-text"></i> 备注</h5>
-            <p style="color: var(--text-dark);">{{ valve.备注 }}</p>
-        </div>
-        {% endif %}
-    </div>
-</div>
-
-<div class="modern-card mb-4">
-    <div class="card-header-custom"><i class="bi bi-camera"></i> 照片</div>
-    <div class="card-body-custom">
-        <div class="row g-3">
-            {% if valve.photos %}
-                {% for photo in valve.photos %}
-                <div class="col-md-2">
-                    <a href="{{ url_for('static', filename='uploads/' + photo.filename) }}" target="_blank">
-                        <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" 
-                             class="img-thumbnail" style="height: 100px; width: 100%; object-fit: cover; border-radius: 8px;">
-                    </a>
-                    <small class="d-block text-muted mt-1">{{ photo.description or '无描述' }}</small>
+            
+            {% if valve.attachments %}
+            <div class="attachments-section">
+                <div class="attachments-header">
+                    <h5><i class="bi bi-paperclip"></i> 附件信息</h5>
+                    <span class="attachments-count">{{ valve.attachments|length }} 个附件</span>
                 </div>
-                {% endfor %}
-            {% else %}
-            <div class="col-12">
-                <p class="text-muted">暂无照片</p>
+                <div class="attachments-grid">
+                    {% for att in valve.attachments %}
+                    <div class="attachment-card">
+                        <div class="attachment-icon">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="attachment-info">
+                            <span class="attachment-type">{{ att.type }}</span>
+                            <h6>{{ att.名称 or '-' }}</h6>
+                            <p><i class="bi bi-award"></i> {{ att.设备等级 or '-' }}</p>
+                            <p><i class="bi bi-box"></i> {{ att.型号规格 or '-' }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
             {% endif %}
         </div>
-        <a href="{{ url_for('valves.photos', id=valve.id) }}" class="btn btn-sm btn-outline-primary mt-3">
-            <i class="bi bi-plus"></i> 管理照片
-        </a>
-    </div>
-</div>
-
-<div class="modern-card mb-4">
-    <div class="card-header-custom"><i class="bi bi-wrench"></i> 维护记录</div>
-    <div class="card-body-custom">
-        <a href="{{ url_for('valves.maintenance', id=valve.id) }}" class="btn btn-sm btn-primary mb-3">
-            <i class="bi bi-plus"></i> 添加维护记录
-        </a>
-        {% if valve.maintenance_records %}
-        <table class="modern-table">
-            <thead>
-                <tr>
-                    <th>所属中心</th>
-                    <th>检修时间</th>
-                    <th>检修人员</th>
-                    <th>检修内容</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in valve.maintenance_records[:5] %}
-                <tr>
-                    <td>{{ record.所属中心 or '-' }}</td>
-                    <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>
-                    <td>{{ record.检修人员 or '-' }}</td>
-                    <td>{{ record.检修内容[:30] if record.检修内容 else '-' }}{% if record.检修内容 and record.检修内容|length > 30 %}...{% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% if valve.maintenance_records|length > 5 %}
-        <a href="{{ url_for('valves.maintenance_list') }}?valve_id={{ valve.id }}" class="btn btn-sm btn-link mt-2">查看全部维护记录</a>
-        {% endif %}
-        {% else %}
-        <p class="text-muted">暂无维护记录</p>
-        {% endif %}
+        
+        <div class="tab-pane fade" id="media-panel" role="tabpanel">
+            <div class="media-grid-layout">
+                <div class="media-section">
+                    <div class="media-header">
+                        <h5><i class="bi bi-camera"></i> 设备照片</h5>
+                        <a href="{{ url_for('valves.photos', id=valve.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> 管理
+                        </a>
+                    </div>
+                    <div class="photo-grid">
+                        {% if valve.photos %}
+                            {% for photo in valve.photos %}
+                            <div class="photo-item">
+                                <a href="{{ url_for('static', filename='uploads/' + photo.filename) }}" target="_blank" class="photo-link">
+                                    <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" alt="{{ photo.description or '设备照片' }}">
+                                </a>
+                                <div class="photo-caption">{{ photo.description or '无描述' }}</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div class="empty-media">
+                            <i class="bi bi-image"></i>
+                            <p>暂无照片</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="media-section">
+                    <div class="media-header">
+                        <h5><i class="bi bi-wrench-adjustable"></i> 维护记录</h5>
+                        <a href="{{ url_for('valves.maintenance', id=valve.id) }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus"></i> 添加
+                        </a>
+                    </div>
+                    <div class="maintenance-list">
+                        {% if valve.maintenance_records %}
+                            {% for record in valve.maintenance_records[:5] %}
+                            <div class="maintenance-item">
+                                <div class="maintenance-date">
+                                    <span class="date-day">{{ record.检修时间.strftime('%d') if record.检修时间 else '--' }}</span>
+                                    <span class="date-month">{{ record.检修时间.strftime('%m月') if record.检修时间 else '--' }}</span>
+                                </div>
+                                <div class="maintenance-content">
+                                    <div class="maintenance-title">{{ record.检修内容[:50] if record.检修内容 else '无内容' }}{% if record.检修内容 and record.检修内容|length > 50 %}...{% endif %}</div>
+                                    <div class="maintenance-meta">
+                                        <span><i class="bi bi-person"></i> {{ record.检修人员 or '-' }}</span>
+                                        <span><i class="bi bi-building"></i> {{ record.所属中心 or '-' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% if valve.maintenance_records|length > 5 %}
+                            <a href="{{ url_for('valves.maintenance_list') }}?valve_id={{ valve.id }}" class="view-all-link">
+                                查看全部 {{ valve.maintenance_records|length }} 条记录 <i class="bi bi-arrow-right"></i>
+                            </a>
+                            {% endif %}
+                        {% else %}
+                        <div class="empty-media">
+                            <i class="bi bi-clipboard-check"></i>
+                            <p>暂无维护记录</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <style>
-.detail-section { }
-.detail-title {
-    font-size: 16px;
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 28px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.detail-header-main {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.detail-icon {
+    width: 64px;
+    height: 64px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.detail-icon i {
+    font-size: 32px;
+    color: white;
+}
+
+.detail-header-info {
+    color: white;
+}
+
+.detail-title-text {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 8px 0;
+    font-size: 24px;
     font-weight: 600;
-    color: var(--primary-color);
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--accent-color);
+}
+
+.valve-tag {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 18px;
+}
+
+.valve-name {
+    color: white;
+}
+
+.detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.85);
+}
+
+.detail-meta i {
+    margin-right: 4px;
+    opacity: 0.7;
+}
+
+.meta-divider {
+    opacity: 0.4;
+}
+
+.detail-header-status .badge-status {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.detail-tabs {
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 24px;
+    background: #fafbfc;
+}
+
+.detail-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 16px 24px;
+    color: var(--text-muted);
+    font-weight: 500;
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: all 0.2s;
 }
-.detail-grid {
+
+.detail-tabs .nav-link i {
+    font-size: 18px;
+}
+
+.detail-tabs .nav-link:hover {
+    color: var(--primary-color);
+    border-color: transparent;
+}
+
+.detail-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background: transparent;
+}
+
+.tab-badge {
+    background: var(--accent-color);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.detail-tab-content {
+    padding: 24px;
+}
+
+.detail-grid-layout {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
-.detail-item {
+
+.detail-column {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 16px;
 }
-.detail-label {
+
+.info-section {
+    background: #fafbfc;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-section-half {
+    flex: none;
+}
+
+.info-section-compact {
+    flex: none;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.section-header i {
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+.section-count {
+    margin-left: auto;
+    font-size: 12px;
+    background: rgba(255,255,255,0.2);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.section-header-cyan {
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+}
+
+.section-header-orange {
+    background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+}
+
+.section-header-red {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+.section-header-green {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.section-header-gray {
+    background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+}
+
+.section-header-purple {
+    background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+}
+
+.info-list {
+    padding: 14px 18px;
+    flex: 1;
+}
+
+.info-row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px dashed #e2e8f0;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row-full {
+    grid-template-columns: 1fr;
+}
+
+.info-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.info-label i {
+    font-size: 14px;
+    opacity: 0.6;
+    width: 16px;
+}
+
+.info-value {
+    color: var(--text-dark);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.attachments-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.attachments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.attachments-header h5 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-dark);
+}
+
+.attachments-header h5 i {
+    color: #7c3aed;
+}
+
+.attachments-count {
     font-size: 12px;
     color: var(--text-muted);
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.attachments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.attachment-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: #fafbfc;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s;
+}
+
+.attachment-card:hover {
+    border-color: #8b5cf6;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.1);
+    transform: translateY(-1px);
+}
+
+.attachment-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.attachment-icon i {
+    font-size: 22px;
+    color: white;
+}
+
+.attachment-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.attachment-info h6 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.attachment-info p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.attachment-info p i {
+    font-size: 11px;
+}
+
+.attachment-type {
+    font-size: 10px;
+    color: #7c3aed;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-.detail-value {
-    font-size: 14px;
+
+.media-grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.media-section {
+    background: #fafbfc;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.media-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color);
+    background: white;
+}
+
+.media-header h5 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     color: var(--text-dark);
+}
+
+.media-header h5 i {
+    color: var(--primary-color);
+}
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 14px;
+}
+
+.photo-item {
+    position: relative;
+}
+
+.photo-link {
+    display: block;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.photo-link:hover {
+    transform: scale(1.05);
+}
+
+.photo-item img {
+    width: 100%;
+    height: 90px;
+    object-fit: cover;
+    display: block;
+}
+
+.photo-caption {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.maintenance-list {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.maintenance-item {
+    display: flex;
+    gap: 14px;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    transition: box-shadow 0.2s;
+}
+
+.maintenance-item:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+.maintenance-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 46px;
+    height: 46px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    border-radius: 8px;
+    color: white;
+}
+
+.date-day {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.date-month {
+    font-size: 10px;
+    opacity: 0.9;
+}
+
+.maintenance-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.maintenance-title {
+    font-size: 13px;
     font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.maintenance-meta {
+    display: flex;
+    gap: 14px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.maintenance-meta i {
+    margin-right: 3px;
+}
+
+.view-all-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.view-all-link:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.empty-media {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+.empty-media i {
+    font-size: 48px;
+    opacity: 0.3;
+    margin-bottom: 12px;
+}
+
+.empty-media p {
+    margin: 0;
+    font-size: 14px;
+}
+
+@media (max-width: 992px) {
+    .detail-grid-layout,
+    .media-grid-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .detail-header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+    
+    .detail-header-main {
+        flex-direction: column;
+    }
+    
+    .detail-meta {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .info-row {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+    
+    .photo-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .detail-tabs .nav-link {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+    
+    .attachments-grid {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
 {% endblock %}
