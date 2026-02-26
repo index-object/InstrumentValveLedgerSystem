@@ -9,6 +9,12 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from app.models import db, Ledger, Valve, ApprovalLog, Setting
+from app.routes.valves.permissions import (
+    can_edit_valve,
+    can_delete_valve,
+    can_view_ledger,
+    can_view_valve,
+)
 from sqlalchemy import or_
 from datetime import datetime
 
@@ -51,6 +57,11 @@ def list():
     status = request.args.get("status")
     if status:
         query = query.filter(Ledger.status == status)
+
+    if current_user.role == "employee":
+        query = query.filter(
+            (Ledger.created_by == current_user.id) | (Ledger.status == "approved")
+        )
 
     ledgers_list = query.order_by(Ledger.created_at.desc()).all()
 
@@ -108,6 +119,10 @@ def new():
 def detail(id):
     from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)
+
+    if not can_view_ledger(ledger):
+        flash("无权访问")
+        return redirect(url_for("ledgers.list"))
 
     ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
     ledger.pending_count = Valve.query.filter_by(ledger_id=id, status="pending").count()
@@ -210,6 +225,11 @@ def detail(id):
             return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     query = Valve.query.filter_by(ledger_id=id)
+
+    if current_user.role == "employee":
+        query = query.filter(
+            (Valve.created_by == current_user.id) | (Valve.status == "approved")
+        )
 
     search = request.args.get("search")
     if search:

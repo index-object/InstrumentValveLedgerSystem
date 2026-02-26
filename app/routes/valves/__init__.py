@@ -55,6 +55,9 @@ def list():
 @login_required
 def detail(id):
     valve = Valve.query.get_or_404(id)
+    if not can_view_valve(valve):
+        flash("无权访问")
+        return redirect(url_for("valves.list"))
     return render_template("valves/detail.html", valve=valve)
 
 
