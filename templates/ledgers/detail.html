@@ -118,7 +118,7 @@
                             <input type="checkbox" name="valve_ids" value="{{ valve.id }}" class="form-check-input item-checkbox">
                         </td>
                         <td>{{ loop.index }}</td>
-                        <td><a href="{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
+                        <td><a href="{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ request.args.get('from', 'all') }}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
                         <td>{{ valve.名称 or '-' }}</td>
                         <td>{{ valve.装置名称 or '-' }}</td>
                         <td>{{ valve.设备等级 or '-' }}</td>
@@ -161,7 +161,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}" class="btn-action" style="background: #e2e8f0; color: #475569;">
+                            <a href="{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ request.args.get('from', 'all') }}" class="btn-action" style="background: #e2e8f0; color: #475569;">
                                 <i class="bi bi-eye"></i>
                             </a>
                             {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}

@@ -172,7 +172,7 @@
                     <tr>
                         <td style="position: sticky; left: 0; z-index: 2; background: #fff; border-right: 1px solid #dee2e6;"><input type="checkbox" name="ids" value="{{ valve.id }}" class="form-check-input item-checkbox"></td>
                         <td>{{ (pagination.page - 1) * pagination.per_page + loop.index }}</td>
-                        <td><a href="{% if ledger %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
+                        <td><a href="{% if ledger %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ from_param|default(request.args.get('from', 'all')) }}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
                         <td>{{ valve.名称 or '-' }}</td>
                         <td>{{ valve.装置名称 or '-' }}</td>
                         <td>{{ valve.设备等级 or '-' }}</td>
@@ -217,8 +217,8 @@
                             <span class="badge-status badge-draft">草稿</span>
                             {% endif %}
                         </td>
-                        <td style="position: sticky; right: 0; z-index: 2; background: #fff;">
-                            <a href="{% if ledger %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i></a>
+<td style="position: sticky; right: 0; z-index: 2; background: #fff;">
+                            <a href="{% if ledger %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ from_param|default(request.args.get('from', 'all')) }}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i></a>
                             {% if (ledger and (ledger.created_by == current_user.id or current_user.role in ['leader', 'admin']) and valve.status in ['draft', 'rejected', 'approved']) or (not ledger and (valve.created_by == current_user.id or current_user.role in ['leader', 'admin'])) %}
                             <a href="{% if ledger %}{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i></a>
                             {% endif %}

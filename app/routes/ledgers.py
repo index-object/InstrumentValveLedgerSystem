@@ -510,7 +510,10 @@ def edit_valve(ledger_id, id):
 @login_required
 def valve_detail(ledger_id, id):
     valve = Valve.query.get_or_404(id)
-    return render_template("valves/detail.html", valve=valve)
+    from_param = request.args.get("from", "all")
+    return render_template(
+        "valves/detail.html", valve=valve, ledger_id=ledger_id, from_param=from_param
+    )
 
 
 @ledgers.route("/ledger/<int:ledger_id>/valve/delete/<int:id>", methods=["POST"])
