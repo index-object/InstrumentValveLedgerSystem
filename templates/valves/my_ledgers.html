@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 
-{% block page_title %}我的台账{% endblock %}
+{% block page_title %}
+<span style="display: flex; align-items: center; gap: 8px;">
+    <i class="bi bi-person-badge" style="color: #10b981;"></i>
+    我的台账
+    <span class="page-tag"><i class="bi bi-person"></i> 个人</span>
+</span>
+{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -18,7 +24,19 @@
         align-items: center;
         gap: 10px;
     }
-    .page-title-text i { color: var(--accent-color); }
+    .page-title-text i { color: #10b981; }
+    
+    .page-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
+    }
     
     .toolbar {
         display: flex;
@@ -166,7 +184,7 @@
                 <tr>
                     <td>
                         <a href="{{ url_for('ledgers.detail', id=ledger.id, from='mine') }}" class="ledger-name-link">
-                            <i class="bi bi-folder2-open folder-icon"></i>{{ ledger.名称 }}
+                            <i class="bi bi-folder2-open folder-icon" style="color: #10b981;"></i>{{ ledger.名称 }}
                         </a>
                     </td>
                     <td><span class="count-cell">{{ ledger.valve_count }}</span></td>
