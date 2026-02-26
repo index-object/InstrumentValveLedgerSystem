@@ -27,11 +27,16 @@ def can_view_valve(valve):
     return False
 
 
-def can_view_ledger(ledger):
+def can_view_ledger(ledger, db):
     """查看台账集合权限"""
     if ledger.created_by == current_user.id:
         return True
     if current_user.role in ["leader", "admin"]:
+        return True
+    from app.models import Valve
+
+    has_approved = Valve.query.filter_by(ledger_id=ledger.id, status="approved").first()
+    if has_approved:
         return True
     return False
 

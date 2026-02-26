@@ -125,7 +125,7 @@ def detail(id):
     from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)
 
-    if not can_view_ledger(ledger):
+    if not can_view_ledger(ledger, db):
         flash("无权访问")
         return redirect(url_for("ledgers.list"))
 
