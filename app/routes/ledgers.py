@@ -27,6 +27,16 @@ def get_back_url(from_param):
     return url_for("ledgers.list")
 
 
+def update_ledger_status(ledger):
+    total = Valve.query.filter_by(ledger_id=ledger.id).count()
+    if total == 0:
+        return
+    approved = Valve.query.filter_by(ledger_id=ledger.id, status="approved").count()
+    if approved == total:
+        ledger.status = "approved"
+        ledger.approved_at = datetime.utcnow()
+
+
 def can_edit_ledger(ledger):
     return ledger.created_by == current_user.id or current_user.role in [
         "leader",
@@ -193,6 +203,7 @@ def detail(id):
                     )
                     db.session.add(log)
                     approved_count += 1
+            update_ledger_status(ledger)
             db.session.commit()
             flash(f"已审批 {approved_count} 项台账内容")
             return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
@@ -420,6 +431,7 @@ def approve(id):
         )
         db.session.add(log)
 
+    update_ledger_status(ledger)
     db.session.commit()
 
     flash(f"已审批通过，共 {len(pending_valves)} 项台账内容")

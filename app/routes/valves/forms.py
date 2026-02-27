@@ -1,6 +1,16 @@
 import json
-from app.models import ValveAttachment, Setting
+from app.models import ValveAttachment, Setting, Valve, Ledger, db
 from datetime import datetime
+
+
+def update_ledger_status(ledger):
+    total = Valve.query.filter_by(ledger_id=ledger.id).count()
+    if total == 0:
+        return
+    approved = Valve.query.filter_by(ledger_id=ledger.id, status="approved").count()
+    if approved == total:
+        ledger.status = "approved"
+        ledger.approved_at = datetime.utcnow()
 
 
 VALVE_FIELD_NAMES = [
@@ -202,6 +212,10 @@ def set_valve_status_after_submit(valve, user_id):
         valve.status = "approved"
         valve.approved_by = user_id
         valve.approved_at = datetime.utcnow()
+        if valve.ledger_id:
+            ledger = Ledger.query.get(valve.ledger_id)
+            if ledger:
+                update_ledger_status(ledger)
         return "approve"
     else:
         valve.status = "pending"

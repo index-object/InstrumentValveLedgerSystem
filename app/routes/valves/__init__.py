@@ -8,13 +8,14 @@ from flask import (
     jsonify,
 )
 from flask_login import login_required, current_user
-from app.models import db, Valve, ApprovalLog
+from app.models import db, Valve, ApprovalLog, Ledger
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
 from app.routes.valves.permissions import (
     can_edit_valve,
     can_delete_valve,
+    can_view_valve,
     require_leader,
     require_edit_permission,
     require_delete_permission,
@@ -27,6 +28,16 @@ from app.routes.valves.forms import (
 )
 
 valves = Blueprint("valves", __name__)
+
+
+def update_ledger_status(ledger):
+    total = Valve.query.filter_by(ledger_id=ledger.id).count()
+    if total == 0:
+        return
+    approved = Valve.query.filter_by(ledger_id=ledger.id, status="approved").count()
+    if approved == total:
+        ledger.status = "approved"
+        ledger.approved_at = datetime.utcnow()
 
 
 @valves.route("/valve/check-tag")
@@ -249,6 +260,10 @@ def batch_approve():
             )
             db.session.add(log)
             count += 1
+            if valve.ledger_id:
+                ledger = Ledger.query.get(valve.ledger_id)
+                if ledger:
+                    update_ledger_status(ledger)
 
     db.session.commit()
     flash(f"成功审批 {count} 条记录")
@@ -329,6 +344,10 @@ def approve(id):
         comment=request.form.get("comment", ""),
     )
     db.session.add(log)
+    if valve.ledger_id:
+        ledger = Ledger.query.get(valve.ledger_id)
+        if ledger:
+            update_ledger_status(ledger)
     db.session.commit()
 
     flash("审批通过")

@@ -1,11 +1,21 @@
 from flask import flash, redirect, url_for, request, render_template, make_response
 from flask_login import login_required, current_user
-from app.models import db, Valve
+from app.models import db, Valve, Ledger, Setting
 from app.routes.valves.permissions import require_leader
 from app.routes.valves.forms import IMPORT_COLUMN_MAP, get_valve_export_data
 from datetime import datetime
 from io import BytesIO
 import pandas as pd
+
+
+def update_ledger_status(ledger):
+    total = Valve.query.filter_by(ledger_id=ledger.id).count()
+    if total == 0:
+        return
+    approved = Valve.query.filter_by(ledger_id=ledger.id, status="approved").count()
+    if approved == total:
+        ledger.status = "approved"
+        ledger.approved_at = datetime.utcnow()
 
 
 def import_data():
