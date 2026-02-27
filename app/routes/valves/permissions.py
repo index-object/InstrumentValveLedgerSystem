@@ -16,6 +16,28 @@ def can_delete_valve(valve):
     return can_edit_valve(valve)
 
 
+def can_view_valve(valve):
+    """查看台账权限"""
+    if valve.created_by == current_user.id:
+        return True
+    if current_user.role in ["leader", "admin"]:
+        return True
+    if valve.status == "approved":
+        return True
+    return False
+
+
+def can_view_ledger(ledger):
+    """查看台账集合权限"""
+    if ledger.created_by == current_user.id:
+        return True
+    if current_user.role in ["leader", "admin"]:
+        return True
+    if ledger.status == "approved":
+        return True
+    return False
+
+
 def require_leader(f):
     """装饰器：要求领导权限"""
 
