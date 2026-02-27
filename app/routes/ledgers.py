@@ -15,7 +15,7 @@ from app.routes.valves.permissions import (
     can_view_ledger,
     can_view_valve,
 )
-from sqlalchemy import or_, exists
+from sqlalchemy import or_
 from datetime import datetime
 
 ledgers = Blueprint("ledgers", __name__)
@@ -59,14 +59,7 @@ def list():
         query = query.filter(Ledger.status == status)
 
     if current_user.role == "employee":
-        has_approved_valve = (
-            exists()
-            .where(Valve.ledger_id == Ledger.id)
-            .where(Valve.status == "approved")
-        )
-        query = query.filter(
-            (Ledger.created_by == current_user.id) | has_approved_valve
-        )
+        query = query.filter(Ledger.status == "approved")
 
     ledgers_list = query.order_by(Ledger.created_at.desc()).all()
 
@@ -125,7 +118,7 @@ def detail(id):
     from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)
 
-    if not can_view_ledger(ledger, db):
+    if not can_view_ledger(ledger):
         flash("无权访问")
         return redirect(url_for("ledgers.list"))
 
