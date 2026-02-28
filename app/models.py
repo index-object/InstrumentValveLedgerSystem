@@ -48,6 +48,9 @@ class Ledger(db.Model):
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
+    approved_snapshot_status = db.Column(db.String(20), nullable=True)
+    approved_snapshot_at = db.Column(db.DateTime, nullable=True)
+
     creator = db.relationship("User", foreign_keys=[created_by])
     approver = db.relationship("User", foreign_keys=[approved_by])
     valves = db.relationship("Valve", backref="ledger", lazy="dynamic")

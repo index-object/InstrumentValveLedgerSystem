@@ -32,10 +32,24 @@ def update_ledger_status(ledger):
     total = Valve.query.filter_by(ledger_id=ledger.id).count()
     if total == 0:
         return
+
     approved = Valve.query.filter_by(ledger_id=ledger.id, status="approved").count()
-    if approved == total:
+    pending = Valve.query.filter_by(ledger_id=ledger.id, status="pending").count()
+    rejected = Valve.query.filter_by(ledger_id=ledger.id, status="rejected").count()
+    draft = Valve.query.filter_by(ledger_id=ledger.id, status="draft").count()
+
+    if pending > 0:
+        ledger.status = "pending"
+    elif rejected > 0:
+        ledger.status = "rejected"
+    elif draft > 0:
+        ledger.status = "draft"
+    elif approved == total:
         ledger.status = "approved"
         ledger.approved_at = datetime.utcnow()
+
+        ledger.approved_snapshot_status = "approved"
+        ledger.approved_snapshot_at = datetime.utcnow()
 
 
 def can_edit_ledger(ledger):
@@ -67,10 +81,13 @@ def list():
 
     status = request.args.get("status")
     if status:
-        query = query.filter(Ledger.status == status)
-
-    if current_user.role == "employee":
-        query = query.filter(Ledger.status == "approved")
+        if current_user.role in ["leader", "admin"]:
+            query = query.filter(Ledger.status == status)
+        else:
+            query = query.filter(Ledger.approved_snapshot_status == status)
+    else:
+        if current_user.role == "employee":
+            query = query.filter(Ledger.approved_snapshot_status == "approved")
 
     ledgers_list = query.order_by(Ledger.created_at.desc()).all()
 
@@ -89,16 +106,27 @@ def list():
             ledger_id=ledger.id, status="draft"
         ).count()
 
-        if ledger.pending_count > 0:
-            ledger.display_status = "pending"
-        elif ledger.rejected_count > 0:
-            ledger.display_status = "rejected"
-        elif ledger.approved_count > 0 and ledger.approved_count == ledger.valve_count:
-            ledger.display_status = "approved"
-        elif ledger.valve_count > 0:
-            ledger.display_status = "draft"
+        is_owner = ledger.created_by == current_user.id or current_user.role in [
+            "leader",
+            "admin",
+        ]
+
+        if is_owner:
+            if ledger.pending_count > 0:
+                ledger.display_status = "pending"
+            elif ledger.rejected_count > 0:
+                ledger.display_status = "rejected"
+            elif (
+                ledger.approved_count > 0
+                and ledger.approved_count == ledger.valve_count
+            ):
+                ledger.display_status = "approved"
+            elif ledger.valve_count > 0:
+                ledger.display_status = "draft"
+            else:
+                ledger.display_status = "draft"
         else:
-            ledger.display_status = "draft"
+            ledger.display_status = ledger.approved_snapshot_status or "draft"
 
     return render_template("ledgers/list.html", ledgers=ledgers_list)
 
@@ -143,16 +171,24 @@ def detail(id):
     ).count()
     ledger.draft_count = Valve.query.filter_by(ledger_id=id, status="draft").count()
 
-    if ledger.pending_count > 0:
-        ledger.display_status = "pending"
-    elif ledger.rejected_count > 0:
-        ledger.display_status = "rejected"
-    elif ledger.approved_count > 0 and ledger.approved_count == ledger.valve_count:
-        ledger.display_status = "approved"
-    elif ledger.valve_count > 0:
-        ledger.display_status = "draft"
+    ledger.is_owner = ledger.created_by == current_user.id or current_user.role in [
+        "leader",
+        "admin",
+    ]
+
+    if ledger.is_owner:
+        if ledger.pending_count > 0:
+            ledger.display_status = "pending"
+        elif ledger.rejected_count > 0:
+            ledger.display_status = "rejected"
+        elif ledger.approved_count > 0 and ledger.approved_count == ledger.valve_count:
+            ledger.display_status = "approved"
+        elif ledger.valve_count > 0:
+            ledger.display_status = "draft"
+        else:
+            ledger.display_status = "draft"
     else:
-        ledger.display_status = "draft"
+        ledger.display_status = ledger.approved_snapshot_status or "draft"
 
     db.session.commit()
 
