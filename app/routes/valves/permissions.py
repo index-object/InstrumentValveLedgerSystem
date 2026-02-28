@@ -33,7 +33,7 @@ def can_view_ledger(ledger):
         return True
     if current_user.role in ["leader", "admin"]:
         return True
-    if ledger.status == "approved":
+    if ledger.approved_snapshot_status == "approved":
         return True
     return False
 
