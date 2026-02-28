@@ -11,7 +11,8 @@ login_manager.login_view = "auth.login"
 
 def create_app(config_class=Config):
     template_dir = os.path.join(os.path.dirname(__file__), "..", "templates")
-    app = Flask(__name__, template_folder=template_dir)
+    static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+    app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
     app.config.from_object(config_class)
 
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)

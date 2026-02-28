@@ -8,7 +8,7 @@ from flask import (
     jsonify,
 )
 from flask_login import login_required, current_user
-from app.models import db, Ledger, Valve, ApprovalLog, Setting
+from app.models import db, Ledger, Valve, ApprovalLog, Setting, ValveAttachment
 from app.routes.valves.permissions import (
     can_edit_valve,
     can_delete_valve,
@@ -17,6 +17,7 @@ from app.routes.valves.permissions import (
 )
 from sqlalchemy import or_
 from datetime import datetime
+import json
 
 ledgers = Blueprint("ledgers", __name__)
 
@@ -489,6 +490,13 @@ def new_valve(id):
                 )
 
         valve = Valve()
+        with open("debug_form.log", "a", encoding="utf-8") as f:
+            f.write("=== DEBUG FORM DATA ===\n")
+            for key in request.form:
+                f.write(
+                    f"  {key}: {request.form.get(key)[:200] if request.form.get(key) else 'None'}...\n"
+                )
+            f.write("=======================\n")
         for key in request.form:
             if key == "attachments":
                 continue
@@ -502,10 +510,35 @@ def new_valve(id):
         try:
             db.session.add(valve)
             db.session.commit()
-        except:
+        except Exception as e:
             db.session.rollback()
-            flash("位号已存在，请使用其他位号")
+            flash(f"保存失败: {str(e)}")
             return redirect(url_for("ledgers.new_valve", id=id, **{"from": from_param}))
+
+        attachments_json = request.form.get("attachments")
+        with open("debug_form.log", "a", encoding="utf-8") as f:
+            f.write(f"DEBUG: attachments_json = {repr(attachments_json)}\n")
+        if attachments_json:
+            try:
+                attachments = json.loads(attachments_json)
+                with open("debug_form.log", "a", encoding="utf-8") as f:
+                    f.write(f"DEBUG: parsed attachments = {attachments}\n")
+                for att in attachments:
+                    att_type = att.get("attachment_type") or att.get("type")
+                    if att_type:
+                        attachment = ValveAttachment(
+                            valve_id=valve.id,
+                            type=att_type,
+                            名称=att.get("name") or att.get("名称", ""),
+                            设备等级=att.get("device_grade") or att.get("设备等级", ""),
+                            型号规格=att.get("model") or att.get("型号规格", ""),
+                            生产厂家=att.get("manufacturer") or att.get("生产厂家", ""),
+                        )
+                        db.session.add(attachment)
+                db.session.commit()
+            except json.JSONDecodeError as e:
+                with open("debug_form.log", "a", encoding="utf-8") as f:
+                    f.write(f"DEBUG: JSON decode error: {e}\n")
 
         ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
         db.session.commit()
@@ -534,8 +567,59 @@ def edit_valve(ledger_id, id):
 
     if request.method == "POST":
         for key in request.form:
+            if key == "attachments":
+                continue
             if hasattr(valve, key):
                 setattr(valve, key, request.form.get(key))
+
+        attachments_json = request.form.get("attachments")
+        if attachments_json:
+            try:
+                attachments = json.loads(attachments_json)
+                existing_ids = {att.id for att in valve.attachments}
+                submitted_ids = set()
+                for att in attachments:
+                    att_type = att.get("attachment_type") or att.get("type")
+                    if not att_type:
+                        continue
+                    att_id = att.get("id")
+                    if att_id:
+                        attachment = ValveAttachment.query.filter(
+                            ValveAttachment.id == att_id,
+                            ValveAttachment.valve_id == valve.id,
+                        ).first()
+                        if attachment:
+                            attachment.type = att_type
+                            attachment.名称 = att.get("name") or att.get("名称", "")
+                            attachment.设备等级 = att.get("device_grade") or att.get(
+                                "设备等级", ""
+                            )
+                            attachment.型号规格 = att.get("model") or att.get(
+                                "型号规格", ""
+                            )
+                            attachment.生产厂家 = att.get("manufacturer") or att.get(
+                                "生产厂家", ""
+                            )
+                            submitted_ids.add(att_id)
+                    else:
+                        attachment = ValveAttachment(
+                            valve_id=valve.id,
+                            type=att_type,
+                            名称=att.get("name") or att.get("名称", ""),
+                            设备等级=att.get("device_grade") or att.get("设备等级", ""),
+                            型号规格=att.get("model") or att.get("型号规格", ""),
+                            生产厂家=att.get("manufacturer") or att.get("生产厂家", ""),
+                        )
+                        db.session.add(attachment)
+                for att_id in existing_ids - submitted_ids:
+                    attachment = ValveAttachment.query.filter(
+                        ValveAttachment.id == att_id,
+                        ValveAttachment.valve_id == valve.id,
+                    ).first()
+                    if attachment:
+                        db.session.delete(attachment)
+            except json.JSONDecodeError:
+                pass
 
         db.session.commit()
         flash("更新成功")
@@ -624,10 +708,15 @@ def batch_save_valve(id):
             db.session.add(valve)
 
         for key, value in form_data.items():
+            if key == "ledger_id":
+                continue
             if hasattr(valve, key):
                 setattr(valve, key, value)
 
-        saved_ids.append(valve.id)
+        db.session.flush()
+
+        if valve.id:
+            saved_ids.append(valve.id)
 
     try:
         db.session.commit()

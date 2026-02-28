@@ -8,9 +8,10 @@ from flask import (
     jsonify,
 )
 from flask_login import login_required, current_user
-from app.models import db, Valve, ApprovalLog, Ledger
+from app.models import db, Valve, ApprovalLog, Ledger, ValveAttachment
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
+import json
 
 from app.routes.valves.permissions import (
     can_edit_valve,
@@ -25,6 +26,8 @@ from app.routes.valves.forms import (
     process_attachments_create,
     process_attachments_update,
     set_valve_status_after_submit,
+    parse_attachments_data,
+    create_attachment_from_data,
 )
 
 valves = Blueprint("valves", __name__)
@@ -76,43 +79,54 @@ def detail(id):
 @login_required
 def new():
     if request.method == "POST":
-        位号 = request.form.get("位号")
-        if 位号:
-            existing = Valve.query.filter(
-                Valve.位号 == 位号, Valve.status != "draft"
-            ).first()
-            if existing:
-                flash("位号已存在，请使用其他位号")
-                return redirect(url_for("valves.new"))
+        valve_id = request.form.get("valve_id")
 
-        valve = Valve()
-        populate_valve_from_form(valve, request.form)
-        valve.created_by = current_user.id
-        valve.status = "draft"
-
-        try:
-            db.session.add(valve)
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            draft = Valve.query.filter(
-                Valve.位号 == 位号,
-                Valve.status == "draft",
-                Valve.created_by == current_user.id,
-            ).first()
-            if draft:
-                db.session.delete(draft)
+        if valve_id:
+            valve = Valve.query.get(valve_id)
+            if valve and can_edit_valve(valve):
+                populate_valve_from_form(valve, request.form)
                 db.session.commit()
-                try:
-                    db.session.add(valve)
-                    db.session.commit()
-                except IntegrityError:
-                    db.session.rollback()
+            else:
+                flash("台账不存在或无权编辑")
+                return redirect(url_for("valves.new"))
+        else:
+            位号 = request.form.get("位号")
+            if 位号:
+                existing = Valve.query.filter(
+                    Valve.位号 == 位号, Valve.status != "draft"
+                ).first()
+                if existing:
                     flash("位号已存在，请使用其他位号")
                     return redirect(url_for("valves.new"))
-            else:
-                flash("位号已存在，请使用其他位号")
-                return redirect(url_for("valves.new"))
+
+            valve = Valve()
+            populate_valve_from_form(valve, request.form)
+            valve.created_by = current_user.id
+            valve.status = "draft"
+
+            try:
+                db.session.add(valve)
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                draft = Valve.query.filter(
+                    Valve.位号 == 位号,
+                    Valve.status == "draft",
+                    Valve.created_by == current_user.id,
+                ).first()
+                if draft:
+                    db.session.delete(draft)
+                    db.session.commit()
+                    try:
+                        db.session.add(valve)
+                        db.session.commit()
+                    except IntegrityError:
+                        db.session.rollback()
+                        flash("位号已存在，请使用其他位号")
+                        return redirect(url_for("valves.new"))
+                else:
+                    flash("位号已存在，请使用其他位号")
+                    return redirect(url_for("valves.new"))
 
         log = ApprovalLog(valve_id=valve.id, action="submit", user_id=current_user.id)
         db.session.add(log)
@@ -121,7 +135,10 @@ def new():
         log.action = action
         db.session.commit()
 
-        process_attachments_create(db, valve.id, request.form.get("attachments"))
+        if valve_id:
+            process_attachments_update(db, valve, request.form.get("attachments"))
+        else:
+            process_attachments_create(db, valve.id, request.form.get("attachments"))
         db.session.commit()
 
         flash("提交成功")
@@ -138,6 +155,7 @@ def save_draft():
         return jsonify({"success": False, "message": "无效数据"})
 
     valve_id = data.get("valve_id")
+    ledger_id = data.get("ledger_id")
 
     if valve_id:
         valve = Valve.query.get(valve_id)
@@ -146,14 +164,88 @@ def save_draft():
         if not can_edit_valve(valve):
             return jsonify({"success": False, "message": "无权编辑"})
     else:
-        valve = Valve()
-        valve.created_by = current_user.id
-        valve.status = "draft"
-        db.session.add(valve)
+        if ledger_id:
+            valve = Valve.query.filter_by(
+                ledger_id=ledger_id, status="draft", created_by=current_user.id
+            ).first()
+            if not valve:
+                valve = Valve()
+                valve.created_by = current_user.id
+                valve.status = "draft"
+                valve.ledger_id = ledger_id
+                db.session.add(valve)
+                db.session.flush()
+        else:
+            valve = Valve()
+            valve.created_by = current_user.id
+            valve.status = "draft"
+            db.session.add(valve)
+            db.session.flush()
 
     for key, value in data.get("formData", {}).items():
+        if key == "ledger_id":
+            continue
         if hasattr(valve, key):
             setattr(valve, key, value)
+
+    db.session.flush()
+
+    attachments_json = data.get("attachments")
+    if attachments_json:
+        try:
+            attachments = json.loads(attachments_json)
+            existing_ids = {att.id for att in valve.attachments}
+            submitted_ids = set()
+            for att in attachments:
+                att_type = att.get("attachment_type") or att.get("type")
+                if not att_type:
+                    continue
+                att_id = att.get("id")
+                if att_id:
+                    attachment = ValveAttachment.query.filter(
+                        ValveAttachment.id == att_id,
+                        ValveAttachment.valve_id == valve.id,
+                    ).first()
+                    if attachment:
+                        attachment.type = att_type
+                        attachment.名称 = att.get("name") or att.get("名称", "")
+                        attachment.设备等级 = att.get("device_grade") or att.get(
+                            "设备等级", ""
+                        )
+                        attachment.型号规格 = att.get("model") or att.get(
+                            "型号规格", ""
+                        )
+                        attachment.生产厂家 = att.get("manufacturer") or att.get(
+                            "生产厂家", ""
+                        )
+                        submitted_ids.add(att_id)
+                else:
+                    att_type = att.get("attachment_type") or att.get("type")
+                    att_name = att.get("name") or att.get("名称", "")
+                    att_grade = att.get("device_grade") or att.get("设备等级", "")
+                    att_model = att.get("model") or att.get("型号规格", "")
+                    att_manufacturer = att.get("manufacturer") or att.get(
+                        "生产厂家", ""
+                    )
+                    if att_type:
+                        attachment = ValveAttachment(
+                            valve_id=valve.id,
+                            type=att_type,
+                            名称=att_name,
+                            设备等级=att_grade,
+                            型号规格=att_model,
+                            生产厂家=att_manufacturer,
+                        )
+                        db.session.add(attachment)
+            for att_id in existing_ids - submitted_ids:
+                attachment = ValveAttachment.query.filter(
+                    ValveAttachment.id == att_id,
+                    ValveAttachment.valve_id == valve.id,
+                ).first()
+                if attachment:
+                    db.session.delete(attachment)
+        except json.JSONDecodeError:
+            pass
 
     db.session.commit()
     return jsonify({"success": True, "valve_id": valve.id})

@@ -129,6 +129,8 @@ def populate_valve_from_form(valve, form_data):
     for key in form_data:
         if key == "attachments":
             continue
+        if key == "ledger_id":
+            continue
         if hasattr(valve, key):
             setattr(valve, key, form_data.get(key))
 
@@ -145,15 +147,15 @@ def parse_attachments_data(attachments_json):
 
 def create_attachment_from_data(valve_id, att_data):
     """从数据字典创建附件对象"""
-    if not att_data.get("type"):
+    if not att_data.get("type") and not att_data.get("attachment_type"):
         return None
     return ValveAttachment(
         valve_id=valve_id,
-        type=att_data.get("type"),
-        名称=att_data.get("名称", ""),
-        设备等级=att_data.get("设备等级", ""),
-        型号规格=att_data.get("型号规格", ""),
-        生产厂家=att_data.get("生产厂家", ""),
+        type=att_data.get("type") or att_data.get("attachment_type"),
+        名称=att_data.get("名称") or att_data.get("name", ""),
+        设备等级=att_data.get("设备等级") or att_data.get("device_grade", ""),
+        型号规格=att_data.get("型号规格") or att_data.get("model", ""),
+        生产厂家=att_data.get("生产厂家") or att_data.get("manufacturer", ""),
     )
 
 
@@ -176,7 +178,8 @@ def process_attachments_update(db, valve, attachments_json):
     submitted_ids = set()
 
     for att in attachments:
-        if not att.get("type"):
+        att_type = att.get("type") or att.get("attachment_type")
+        if not att_type:
             continue
         att_id = att.get("id")
         if att_id:
@@ -185,11 +188,11 @@ def process_attachments_update(db, valve, attachments_json):
                 ValveAttachment.valve_id == valve.id,
             ).first()
             if attachment:
-                attachment.type = att.get("type")
-                attachment.名称 = att.get("名称", "")
-                attachment.设备等级 = att.get("设备等级", "")
-                attachment.型号规格 = att.get("型号规格", "")
-                attachment.生产厂家 = att.get("生产厂家", "")
+                attachment.type = att_type
+                attachment.名称 = att.get("名称") or att.get("name", "")
+                attachment.设备等级 = att.get("设备等级") or att.get("device_grade", "")
+                attachment.型号规格 = att.get("型号规格") or att.get("model", "")
+                attachment.生产厂家 = att.get("生产厂家") or att.get("manufacturer", "")
                 submitted_ids.add(att_id)
         else:
             attachment = create_attachment_from_data(valve.id, att)

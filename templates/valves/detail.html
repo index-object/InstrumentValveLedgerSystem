@@ -366,6 +366,10 @@
     </div>
 </div>
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
+{% endblock %}
+
 <style>
 .detail-header {
     display: flex;

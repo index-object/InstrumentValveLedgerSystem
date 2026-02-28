@@ -3,41 +3,8 @@
 {% block page_title %}首页{% endblock %}
 
 {% block extra_css %}
-<style>
-    .main-body-index { padding-top: 16px !important; }
-    
-    .welcome-section {
-        padding: 20px 0 28px;
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        margin: -24px -32px 32px;
-        padding: 24px 32px 32px;
-        border-bottom: 1px solid var(--border-color);
-    }
-    
-    .welcome-section .user-avatar-small {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 22px;
-        font-weight: 600;
-        box-shadow: 0 4px 12px rgba(30,58,95,0.3);
-    }
-    
-    .stats-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        margin-bottom: 32px;
-    }
-    .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px 24px;
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
         box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         border: 1px solid #e5e7eb;
         display: flex;

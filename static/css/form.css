@@ -1,0 +1,95 @@
+.form-page-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    color: white;
+    padding: 32px;
+    border-radius: var(--radius-md);
+    margin-bottom: 24px;
+}
+.form-page-header h2 { margin: 0; font-size: 24px; font-weight: 600; }
+.form-page-header p { margin: 8px 0 0; opacity: 0.85; font-size: 14px; }
+
+.step-wizard {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding: 0 40px;
+    position: relative;
+}
+.step-wizard::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 60px;
+    right: 60px;
+    height: 3px;
+    background: #e5e7eb;
+    z-index: 0;
+}
+.step-wizard-progress {
+    position: absolute;
+    top: 20px;
+    left: 60px;
+    height: 3px;
+    background: var(--primary-color);
+    z-index: 1;
+    transition: width 0.3s ease;
+}
+.step-item {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    flex: 1;
+}
+.step-item .step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #9ca3af;
+    transition: all 0.3s ease;
+}
+.step-item.active .step-number,
+.step-item.completed .step-number {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: #fff;
+}
+.step-item .step-label {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #9ca3af;
+    text-align: center;
+}
+.step-item.active .step-label,
+.step-item.completed .step-label {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.form-step {
+    display: none;
+}
+.form-step.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.step-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+}
