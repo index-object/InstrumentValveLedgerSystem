@@ -98,10 +98,28 @@
                             <a href="{{ url_for('ledgers.detail', id=ledger.id, from='mine') }}" class="btn-action" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px;">
                                 <i class="bi bi-eye"></i><span>查看</span>
                             </a>
-                            {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+{% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
                             <a href="{{ url_for('ledgers.edit', id=ledger.id, from='mine') }}" class="btn-action" style="background: rgba(56,178,172,0.15); color: var(--accent-color); border: 1px solid rgba(56,178,172,0.3); border-radius: 6px;">
                                 <i class="bi bi-pencil"></i><span>编辑</span>
                             </a>
+                            {% if ledger.display_status != 'approved' %}
+                            {% if ledger.draft_count > 0 %}
+                            <form method="post" action="{{ url_for('ledgers.submit', id=ledger.id, from='mine') }}" style="display:inline;" onsubmit="return handleListFormSubmit(this)">
+                                <button type="submit" class="btn-action" style="background: var(--primary-color); color: white; border: 1px solid var(--primary-color); border-radius: 6px;">
+                                    <i class="bi bi-send"></i><span>提交</span>
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                            {% if current_user.role in ['leader', 'admin'] %}
+                            {% if ledger.display_status == 'pending' %}
+                            <form method="post" action="{{ url_for('ledgers.approve', id=ledger.id, from='mine') }}" style="display:inline;" onsubmit="return handleListFormSubmit(this)">
+                                <button type="submit" class="btn-action" style="background: #10b981; color: white; border: 1px solid #10b981; border-radius: 6px;">
+                                    <i class="bi bi-check-lg"></i><span>审批</span>
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
                             {% endif %}
                         </div>
                     </td>
@@ -114,11 +132,12 @@
                             <p>暂无台账合集</p>
                             <a href="{{ url_for('ledgers.new', from='mine') }}" class="btn-new">创建第一个合集</a>
                         </div>
-                    </td>
+</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+<script src="{{ url_for('static', filename='js/ledgers-list.js') }}"></script>
 {% endblock %}
