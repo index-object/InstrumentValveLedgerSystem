@@ -405,7 +405,7 @@ def submit(id):
     db.session.commit()
 
     flash(f"已提交 {len(submit_valves)} 项台账内容审批")
-    return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
+    return redirect(get_back_url(from_param))
 
 
 @ledgers.route("/ledger/<int:id>/approve", methods=["POST"])
@@ -436,7 +436,7 @@ def approve(id):
     db.session.commit()
 
     flash(f"已审批通过，共 {len(pending_valves)} 项台账内容")
-    return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
+    return redirect(get_back_url(from_param))
 
 
 @ledgers.route("/ledger/<int:id>/reject", methods=["POST"])
