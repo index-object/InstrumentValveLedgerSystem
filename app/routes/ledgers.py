@@ -81,13 +81,9 @@ def list():
 
     status = request.args.get("status")
     if status:
-        if current_user.role in ["leader", "admin"]:
-            query = query.filter(Ledger.status == status)
-        else:
-            query = query.filter(Ledger.approved_snapshot_status == status)
+        query = query.filter(Ledger.approved_snapshot_status == status)
     else:
-        if current_user.role == "employee":
-            query = query.filter(Ledger.approved_snapshot_status == "approved")
+        query = query.filter(Ledger.approved_snapshot_status == "approved")
 
     ledgers_list = query.order_by(Ledger.created_at.desc()).all()
 
@@ -106,27 +102,7 @@ def list():
             ledger_id=ledger.id, status="draft"
         ).count()
 
-        is_owner = ledger.created_by == current_user.id or current_user.role in [
-            "leader",
-            "admin",
-        ]
-
-        if is_owner:
-            if ledger.pending_count > 0:
-                ledger.display_status = "pending"
-            elif ledger.rejected_count > 0:
-                ledger.display_status = "rejected"
-            elif (
-                ledger.approved_count > 0
-                and ledger.approved_count == ledger.valve_count
-            ):
-                ledger.display_status = "approved"
-            elif ledger.valve_count > 0:
-                ledger.display_status = "draft"
-            else:
-                ledger.display_status = "draft"
-        else:
-            ledger.display_status = ledger.approved_snapshot_status or "draft"
+        ledger.display_status = ledger.approved_snapshot_status or "draft"
 
     return render_template("ledgers/list.html", ledgers=ledgers_list)
 
