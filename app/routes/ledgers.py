@@ -83,7 +83,16 @@ def list():
     if status:
         query = query.filter(Ledger.approved_snapshot_status == status)
     else:
-        query = query.filter(Ledger.approved_snapshot_status == "approved")
+        if current_user.role in ["leader", "admin"]:
+            query = query.filter(
+                or_(
+                    Ledger.approved_snapshot_status == "approved",
+                    Ledger.status == "pending",
+                    Ledger.status == "rejected",
+                )
+            )
+        else:
+            query = query.filter(Ledger.approved_snapshot_status == "approved")
 
     ledgers_list = query.order_by(Ledger.created_at.desc()).all()
 
