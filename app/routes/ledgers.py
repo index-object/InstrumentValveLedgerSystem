@@ -254,10 +254,8 @@ def detail(id):
 
     query = Valve.query.filter_by(ledger_id=id)
 
-    if current_user.role == "employee":
-        query = query.filter(
-            (Valve.created_by == current_user.id) | (Valve.status == "approved")
-        )
+    if from_param != "mine" and ledger.created_by != current_user.id:
+        query = query.filter(Valve.status == "approved")
 
     search = request.args.get("search")
     if search:
