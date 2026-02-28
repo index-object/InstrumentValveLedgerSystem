@@ -272,20 +272,12 @@ def edit(id):
                 return redirect(url_for("valves.edit", id=id))
 
         populate_valve_from_form(valve, request.form)
-        valve.status = "draft"
 
         process_attachments_update(db, valve, request.form.get("attachments"))
         db.session.commit()
 
-        log = ApprovalLog(valve_id=valve.id, action="submit", user_id=current_user.id)
-        db.session.add(log)
-
-        action = set_valve_status_after_submit(valve, current_user.id)
-        log.action = action
-        db.session.commit()
-
-        flash("提交成功")
-        return redirect(url_for("valves.list"))
+        flash("保存成功")
+        return redirect(url_for("valves.detail", id=id))
 
     return render_template("valves/form.html", valve=valve)
 

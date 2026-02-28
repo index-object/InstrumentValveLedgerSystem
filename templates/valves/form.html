@@ -324,7 +324,7 @@
             </button>
             <div class="d-flex gap-3">
                 <button type="submit" class="btn-submit">
-                    <i class="bi bi-check-circle"></i> {% if ledger %}保存{% else %}提交审批{% endif %}
+                    <i class="bi bi-check-circle"></i> {% if valve %}保存{% elif ledger %}保存{% else %}提交审批{% endif %}
                 </button>
                 <a href="{{ url_for('ledgers.detail', id=ledger.id, from=from_param) if ledger else url_for('valves.list') }}" class="btn-back">
                     <i class="bi bi-x-circle"></i> 取消
@@ -381,7 +381,7 @@
 </template>
 
 <script>
-window.existingAttachments = {{ (valve.attachments|tojson if valve and valve.attachments else '[]')|safe }};
+window.existingAttachments = {{ (valve.attachments_json|tojson if valve and valve.attachments else '[]')|safe }};
 window.excludeValveId = {{ valve.id|tojson if valve else 'null'|tojson }};
 window.checkTagUrl = "{{ url_for('valves.check_tag') }}";
 window.saveDraftUrl = "{{ url_for('valves.save_draft') }}";

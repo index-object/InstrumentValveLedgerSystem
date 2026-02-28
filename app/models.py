@@ -112,6 +112,20 @@ class Valve(db.Model):
     creator = db.relationship("User", foreign_keys=[created_by])
     approver = db.relationship("User", foreign_keys=[approved_by])
 
+    @property
+    def attachments_json(self):
+        return [
+            {
+                "id": att.id,
+                "attachment_type": att.type,
+                "name": att.名称,
+                "device_grade": att.设备等级,
+                "model": att.型号规格,
+                "manufacturer": att.生产厂家,
+            }
+            for att in self.attachments
+        ]
+
 
 class ValvePhoto(db.Model):
     __tablename__ = "valve_photos"
