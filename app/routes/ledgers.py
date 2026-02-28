@@ -608,6 +608,10 @@ def edit_valve(ledger_id, id):
             if hasattr(valve, key):
                 setattr(valve, key, request.form.get(key))
 
+        if valve.status == "approved":
+            valve.status = "draft"
+            update_ledger_status(ledger)
+
         attachments_json = request.form.get("attachments")
         if attachments_json:
             try:
@@ -723,6 +727,8 @@ def batch_save_valve(id):
     saved_ids = []
     errors = []
 
+    approved_to_draft = False
+
     for item in data:
         valve_id = item.get("id")
         form_data = item.get("data", {})
@@ -733,9 +739,13 @@ def batch_save_valve(id):
                 errors.append({"id": valve_id, "error": "台账不存在"})
                 continue
 
-            if valve.status not in ["draft", "rejected"]:
+            if valve.status not in ["draft", "rejected", "approved"]:
                 errors.append({"id": valve_id, "error": "当前状态无法编辑"})
                 continue
+
+            if valve.status == "approved":
+                valve.status = "draft"
+                approved_to_draft = True
         else:
             valve = Valve()
             valve.ledger_id = id
@@ -756,6 +766,9 @@ def batch_save_valve(id):
 
     try:
         db.session.commit()
+
+        if approved_to_draft:
+            update_ledger_status(ledger)
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
