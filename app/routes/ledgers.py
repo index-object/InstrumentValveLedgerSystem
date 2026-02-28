@@ -137,6 +137,15 @@ def detail(id):
         flash("无权访问")
         return redirect(url_for("ledgers.list"))
 
+    is_owner = ledger.created_by == current_user.id or current_user.role in [
+        "leader",
+        "admin",
+    ]
+
+    if from_param != "mine" and not is_owner:
+        flash("无权访问")
+        return redirect(url_for("ledgers.list"))
+
     ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
     ledger.pending_count = Valve.query.filter_by(ledger_id=id, status="pending").count()
     ledger.rejected_count = Valve.query.filter_by(
@@ -147,12 +156,9 @@ def detail(id):
     ).count()
     ledger.draft_count = Valve.query.filter_by(ledger_id=id, status="draft").count()
 
-    ledger.is_owner = ledger.created_by == current_user.id or current_user.role in [
-        "leader",
-        "admin",
-    ]
+    ledger.is_owner = is_owner
 
-    if ledger.is_owner:
+    if from_param == "mine" or ledger.approved_snapshot_status == "approved":
         if ledger.pending_count > 0:
             ledger.display_status = "pending"
         elif ledger.rejected_count > 0:
