@@ -4,6 +4,7 @@
 <span style="display: flex; align-items: center; gap: 8px;">
     <i class="bi bi-check-circle-fill" style="color: #10b981;"></i>
     审批中心
+    <span class="page-tag"><i class="bi bi-shield-check"></i> 管理</span>
 </span>
 {% endblock %}
 
@@ -13,16 +14,19 @@
 
 {% block header_actions %}
 <div class="toolbar">
-    <div class="search-filter">
-        <a href="{{ url_for('approvals.index', tab='pending') }}" class="btn-tab {% if tab=='pending' %}active{% endif %}">
-            <span class="badge-count">{{ pending_count }}</span>
-            待审批
+    <div class="tab-switcher">
+        <a href="{{ url_for('approvals.index', tab='pending') }}" class="tab-item {% if tab=='pending' %}active{% endif %}">
+            <span class="tab-badge {% if pending_count > 0 %}has-count{% endif %}">{{ pending_count }}</span>
+            <i class="bi bi-clock"></i>
+            <span>待审批</span>
         </a>
-        <a href="{{ url_for('approvals.index', tab='approved') }}" class="btn-tab {% if tab=='approved' %}active{% endif %}">
-            已审批
+        <a href="{{ url_for('approvals.index', tab='approved') }}" class="tab-item {% if tab=='approved' %}active{% endif %}">
+            <i class="bi bi-check-circle"></i>
+            <span>已审批</span>
         </a>
-        <a href="{{ url_for('approvals.index', tab='rejected') }}" class="btn-tab {% if tab=='rejected' %}active{% endif %}">
-            已驳回
+        <a href="{{ url_for('approvals.index', tab='rejected') }}" class="tab-item {% if tab=='rejected' %}active{% endif %}">
+            <i class="bi bi-x-circle"></i>
+            <span>已驳回</span>
         </a>
     </div>
 </div>
@@ -30,56 +34,93 @@
 
 {% block content %}
 <style>
-.btn-tab {
-    padding: 8px 16px;
-    border-radius: 6px;
-    color: #6b7280;
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.2s;
-    display: inline-flex;
+.tab-switcher {
+    display: flex;
+    gap: 4px;
+    background: #f8fafc;
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.tab-item {
+    display: flex;
     align-items: center;
     gap: 6px;
-}
-.btn-tab:hover {
-    background: #f3f4f6;
-    color: #374151;
-}
-.btn-tab.active {
-    background: #ecfdf5;
-    color: #059669;
-    border: 1px solid #a7f3d0;
-}
-.badge-count {
-    background: #ef4444;
-    color: white;
-    font-size: 12px;
-    padding: 2px 6px;
-    border-radius: 10px;
-    min-width: 18px;
-    text-align: center;
-}
-.badge-status {
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 14px;
     font-weight: 500;
+    transition: all 0.2s ease;
 }
-.badge-pending {
-    background: #fef3c7;
-    color: #d97706;
+
+.tab-item:hover {
+    background: #f1f5f9;
+    color: #334155;
 }
-.badge-approved {
-    background: #d1fae5;
-    color: #059669;
+
+.tab-item.active {
+    background: white;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-.badge-rejected {
+
+.tab-badge {
+    background: #e2e8f0;
+    color: #64748b;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    min-width: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.tab-badge.has-count {
     background: #fee2e2;
     color: #dc2626;
+    animation: pulse 2s infinite;
 }
-.badge-draft {
-    background: #f3f4f6;
-    color: #6b7280;
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.empty-state i {
+    font-size: 64px;
+    color: #cbd5e1;
+    margin-bottom: 16px;
+}
+
+.empty-state p {
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.empty-state .empty-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-state .empty-icon i {
+    font-size: 32px;
+    color: #94a3b8;
+    margin-bottom: 0;
 }
 </style>
 
@@ -89,8 +130,10 @@
             <table class="modern-table">
                 <thead>
                     <tr>
-                        <th style="width: 5%;">
-                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        <th style="width: 50px;">
+                            {% if tab == 'pending' and ledgers %}
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="cursor: pointer;">
+                            {% endif %}
                         </th>
                         <th style="width: 25%;">合集名称</th>
                         <th style="width: 10%;">台账总数</th>
@@ -106,9 +149,7 @@
                     <tr>
                         <td>
                             {% if tab == 'pending' %}
-                            <input type="checkbox" name="ledger_ids" value="{{ ledger.id }}" class="ledger-checkbox">
-                            {% else %}
-                            <input type="checkbox" disabled title="该合集无待审批项">
+                            <input type="checkbox" name="ledger_ids" value="{{ ledger.id }}" class="ledger-checkbox" style="cursor: pointer;">
                             {% endif %}
                         </td>
                         <td>
@@ -138,18 +179,34 @@
                             <span class="text-muted">-</span>
                             {% endif %}
                         </td>
-                        <td>{{ ledger.creator.real_name if ledger.creator else '-' }}</td>
                         <td>
-                            <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-action btn-view">
-                                <i class="bi bi-eye"></i> 查看
-                            </a>
+                            {% if ledger.creator %}
+                            {% set color_index = ledger.creator.id % 8 %}
+                            <div class="table-creator creator-color-{{ color_index }}">
+                                <span class="avatar">{{ (ledger.creator.real_name or ledger.creator.username)[0]|upper }}</span>
+                                <span>{{ ledger.creator.real_name or ledger.creator.username }}</span>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-action" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px;">
+                                    <i class="bi bi-eye"></i><span>查看</span>
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-5">
-                            <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3;"></i>
-                            <p class="mt-2">暂无数据</p>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-icon">
+                                    <i class="bi bi-inbox"></i>
+                                </div>
+                                <p>暂无{% if tab == 'pending' %}待审批{% elif tab == 'approved' %}已审批{% elif tab == 'rejected' %}已驳回{% endif %}的台账合集</p>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -158,14 +215,19 @@
         </div>
 
         {% if ledgers and tab == 'pending' %}
-        <div class="table-footer">
-            <div class="footer-left">
-                <button type="button" class="btn btn-success" onclick="showApproveModal()">
-                    <i class="bi bi-check-circle"></i> 批量审批
-                </button>
-                <button type="button" class="btn btn-danger" onclick="showRejectModal()">
-                    <i class="bi bi-x-circle"></i> 批量驳回
-                </button>
+        <div class="table-footer" style="padding: 16px 20px; border-top: 1px solid var(--border-color); background: #f8fafc;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted" style="font-size: 13px;">
+                    已选择 <span id="selectedCount">0</span> 项
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success btn-action-custom" onclick="showApproveModal()" style="background: #10b981; border-color: #10b981;">
+                        <i class="bi bi-check-lg"></i> 批量审批
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="showRejectModal()" style="background: #ef4444; border-color: #ef4444;">
+                        <i class="bi bi-x-lg"></i> 批量驳回
+                    </button>
+                </div>
             </div>
         </div>
         {% endif %}
@@ -174,22 +236,29 @@
 
 <!-- 审批确认弹窗 -->
 <div class="modal fade" id="approveModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">批量审批确认</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 20px 24px;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 40px; height: 40px; background: #d1fae5; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-check-lg" style="color: #059669; font-size: 20px;"></i>
+                    </div>
+                    <h5 class="modal-title" style="font-size: 18px; font-weight: 600; color: #1e293b; margin: 0;">批量审批确认</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="opacity: 0.5;"></button>
             </div>
-            <div class="modal-body">
-                <p>确认审批选中的台账合集？</p>
-                <div class="mb-3">
-                    <label class="form-label">审批意见（可选）</label>
-                    <textarea name="comment" class="form-control" rows="3" placeholder="请输入审批意见..."></textarea>
+            <div class="modal-body" style="padding: 24px;">
+                <p style="color: #475569; margin-bottom: 20px;">确认审批选中的台账合集？审批后数据将对所有用户可见。</p>
+                <div>
+                    <label class="form-label" style="font-weight: 500; color: #374151; margin-bottom: 8px;">审批意见（可选）</label>
+                    <textarea name="comment" class="form-control" rows="3" placeholder="请输入审批意见..." style="border-radius: 8px; border-color: #e2e8f0; padding: 12px;"></textarea>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="submit" form="approvalForm" formaction="{{ url_for('approvals.batch_approve') }}" class="btn btn-success">确认审批</button>
+            <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 24px; gap: 12px;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="background: #f1f5f9; border: none; color: #475569; padding: 10px 20px; border-radius: 8px;">取消</button>
+                <button type="submit" form="approvalForm" formaction="{{ url_for('approvals.batch_approve') }}" class="btn btn-success" style="background: #10b981; border: none; padding: 10px 24px; border-radius: 8px;">
+                    <i class="bi bi-check-lg"></i> 确认审批
+                </button>
             </div>
         </div>
     </div>
@@ -197,22 +266,29 @@
 
 <!-- 驳回确认弹窗 -->
 <div class="modal fade" id="rejectModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">批量驳回确认</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 20px 24px;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 40px; height: 40px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-x-lg" style="color: #dc2626; font-size: 20px;"></i>
+                    </div>
+                    <h5 class="modal-title" style="font-size: 18px; font-weight: 600; color: #1e293b; margin: 0;">批量驳回确认</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="opacity: 0.5;"></button>
             </div>
-            <div class="modal-body">
-                <p>确认驳回选中的台账合集？</p>
-                <div class="mb-3">
-                    <label class="form-label">驳回原因（必填）</label>
-                    <textarea name="comment" class="form-control" rows="3" placeholder="请输入驳回原因..." required></textarea>
+            <div class="modal-body" style="padding: 24px;">
+                <p style="color: #475569; margin-bottom: 20px;">确认驳回选中的台账合集？驳回后创建者将收到通知。</p>
+                <div>
+                    <label class="form-label" style="font-weight: 500; color: #374151; margin-bottom: 8px;">驳回原因（必填）</label>
+                    <textarea name="comment" class="form-control" rows="3" placeholder="请输入驳回原因..." required style="border-radius: 8px; border-color: #e2e8f0; padding: 12px;"></textarea>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="submit" form="approvalForm" formaction="{{ url_for('approvals.batch_reject') }}" class="btn btn-danger">确认驳回</button>
+            <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 24px; gap: 12px;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="background: #f1f5f9; border: none; color: #475569; padding: 10px 20px; border-radius: 8px;">取消</button>
+                <button type="submit" form="approvalForm" formaction="{{ url_for('approvals.batch_reject') }}" class="btn btn-danger" style="background: #ef4444; border: none; padding: 10px 24px; border-radius: 8px;">
+                    <i class="bi bi-x-lg"></i> 确认驳回
+                </button>
             </div>
         </div>
     </div>
@@ -223,6 +299,19 @@ function toggleSelectAll() {
     const selectAll = document.getElementById('selectAll');
     const checkboxes = document.querySelectorAll('.ledger-checkbox');
     checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateSelectedCount();
+}
+
+document.querySelectorAll('.ledger-checkbox').forEach(cb => {
+    cb.addEventListener('change', updateSelectedCount);
+});
+
+function updateSelectedCount() {
+    const checked = document.querySelectorAll('.ledger-checkbox:checked');
+    const countEl = document.getElementById('selectedCount');
+    if (countEl) {
+        countEl.textContent = checked.length;
+    }
 }
 
 function showApproveModal() {
