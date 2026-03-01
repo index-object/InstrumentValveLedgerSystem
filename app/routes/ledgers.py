@@ -273,7 +273,13 @@ def detail(id):
         and ledger.created_by != current_user.id
         and current_user.role == "employee"
     ):
-        query = query.filter(Valve.status == "approved")
+        if ledger.approved_snapshot_at:
+            query = query.filter(
+                Valve.status == "approved",
+                Valve.approved_at <= ledger.approved_snapshot_at,
+            )
+        else:
+            query = query.filter(Valve.status == "approved")
 
     search = request.args.get("search")
     if search:
