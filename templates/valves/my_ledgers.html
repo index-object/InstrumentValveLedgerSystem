@@ -111,15 +111,6 @@
                             </form>
                             {% endif %}
                             {% endif %}
-                            {% if current_user.role in ['leader', 'admin'] %}
-                            {% if ledger.display_status == 'pending' %}
-                            <form method="post" action="{{ url_for('ledgers.approve', id=ledger.id, from='mine') }}" style="display:inline;" onsubmit="return handleListFormSubmit(this)">
-                                <button type="submit" class="btn-action" style="background: #10b981; color: white; border: 1px solid #10b981; border-radius: 6px;">
-                                    <i class="bi bi-check-lg"></i><span>审批</span>
-                                </button>
-                            </form>
-                            {% endif %}
-                            {% endif %}
                             {% endif %}
                         </div>
                     </td>

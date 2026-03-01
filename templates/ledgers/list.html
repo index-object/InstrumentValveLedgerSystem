@@ -41,12 +41,10 @@
         <table class="modern-table">
             <thead>
                 <tr>
-                    <th style="width: 25%;">合集名称</th>
-                    <th style="width: 10%;">台账</th>
-                    <th style="width: 10%;">待审批</th>
-                    <th style="width: 10%;">状态</th>
-                    <th style="width: 15%;">创建人</th>
-                    <th style="width: 15%;">创建时间</th>
+                    <th style="width: 30%;">合集名称</th>
+                    <th style="width: 15%;">台账</th>
+                    <th style="width: 20%;">创建人</th>
+                    <th style="width: 20%;">创建时间</th>
                     <th style="width: 15%;">操作</th>
                 </tr>
             </thead>
@@ -58,23 +56,27 @@
                             <i class="bi bi-folder2 folder-icon" style="color: #3b82f6;"></i>{{ ledger.名称 }}
                         </a>
                     </td>
-                    <td><span style="font-weight: 600; color: var(--text-dark);">{{ ledger.valve_count }}</span> 条</td>
                     <td>
-                        {% if ledger.pending_count > 0 %}
-                        <span class="badge-status badge-pending">{{ ledger.pending_count }}</span>
+                        {% if ledger.valve_count >= 500 %}
+                        <span class="table-creator" style="background: #fee2e2; color: #991b1b; font-weight: 600;">
+                            <span style="background: #ef4444; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: white;">{{ ledger.valve_count }}</span>
+                        </span>
+                        {% elif ledger.valve_count >= 200 %}
+                        <span class="table-creator" style="background: #ffedd5; color: #9a3412; font-weight: 600;">
+                            <span style="background: #f97316; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: white;">{{ ledger.valve_count }}</span>
+                        </span>
+                        {% elif ledger.valve_count >= 100 %}
+                        <span class="table-creator" style="background: #fef3c7; color: #92400e; font-weight: 600;">
+                            <span style="background: #f59e0b; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: white;">{{ ledger.valve_count }}</span>
+                        </span>
+                        {% elif ledger.valve_count >= 50 %}
+                        <span class="table-creator" style="background: #d1fae5; color: #065f46; font-weight: 600;">
+                            <span style="background: #10b981; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: white;">{{ ledger.valve_count }}</span>
+                        </span>
                         {% else %}
-                        <span class="text-muted">-</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if ledger.display_status == 'approved' %}
-                        <span class="badge-status badge-approved">已审批</span>
-                        {% elif ledger.display_status == 'pending' %}
-                        <span class="badge-status badge-pending">待审批</span>
-                        {% elif ledger.display_status == 'rejected' %}
-                        <span class="badge-status badge-rejected">已驳回</span>
-                        {% else %}
-                        <span class="badge-status badge-draft">草稿</span>
+                        <span class="table-creator" style="background: #dbeafe; color: #1e40af; font-weight: 600;">
+                            <span style="background: #3b82f6; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: white;">{{ ledger.valve_count }}</span>
+                        </span>
                         {% endif %}
                     </td>
                     <td>
@@ -95,21 +97,12 @@
                                 <i class="bi bi-pencil"></i><span>编辑</span>
                             </a>
                             {% endif %}
-                            {% if current_user.role in ['leader', 'admin'] %}
-                            {% if ledger.display_status == 'pending' %}
-                            <form method="post" action="{{ url_for('ledgers.approve', id=ledger.id) }}" style="display:inline;" onsubmit="return handleListFormSubmit(this)">
-                                <button type="submit" class="btn-action" style="background: #10b981; color: white; border: 1px solid #10b981; border-radius: 6px;">
-                                    <i class="bi bi-check-lg"></i><span>审批</span>
-                                </button>
-                            </form>
-                            {% endif %}
-                            {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7">
+                    <td colspan="5">
                         <div class="empty-state">
                             <i class="bi bi-inbox"></i>
                             <p>暂无台账合集</p>
