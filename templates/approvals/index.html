@@ -190,11 +190,9 @@
                                     <i class="bi bi-eye"></i><span>查看</span>
                                 </a>
                                 {% if tab == 'pending' and ledger.pending_count > 0 %}
-                                <form method="post" action="{{ url_for('approvals.single_approve', id=ledger.id) }}" style="display:inline;" onsubmit="return confirm('确认审批该台账合集？')">
-                                    <button type="submit" class="btn-action" style="background: #10b981; color: white; border: 1px solid #10b981; border-radius: 6px;">
-                                        <i class="bi bi-check-lg"></i><span>审批</span>
-                                    </button>
-                                </form>
+                                <a href="javascript:void(0)" class="btn-action" style="background: #10b981; color: white; border: 1px solid #10b981; border-radius: 6px;" onclick="if(confirm('确认审批该台账合集？')){fetch('{{ url_for('approvals.single_approve', id=ledger.id) }}',{method:'POST'}).then(()=>window.location.reload());}">
+                                    <i class="bi bi-check-lg"></i><span>审批</span>
+                                </a>
                                 {% endif %}
                             </div>
                         </td>
