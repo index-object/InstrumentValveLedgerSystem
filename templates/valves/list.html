@@ -53,14 +53,6 @@
                 </div>
                 <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
                 {% if ledger %}
-                {% if current_user.role in ['leader', 'admin'] and ledger.display_status == 'pending' %}
-                <button type="button" class="btn btn-sm btn-success" style="padding: 4px 12px; font-size: 12px;" onclick="submitBatchAction('batch_approve')">
-                    <i class="bi bi-check-lg"></i> 批量审批
-                </button>
-                <button type="button" class="btn btn-sm btn-danger" style="padding: 4px 12px; font-size: 12px;" onclick="submitBatchAction('batch_reject')">
-                    <i class="bi bi-x-lg"></i> 批量驳回
-                </button>
-                {% endif %}
                 <div class="d-flex align-items-center gap-1">
                     {% if (ledger.created_by == current_user.id or current_user.role in ['leader', 'admin']) and ledger.display_status != 'pending' %}
                     <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=from_param) }}" class="btn btn-sm btn-primary" style="padding: 4px 12px; font-size: 12px;" title="新增台账">
@@ -100,9 +92,6 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="#" onclick="batchExport()"><i class="bi bi-download"></i> 导出选中</a></li>
-                        {% if current_user.role in ['leader', 'admin'] %}
-                        <li><a class="dropdown-item" href="#" onclick="batchApprove()"><i class="bi bi-check-lg"></i> 批量审批</a></li>
-                        {% endif %}
                     </ul>
                 </div>
                 {% endif %}
