@@ -142,3 +142,42 @@ def batch_reject():
 
     flash(f"已驳回 {rejected_count} 项台账内容")
     return redirect(url_for("approvals.index"))
+
+
+@approvals.route("/approvals/<int:id>/approve", methods=["POST"])
+@login_required
+@require_leader
+def single_approve(id):
+    ledger = Ledger.query.get_or_404(id)
+    comment = request.form.get("comment", "")
+
+    pending_valves = Valve.query.filter_by(ledger_id=id, status="pending").all()
+
+    for valve in pending_valves:
+        valve.status = "approved"
+        valve.approved_by = current_user.id
+        valve.approved_at = datetime.utcnow()
+
+        log = ApprovalLog(
+            ledger_id=ledger.id,
+            valve_id=valve.id,
+            action="approve",
+            user_id=current_user.id,
+            comment=comment,
+        )
+        db.session.add(log)
+
+    total = Valve.query.filter_by(ledger_id=id).count()
+    approved = Valve.query.filter_by(ledger_id=id, status="approved").count()
+
+    if approved == total and total > 0:
+        ledger.status = "approved"
+        ledger.approved_snapshot_status = "approved"
+        ledger.approved_snapshot_at = datetime.utcnow()
+    elif approved > 0:
+        ledger.status = "approved"
+
+    db.session.commit()
+
+    flash(f"已审批台账合集：{ledger.名称}")
+    return redirect(url_for("approvals.index"))
