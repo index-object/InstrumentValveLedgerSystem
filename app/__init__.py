@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from config import Config
 from app.models import db, User, Valve
 from flask_login import LoginManager, current_user
@@ -16,6 +16,10 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+    @app.route("/uploads/<path:filename>")
+    def serve_upload(filename):
+        return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
     db.init_app(app)
     login_manager.init_app(app)

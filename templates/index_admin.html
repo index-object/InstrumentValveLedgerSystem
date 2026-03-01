@@ -136,6 +136,16 @@
             </div>
         </a>
         
+        <a href="{{ url_for('approvals.index') }}" class="stat-card success">
+            <div class="stat-icon success">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <div class="stat-content">
+                <h3>审批中心</h3>
+                <p><span class="stat-value">{{ pending }}</span> 项待审批</p>
+            </div>
+        </a>
+        
         <div class="stat-card purple" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#userStatsModal">
             <div class="stat-icon purple">
                 <i class="bi bi-people-fill"></i>

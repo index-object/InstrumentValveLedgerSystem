@@ -311,8 +311,8 @@
                         {% if valve.photos %}
                             {% for photo in valve.photos %}
                             <div class="photo-item">
-                                <a href="{{ url_for('static', filename='uploads/' + photo.filename) }}" target="_blank" class="photo-link">
-                                    <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" alt="{{ photo.description or '设备照片' }}">
+<a href="{{ '/uploads/' + photo.filename }}" target="_blank" class="photo-link">
+                                    <img src="{{ '/uploads/' + photo.filename }}" alt="{{ photo.description or '设备照片' }}">
                                 </a>
                                 <div class="photo-caption">{{ photo.description or '无描述' }}</div>
                             </div>
