@@ -323,65 +323,14 @@ def batch_delete():
 @login_required
 @require_leader
 def batch_approve():
-    ids = request.form.getlist("ids")
-    if not ids:
-        flash("请选择要审批的记录")
-        return redirect(url_for("valves.approvals"))
-
-    count = 0
-    for id in ids:
-        valve = Valve.query.get(int(id))
-        if valve and valve.status == "pending":
-            valve.status = "approved"
-            valve.approved_by = current_user.id
-            valve.approved_at = datetime.utcnow()
-
-            log = ApprovalLog(
-                valve_id=valve.id,
-                action="approve",
-                user_id=current_user.id,
-                comment=request.form.get("comment", ""),
-            )
-            db.session.add(log)
-            count += 1
-            if valve.ledger_id:
-                ledger = Ledger.query.get(valve.ledger_id)
-                if ledger:
-                    update_ledger_status(ledger)
-
-    db.session.commit()
-    flash(f"成功审批 {count} 条记录")
-    return redirect(url_for("valves.approvals"))
+    return redirect(url_for("approvals.index"))
 
 
 @valves.route("/valves/batch-reject", methods=["POST"])
 @login_required
 @require_leader
 def batch_reject():
-    ids = request.form.getlist("ids")
-    if not ids:
-        flash("请选择要驳回的记录")
-        return redirect(url_for("valves.approvals"))
-
-    comment = request.form.get("comment", "")
-    count = 0
-    for id in ids:
-        valve = Valve.query.get(int(id))
-        if valve and valve.status == "pending":
-            valve.status = "rejected"
-
-            log = ApprovalLog(
-                valve_id=valve.id,
-                action="reject",
-                user_id=current_user.id,
-                comment=comment,
-            )
-            db.session.add(log)
-            count += 1
-
-    db.session.commit()
-    flash(f"成功驳回 {count} 条记录")
-    return redirect(url_for("valves.approvals"))
+    return redirect(url_for("approvals.index"))
 
 
 @valves.route("/my-applications")
@@ -399,63 +348,21 @@ def my_applications():
 @login_required
 @require_leader
 def approvals():
-    status = request.args.get("status", "pending")
-    status_map = {
-        "pending": "pending",
-        "approved": "approved",
-        "rejected": "rejected",
-    }
-    valves_list = Valve.query.filter_by(status=status_map.get(status, "pending")).all()
-
-    return render_template(
-        "valves/approvals.html", valves=valves_list, current_status=status
-    )
+    return redirect(url_for("approvals.index"))
 
 
 @valves.route("/valve/approve/<int:id>", methods=["POST"])
 @login_required
 @require_leader
 def approve(id):
-    valve = Valve.query.get_or_404(id)
-    valve.status = "approved"
-    valve.approved_by = current_user.id
-    valve.approved_at = datetime.utcnow()
-
-    log = ApprovalLog(
-        valve_id=valve.id,
-        action="approve",
-        user_id=current_user.id,
-        comment=request.form.get("comment", ""),
-    )
-    db.session.add(log)
-    if valve.ledger_id:
-        ledger = Ledger.query.get(valve.ledger_id)
-        if ledger:
-            update_ledger_status(ledger)
-    db.session.commit()
-
-    flash("审批通过")
-    return redirect(url_for("valves.approvals"))
+    return redirect(url_for("approvals.index"))
 
 
 @valves.route("/valve/reject/<int:id>", methods=["POST"])
 @login_required
 @require_leader
 def reject(id):
-    valve = Valve.query.get_or_404(id)
-    valve.status = "rejected"
-
-    log = ApprovalLog(
-        valve_id=valve.id,
-        action="reject",
-        user_id=current_user.id,
-        comment=request.form.get("comment", ""),
-    )
-    db.session.add(log)
-    db.session.commit()
-
-    flash("已驳回")
-    return redirect(url_for("valves.approvals"))
+    return redirect(url_for("approvals.index"))
 
 
 from app.routes.valves.exports import register_export_routes
