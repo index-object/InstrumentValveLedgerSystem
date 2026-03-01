@@ -617,6 +617,9 @@ def edit_valve(ledger_id, id):
         if valve.status == "approved":
             valve.status = "draft"
             update_ledger_status(ledger)
+        elif valve.status == "rejected":
+            valve.status = "draft"
+            update_ledger_status(ledger)
 
         attachments_json = request.form.get("attachments")
         if attachments_json:
