@@ -111,7 +111,10 @@ def list():
             ledger_id=ledger.id, status="draft"
         ).count()
 
-        ledger.display_status = ledger.approved_snapshot_status or "draft"
+        if ledger.approved_snapshot_status:
+            ledger.display_status = ledger.approved_snapshot_status
+        else:
+            ledger.display_status = ledger.status
 
     return render_template("ledgers/list.html", ledgers=ledgers_list)
 
