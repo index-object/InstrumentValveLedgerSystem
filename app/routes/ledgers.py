@@ -205,6 +205,8 @@ def detail(id):
                 )
                 db.session.add(log)
             db.session.commit()
+            update_ledger_status(ledger)
+            db.session.commit()
             flash(f"已提交 {len(draft_valves)} 项台账内容审批")
             return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
@@ -431,6 +433,8 @@ def submit(id):
         )
         db.session.add(log)
 
+    db.session.commit()
+    update_ledger_status(ledger)
     db.session.commit()
 
     flash(f"已提交 {len(submit_valves)} 项台账内容审批")
