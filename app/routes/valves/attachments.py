@@ -250,6 +250,8 @@ def my_ledgers():
         else:
             ledger.display_status = "draft"
 
+        ledger.can_edit = True
+
     return render_template("valves/my_ledgers.html", ledgers=ledgers_list)
 
 

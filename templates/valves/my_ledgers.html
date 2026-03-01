@@ -13,35 +13,48 @@
 {% endblock %}
 
 {% block header_actions %}
-<div class="toolbar">
-    <div class="search-filter">
-        <div class="search-box">
-            <i class="bi bi-search"></i>
-            <input type="text" name="search" class="form-control form-control-modern" 
-                   placeholder="搜索合集名称..." value="{{ request.args.get('search', '') }}">
-        </div>
-        <select name="status" class="filter-select">
-            <option value="">全部状态</option>
-            <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
-            <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
-            <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
-            <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
-        </select>
-        <button type="submit" class="btn btn-primary-custom" style="height: 40px; padding: 0 16px;"><i class="bi bi-search"></i></button>
-    </div>
-    <a href="{{ url_for('ledgers.new', from='mine') }}" class="btn-new">
-        <i class="bi bi-plus-circle-fill"></i> 新建合集
-    </a>
-</div>
 {% endblock %}
 
 {% block content %}
+<div class="list-toolbar" data-batch-submit-url="{{ url_for('ledgers.batch_submit_ledgers') }}" data-batch-delete-url="{{ url_for('ledgers.batch_delete_ledgers') }}">
+    <div class="toolbar-left">
+        <button type="button" class="btn-toolbar btn-submit" onclick="batchSubmit()">
+            <i class="bi bi-send"></i> 批量提交
+        </button>
+        <button type="button" class="btn-toolbar btn-delete" onclick="batchDelete()">
+            <i class="bi bi-trash"></i> 批量删除
+        </button>
+        <a href="{{ url_for('ledgers.new', from='mine') }}" class="btn-toolbar btn-new">
+            <i class="bi bi-plus-circle-fill"></i> 新建合集
+        </a>
+    </div>
+    <div class="toolbar-right">
+        <div class="search-filter">
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" class="form-control form-control-modern" 
+                       placeholder="搜索合集名称..." value="{{ request.args.get('search', '') }}">
+            </div>
+            <select name="status" class="filter-select">
+                <option value="">全部状态</option>
+                <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
+                <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
+                <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
+                <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
+            </select>
+            <button type="submit" class="btn btn-primary-custom" style="height: 40px; padding: 0 16px;"><i class="bi bi-search"></i></button>
+        </div>
+    </div>
+</div>
 <div class="modern-card">
     <div class="table-responsive">
         <table class="modern-table">
             <thead>
                 <tr>
-                    <th style="width: 22%;">合集名称</th>
+                    <th style="width: 5%;">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                    </th>
+                    <th style="width: 17%;">合集名称</th>
                     <th style="9%;">台账</th>
                     <th style="9%;">待审批</th>
                     <th style="9%;">已通过</th>
@@ -53,7 +66,10 @@
             </thead>
             <tbody>
                 {% for ledger in ledgers %}
-                <tr>
+                <tr data-ledger-id="{{ ledger.id }}" data-can-edit="{% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}true{% else %}false{% endif %}">
+                    <td>
+                        <input type="checkbox" class="ledger-checkbox" value="{{ ledger.id }}" onchange="updateSelectedCount()">
+                    </td>
                     <td>
                         <a href="{{ url_for('ledgers.detail', id=ledger.id, from='mine') }}" class="ledger-name-link">
                             <i class="bi bi-folder2-open folder-icon" style="color: #10b981;"></i>{{ ledger.名称 }}
@@ -117,7 +133,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="8">
+                    <td colspan="9">
                         <div class="empty-state">
                             <i class="bi bi-inbox"></i>
                             <p>暂无台账合集</p>

@@ -821,3 +821,93 @@ def batch_delete_valve(id):
     db.session.commit()
     flash(f"成功删除 {deleted_count} 项台账")
     return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
+
+
+@ledgers.route("/ledgers/batch-delete", methods=["POST"])
+@login_required
+def batch_delete_ledgers():
+    """批量删除台账合集"""
+    ledger_ids = request.form.getlist("ledger_ids")
+    if not ledger_ids:
+        flash("请选择要删除的合集")
+        return redirect(url_for("valves.my_ledgers"))
+
+    deleted_count = 0
+    failed_ledgers = []
+
+    for ledger_id in ledger_ids:
+        ledger = Ledger.query.get(int(ledger_id))
+        if not ledger:
+            continue
+
+        if not can_edit_ledger(ledger):
+            failed_ledgers.append(ledger.名称)
+            continue
+
+        pending_count = Valve.query.filter_by(
+            ledger_id=ledger.id, status="pending"
+        ).count()
+        if pending_count > 0:
+            failed_ledgers.append(f"{ledger.名称}(有待审批记录)")
+            continue
+
+        Valve.query.filter_by(ledger_id=ledger.id).delete()
+        db.session.delete(ledger)
+        deleted_count += 1
+
+    db.session.commit()
+
+    if failed_ledgers:
+        flash(f"部分合集删除失败: {', '.join(failed_ledgers)}")
+    if deleted_count > 0:
+        flash(f"成功删除 {deleted_count} 个合集")
+
+    return redirect(url_for("valves.my_ledgers"))
+
+
+@ledgers.route("/ledgers/batch-submit", methods=["POST"])
+@login_required
+def batch_submit_ledgers():
+    """批量提交合集中的草稿内容审批"""
+    ledger_ids = request.form.getlist("ledger_ids")
+    if not ledger_ids:
+        flash("请选择要提交的合集")
+        return redirect(url_for("valves.my_ledgers"))
+
+    submitted_count = 0
+    failed_ledgers = []
+
+    for ledger_id in ledger_ids:
+        ledger = Ledger.query.get(int(ledger_id))
+        if not ledger:
+            continue
+
+        if not can_edit_ledger(ledger):
+            failed_ledgers.append(ledger.名称)
+            continue
+
+        draft_valves = Valve.query.filter_by(ledger_id=ledger.id, status="draft").all()
+        if not draft_valves:
+            continue
+
+        for valve in draft_valves:
+            valve.status = "pending"
+            log = ApprovalLog(
+                ledger_id=ledger.id,
+                valve_id=valve.id,
+                action="submit",
+                user_id=current_user.id,
+            )
+            db.session.add(log)
+
+        update_ledger_status(ledger)
+        submitted_count += 1
+
+    db.session.commit()
+
+    if failed_ledgers:
+        flash(f"部分合集提交失败: {', '.join(failed_ledgers)}")
+    if submitted_count > 0:
+        flash(f"成功提交 {submitted_count} 个合集的草稿内容审批")
+
+    return redirect(url_for("valves.my_ledgers"))
