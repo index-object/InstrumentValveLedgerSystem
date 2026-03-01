@@ -12,28 +12,16 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/ledgers-list.css') }}">
 {% endblock %}
 
-{% block header_actions %}
-<div class="toolbar">
-    <div class="tab-switcher">
-        <a href="{{ url_for('approvals.index', tab='pending') }}" class="tab-item {% if tab=='pending' %}active{% endif %}">
-            <span class="tab-badge {% if pending_count > 0 %}has-count{% endif %}">{{ pending_count }}</span>
-            <i class="bi bi-clock"></i>
-            <span>待审批</span>
-        </a>
-        <a href="{{ url_for('approvals.index', tab='approved') }}" class="tab-item {% if tab=='approved' %}active{% endif %}">
-            <i class="bi bi-check-circle"></i>
-            <span>已审批</span>
-        </a>
-        <a href="{{ url_for('approvals.index', tab='rejected') }}" class="tab-item {% if tab=='rejected' %}active{% endif %}">
-            <i class="bi bi-x-circle"></i>
-            <span>已驳回</span>
-        </a>
-    </div>
-</div>
-{% endblock %}
-
 {% block content %}
 <style>
+.tab-container {
+    background: white;
+    padding: 16px 20px;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 0;
+}
+
 .tab-switcher {
     display: flex;
     gap: 4px;
@@ -47,12 +35,12 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 16px;
+    padding: 10px 20px;
     border-radius: 8px;
     color: #64748b;
     text-decoration: none;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     transition: all 0.2s ease;
 }
 
@@ -64,46 +52,24 @@
 .tab-item.active {
     background: white;
     color: #0f172a;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
 }
 
 .tab-badge {
-    background: #e2e8f0;
-    color: #64748b;
-    font-size: 11px;
-    padding: 2px 6px;
-    border-radius: 8px;
-    min-width: 20px;
+    background: #ef4444;
+    color: white;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    min-width: 22px;
     text-align: center;
-    font-weight: 600;
-}
-
-.tab-badge.has-count {
-    background: #fee2e2;
-    color: #dc2626;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    font-weight: 700;
 }
 
 .empty-state {
     padding: 60px 20px;
     text-align: center;
-}
-
-.empty-state i {
-    font-size: 64px;
-    color: #cbd5e1;
-    margin-bottom: 16px;
-}
-
-.empty-state p {
-    color: #94a3b8;
-    font-size: 14px;
-    margin-bottom: 20px;
 }
 
 .empty-state .empty-icon {
@@ -122,9 +88,37 @@
     color: #94a3b8;
     margin-bottom: 0;
 }
+
+.empty-state p {
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
 </style>
 
-<div class="modern-card">
+<div class="modern-card" style="margin-bottom: 0; border-radius: 12px 12px 0 0;">
+    <div class="tab-container">
+        <div class="tab-switcher">
+            <a href="{{ url_for('approvals.index', tab='pending') }}" class="tab-item {% if tab=='pending' %}active{% endif %}">
+                <i class="bi bi-clock"></i>
+                <span>待审批</span>
+                {% if pending_count > 0 %}
+                <span class="tab-badge">{{ pending_count }}</span>
+                {% endif %}
+            </a>
+            <a href="{{ url_for('approvals.index', tab='approved') }}" class="tab-item {% if tab=='approved' %}active{% endif %}">
+                <i class="bi bi-check-circle"></i>
+                <span>已审批</span>
+            </a>
+            <a href="{{ url_for('approvals.index', tab='rejected') }}" class="tab-item {% if tab=='rejected' %}active{% endif %}">
+                <i class="bi bi-x-circle"></i>
+                <span>已驳回</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="modern-card" style="margin-top: 0; border-radius: 0 0 12px 12px; border-top: none;">
     <form method="POST" id="approvalForm">
         <div class="table-responsive">
             <table class="modern-table">
