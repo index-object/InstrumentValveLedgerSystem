@@ -319,20 +319,6 @@ def batch_delete():
     return redirect(url_for("valves.list"))
 
 
-@valves.route("/valves/batch-approve", methods=["POST"])
-@login_required
-@require_leader
-def batch_approve():
-    return redirect(url_for("approvals.index"))
-
-
-@valves.route("/valves/batch-reject", methods=["POST"])
-@login_required
-@require_leader
-def batch_reject():
-    return redirect(url_for("approvals.index"))
-
-
 @valves.route("/my-applications")
 @login_required
 def my_applications():
@@ -342,27 +328,6 @@ def my_applications():
         .all()
     )
     return render_template("valves/my_applications.html", valves=my_valves)
-
-
-@valves.route("/approvals")
-@login_required
-@require_leader
-def approvals():
-    return redirect(url_for("approvals.index"))
-
-
-@valves.route("/valve/approve/<int:id>", methods=["POST"])
-@login_required
-@require_leader
-def approve(id):
-    return redirect(url_for("approvals.index"))
-
-
-@valves.route("/valve/reject/<int:id>", methods=["POST"])
-@login_required
-@require_leader
-def reject(id):
-    return redirect(url_for("approvals.index"))
 
 
 from app.routes.valves.exports import register_export_routes
