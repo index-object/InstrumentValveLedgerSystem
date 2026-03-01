@@ -12,6 +12,7 @@ approvals = Blueprint("approvals", __name__)
 @require_leader
 def index():
     tab = request.args.get("tab", "pending")
+    pending_count = Valve.query.filter_by(status="pending").count()
 
     if tab == "pending":
         ledgers = (
@@ -39,6 +40,7 @@ def index():
         ledgers = []
 
     for ledger in ledgers:
+        ledger.valve_count = Valve.query.filter_by(ledger_id=ledger.id).count()
         ledger.pending_count = Valve.query.filter_by(
             ledger_id=ledger.id, status="pending"
         ).count()
@@ -52,7 +54,9 @@ def index():
             ledger_id=ledger.id, status="draft"
         ).count()
 
-    return render_template("approvals/index.html", ledgers=ledgers, tab=tab)
+    return render_template(
+        "approvals/index.html", ledgers=ledgers, tab=tab, pending_count=pending_count
+    )
 
 
 @approvals.route("/approvals/batch-approve", methods=["POST"])
