@@ -147,7 +147,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="ledger-name-link">
+                            <a href="{{ url_for('ledgers.detail', id=ledger.id, from='approvals') }}" class="ledger-name-link">
                                 <i class="bi bi-folder2 folder-icon" style="color: #3b82f6;"></i>{{ ledger.名称 }}
                             </a>
                         </td>
@@ -186,7 +186,7 @@
                         </td>
                         <td>
                             <div class="action-btns">
-                                <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-action" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px;">
+                                <a href="{{ url_for('ledgers.detail', id=ledger.id, from='approvals') }}" class="btn-action" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px;">
                                     <i class="bi bi-eye"></i><span>查看</span>
                                 </a>
                                 {% if tab == 'pending' and ledger.pending_count > 0 %}

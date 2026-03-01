@@ -9,6 +9,8 @@
     {% endif %}
     {% if from_param == 'mine' %}
     <a href="{{ url_for('ledgers.detail', id=valve.ledger_id) }}?from=mine" class="btn" style="background: #e2e8f0; color: #475569;"><i class="bi bi-arrow-left"></i> 返回</a>
+    {% elif from_param == 'approvals' %}
+    <a href="{{ url_for('ledgers.detail', id=valve.ledger_id) }}?from=approvals" class="btn" style="background: #e2e8f0; color: #475569;"><i class="bi bi-arrow-left"></i> 返回</a>
     {% else %}
     <a href="{{ url_for('ledgers.detail', id=valve.ledger_id) }}" class="btn" style="background: #e2e8f0; color: #475569;"><i class="bi bi-arrow-left"></i> 返回</a>
     {% endif %}

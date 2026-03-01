@@ -25,6 +25,8 @@ ledgers = Blueprint("ledgers", __name__)
 def get_back_url(from_param):
     if from_param == "mine":
         return url_for("valves.my_ledgers")
+    elif from_param == "approvals":
+        return url_for("approvals.index")
     return url_for("ledgers.list")
 
 

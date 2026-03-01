@@ -12,6 +12,10 @@
     <a href="{{ url_for('valves.my_ledgers') }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> 返回
     </a>
+    {% elif from_param == 'approvals' %}
+    <a href="{{ url_for('approvals.index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回
+    </a>
     {% else %}
     <a href="{{ url_for('ledgers.list') }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> 返回
