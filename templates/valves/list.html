@@ -258,7 +258,6 @@ window.filterOptions = {{ filter_options | tojson | safe }};
 window.activeFilters = {{ active_filters | tojson | safe }};
 window.batchDeleteUrl = "{{ url_for('valves.batch_delete') }}";
 window.batchExportUrl = "{{ url_for('valves.export_data') }}";
-window.batchApproveUrl = "{{ url_for('valves.batch_approve') }}";
 </script>
 <script src="{{ url_for('static', filename='js/list.js') }}"></script>
 {% endblock %}
