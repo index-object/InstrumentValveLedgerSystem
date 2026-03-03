@@ -85,16 +85,7 @@ def list():
     if status:
         query = query.filter(Ledger.approved_snapshot_status == status)
     else:
-        if current_user.role in ["leader", "admin"]:
-            query = query.filter(
-                or_(
-                    Ledger.approved_snapshot_status == "approved",
-                    Ledger.status == "pending",
-                    Ledger.status == "rejected",
-                )
-            )
-        else:
-            query = query.filter(Ledger.approved_snapshot_status == "approved")
+        query = query.filter(Ledger.approved_snapshot_status == "approved")
 
     ledgers_list = query.order_by(Ledger.created_at.desc()).all()
 
@@ -270,11 +261,7 @@ def detail(id):
 
     query = Valve.query.filter_by(ledger_id=id)
 
-    if (
-        from_param != "mine"
-        and ledger.created_by != current_user.id
-        and current_user.role == "employee"
-    ):
+    if from_param != "mine":
         if ledger.approved_snapshot_at:
             query = query.filter(
                 Valve.status == "approved",
