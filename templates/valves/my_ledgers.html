@@ -29,7 +29,7 @@
         </a>
     </div>
     <div class="toolbar-right">
-        <div class="search-filter">
+        <form method="get" class="search-filter">
             <div class="search-box">
                 <i class="bi bi-search"></i>
                 <input type="text" name="search" class="form-control form-control-modern" 
@@ -43,7 +43,7 @@
                 <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
             </select>
             <button type="submit" class="btn btn-primary-custom" style="height: 40px; padding: 0 16px;"><i class="bi bi-search"></i></button>
-        </div>
+        </form>
     </div>
 </div>
 <div class="modern-card">

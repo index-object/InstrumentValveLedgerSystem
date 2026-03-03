@@ -261,7 +261,9 @@ def detail(id):
 
     query = Valve.query.filter_by(ledger_id=id)
 
-    if from_param != "mine":
+    status_filter = request.args.get("status")
+
+    if from_param != "mine" and not status_filter:
         if ledger.approved_snapshot_at:
             query = query.filter(
                 Valve.status == "approved",
