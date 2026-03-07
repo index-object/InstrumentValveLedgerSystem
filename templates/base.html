@@ -56,9 +56,15 @@
     </div>
     <div class="main-content">
         <div class="toast-container" id="toastContainer"></div>
-        <div class="main-header">
-            <h1 class="page-title">{% block page_title %}仪表阀门台账系统{% endblock %}</h1>
+<div class="main-header">
+            <div style="display: flex; align-items: center; flex: 1;">
+                {% block back_btn %}{% endblock %}
+                <h1 class="page-title">{% block page_title %}仪表阀门台账系统{% endblock %}</h1>
+            </div>
             <div class="header-actions">{% block header_actions %}{% endblock %}</div>
+        </div>
+        <div class="toolbar-wrapper">
+            {% block toolbar %}{% endblock %}
         </div>
         <div class="main-body">
             {% with messages = get_flashed_messages(with_categories=true) %}
