@@ -6,18 +6,20 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
 {% endblock %}
 
-{% block header_actions %}
+{% block back_btn %}
 {% set from_param = from_param|default('all') %}
 {% if ledger %}
-<a href="{{ url_for('ledgers.detail', id=ledger.id, from=from_param) }}" class="btn-back">
+<a href="{{ url_for('ledgers.detail', id=ledger.id, from=from_param) }}" class="btn-back-header">
     <i class="bi bi-arrow-left"></i> 返回
 </a>
 {% else %}
-<a href="{{ url_for('valves.list') }}" class="btn-back">
+<a href="{{ url_for('valves.list') }}" class="btn-back-header">
     <i class="bi bi-arrow-left"></i> 返回列表
 </a>
 {% endif %}
 {% endblock %}
+
+{% block header_actions %}{% endblock %}
 
 {% block content %}
 <div class="form-page-header">

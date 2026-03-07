@@ -12,29 +12,39 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/ledgers-list.css') }}">
 {% endblock %}
 
-{% block header_actions %}
-<form method="get" class="toolbar-form">
-<div class="toolbar">
-    <div class="search-filter">
-        <div class="search-box">
-            <i class="bi bi-search"></i>
-            <input type="text" name="search" class="form-control form-control-modern" 
-                   placeholder="搜索合集名称..." value="{{ request.args.get('search', '') }}">
+{% block back_btn %}{% endblock %}
+
+{% block header_actions %}{% endblock %}
+
+{% block toolbar %}
+<div class="table-toolbar-card">
+    <div class="table-toolbar">
+        <div class="toolbar-left">
+            <a href="{{ url_for('ledgers.new') }}" class="toolbar-btn toolbar-btn-primary">
+                <i class="bi bi-plus-circle-fill"></i> 新建合集
+            </a>
         </div>
-        <select name="status" class="filter-select">
-            <option value="">全部状态</option>
-            <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
-            <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
-            <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
-            <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
-        </select>
-        <button type="submit" class="btn btn-primary-custom" style="height: 40px; padding: 0 16px;"><i class="bi bi-search"></i></button>
+        <div class="toolbar-right">
+            <form method="get" class="d-flex gap-2 align-items-center">
+                <div class="toolbar-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" class="form-control form-control-modern" 
+                           placeholder="搜索合集名称..." value="{{ request.args.get('search', '') }}">
+                </div>
+                <select name="status" class="form-control form-control-modern toolbar-filter">
+                    <option value="">全部状态</option>
+                    <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
+                    <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
+                    <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
+                    <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
+                </select>
+                <button type="submit" class="toolbar-btn toolbar-btn-primary">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+        </div>
     </div>
-    <a href="{{ url_for('ledgers.new') }}" class="btn-new">
-        <i class="bi bi-plus-circle-fill"></i> 新建合集
-    </a>
 </div>
-</form>
 {% endblock %}
 
 {% block content %}

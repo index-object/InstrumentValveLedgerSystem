@@ -2,32 +2,50 @@
 
 {% block page_title %}维护记录列表{% endblock %}
 
-{% block header_actions %}
-<form method="get" class="d-flex gap-2">
-    <select name="valve_id" class="form-control form-control-modern" style="width: 180px;" onchange="this.form.submit()">
-        <option value="">全部位号</option>
-        {% for v in valves %}
-        <option value="{{ v.id }}" {% if request.args.get('valve_id')|int == v.id %}selected{% endif %}>{{ v.位号 }}</option>
-        {% endfor %}
-    </select>
-    <div class="search-box">
-        <i class="bi bi-search"></i>
-        <input type="text" name="search" class="form-control form-control-modern" placeholder="搜索检修内容..." value="{{ request.args.get('search', '') }}">
+{% block back_btn %}
+<a href="{{ url_for('main.index') }}" class="btn-back-header">
+    <i class="bi bi-arrow-left"></i> 返回
+</a>
+{% endblock %}
+
+{% block header_actions %}{% endblock %}
+
+{% block toolbar %}
+<div class="table-toolbar-card">
+    <div class="table-toolbar">
+        <div class="toolbar-left">
+            <a href="{{ url_for('valves.maintenance_create') }}" class="toolbar-btn toolbar-btn-primary">
+                <i class="bi bi-plus-lg"></i> 新建
+            </a>
+            <button type="button" class="toolbar-btn toolbar-btn-secondary" onclick="batchExport()">
+                <i class="bi bi-download"></i> 导出选中
+            </button>
+            <button type="button" class="toolbar-btn toolbar-btn-danger" onclick="batchDelete()">
+                <i class="bi bi-trash"></i> 删除选中
+            </button>
+            <a href="{{ url_for('valves.maintenance_export') }}" class="toolbar-btn toolbar-btn-secondary">
+                <i class="bi bi-download"></i> 导出全部
+            </a>
+        </div>
+        <div class="toolbar-right">
+            <form method="get" class="d-flex gap-2 align-items-center">
+                <select name="valve_id" class="form-control form-control-modern toolbar-filter" onchange="this.form.submit()">
+                    <option value="">全部位号</option>
+                    {% for v in valves %}
+                    <option value="{{ v.id }}" {% if request.args.get('valve_id')|int == v.id %}selected{% endif %}>{{ v.位号 }}</option>
+                    {% endfor %}
+                </select>
+                <div class="toolbar-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" class="form-control form-control-modern" 
+                           placeholder="搜索检修内容..." value="{{ request.args.get('search', '') }}">
+                </div>
+                <button type="submit" class="toolbar-btn toolbar-btn-primary">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
-</form>
-<div class="d-flex gap-2">
-    <a href="{{ url_for('valves.maintenance_create') }}" class="btn btn-primary-custom"><i class="bi bi-plus-lg"></i> 新建</a>
-    <div class="btn-group">
-        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            批量操作
-        </button>
-        <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#" onclick="batchExport()"><i class="bi bi-download"></i> 导出选中</a></li>
-            <li><a class="dropdown-item" href="#" onclick="batchDelete()"><i class="bi bi-trash"></i> 删除选中</a></li>
-        </ul>
-    </div>
-    <a href="{{ url_for('valves.maintenance_export') }}" class="btn btn-sm btn-info"><i class="bi bi-download"></i> 导出全部</a>
 </div>
 {% endblock %}
 
