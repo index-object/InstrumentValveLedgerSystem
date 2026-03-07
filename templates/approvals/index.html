@@ -12,6 +12,36 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/ledgers-list.css') }}">
 {% endblock %}
 
+{% block back_btn %}
+<a href="{{ url_for('main.index') }}" class="btn-back-header">
+    <i class="bi bi-arrow-left"></i> 返回
+</a>
+{% endblock %}
+
+{% block header_actions %}{% endblock %}
+
+{% block toolbar %}
+<div class="table-toolbar-card">
+    <div class="table-toolbar">
+        <div class="toolbar-left">
+            {% if ledgers and tab == 'pending' %}
+            <button type="button" class="toolbar-btn toolbar-btn-success" onclick="showApproveModal()">
+                <i class="bi bi-check-lg"></i> 批量审批
+            </button>
+            <button type="button" class="toolbar-btn toolbar-btn-danger" onclick="showRejectModal()">
+                <i class="bi bi-x-lg"></i> 批量驳回
+            </button>
+            {% endif %}
+        </div>
+        <div class="toolbar-right">
+            <span class="text-muted" style="font-size: 13px;">
+                待审批: <strong>{{ pending_count }}</strong> 项
+            </span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
 {% block content %}
 <style>
 .tab-container {

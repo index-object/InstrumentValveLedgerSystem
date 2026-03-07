@@ -1,38 +1,59 @@
 {% extends "valves/list.html" %}
 
-{% block content %}
-<div class="modern-card mb-3">
-    <div class="p-3" style="border-bottom: 1px solid var(--border-color);">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <span class="text-muted">状态：</span>
-                {% if ledger.display_status == 'approved' %}
-                <span class="badge-status badge-approved">已审批</span>
-                {% elif ledger.display_status == 'pending' %}
-                <span class="badge-status badge-pending">待审批</span>
-                {% elif ledger.display_status == 'rejected' %}
-                <span class="badge-status badge-rejected">已驳回</span>
-                {% else %}
-                <span class="badge-status badge-draft">草稿</span>
-                {% endif %}
-                <span class="text-muted ms-3">台账数量：{{ valves|length }}</span>
-                <span class="text-muted ms-3">待审批：{{ ledger.pending_count }}</span>
+{% block back_btn %}
+{% set from_param = from_param|default(request.args.get('from', 'all')) %}
+{% if from_param == 'mine' %}
+<a href="{{ url_for('valves.my_ledgers') }}" class="btn-back-header" title="返回我的台账">
+    <i class="bi bi-arrow-left"></i>
+</a>
+{% elif from_param == 'approvals' %}
+<a href="{{ url_for('approvals.index') }}" class="btn-back-header" title="返回审批中心">
+    <i class="bi bi-arrow-left"></i>
+</a>
+{% else %}
+<a href="{{ url_for('ledgers.list') }}" class="btn-back-header" title="返回台账列表">
+    <i class="bi bi-arrow-left"></i>
+</a>
+{% endif %}
+{% endblock %}
+
+{% block toolbar %}
+{% set from_param = from_param|default(request.args.get('from', 'all')) %}
+<div class="table-toolbar-compact">
+    <div class="table-toolbar">
+        <div class="toolbar-left">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="selectAll">
             </div>
+            <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
             {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
-            <div class="d-flex gap-2">
+                {% if ledger.display_status != 'pending' %}
+                <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=from_param) }}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
+                    <i class="bi bi-plus-lg"></i> 新增台账
+                </a>
+                {% endif %}
                 {% if ledger.display_status != 'approved' and ledger.draft_count > 0 and ledger.display_status != 'pending' %}
                 <form method="post" action="{{ url_for('ledgers.submit', id=ledger.id) }}" style="display:inline;" onsubmit="return handleFormSubmit(this)">
-                    <button type="submit" class="btn btn-primary-custom">
+                    <button type="submit" class="toolbar-btn toolbar-btn-success toolbar-btn-compact">
                         <i class="bi bi-send"></i> 提交审批
                     </button>
                 </form>
                 {% endif %}
-            </div>
             {% endif %}
+        </div>
+        <div class="toolbar-right">
+            <span class="text-muted" style="font-size: 13px;">
+                <i class="bi bi-file-earmark-text"></i> 台账数量：{{ valves|length }}
+                {% if ledger.pending_count > 0 %}
+                <span class="ms-2" style="color: var(--primary-color);"><i class="bi bi-clock"></i> 待审批：{{ ledger.pending_count }}</span>
+                {% endif %}
+            </span>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block content %}
 <form method="post" id="valveForm">
     <input type="hidden" name="action" id="actionInput" value="">
     <input type="hidden" name="comment" id="commentInput" value="">

@@ -2,6 +2,22 @@
 
 {% block page_title %}用户管理{% endblock %}
 
+{% block back_btn %}
+<a href="{{ url_for('admin.index') }}" class="btn-back-header">
+    <i class="bi bi-arrow-left"></i> 返回
+</a>
+{% endblock %}
+
+{% block header_actions %}{% endblock %}
+
+{% block back_btn %}
+<a href="{{ url_for('admin.index') }}" class="btn-back-header">
+    <i class="bi bi-arrow-left"></i> 返回
+</a>
+{% endblock %}
+
+{% block header_actions %}{% endblock %}
+
 {% block content %}
 <div class="modern-card mb-4">
     <div class="card-header-custom"><i class="bi bi-person-plus"></i> 添加用户</div>
