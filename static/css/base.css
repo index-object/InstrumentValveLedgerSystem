@@ -386,3 +386,8 @@ body {
 .pagination-custom .page-item.active .page-link { background: var(--primary-color); border-color: var(--primary-color); }
 .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
 .empty-state i { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.header-title-group {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}

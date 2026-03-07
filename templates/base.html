@@ -52,12 +52,12 @@
                 </div>
             </div>
             <a href="{{ url_for('auth.logout') }}" class="logout-btn"><i class="bi bi-box-arrow-right"></i> 退出登录</a>
-        </div>
+</div>
     </div>
     <div class="main-content">
         <div class="toast-container" id="toastContainer"></div>
-<div class="main-header">
-            <div style="display: flex; align-items: center; flex: 1;">
+        <div class="main-header">
+            <div class="header-title-group">
                 {% block back_btn %}{% endblock %}
                 <h1 class="page-title">{% block page_title %}仪表阀门台账系统{% endblock %}</h1>
             </div>
