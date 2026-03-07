@@ -8,9 +8,26 @@ bp = Blueprint("main", __name__)
 @bp.route("/")
 @login_required
 def index():
-    # 全部台账 - 合集数量和记录总数
-    total_ledgers = Ledger.query.count()
-    total_valves = Valve.query.count()
+    # 全部台账 - 合集数量和记录总数（与 ledgers 页面过滤条件一致）
+    approved_ledgers = Ledger.query.filter(
+        Ledger.approved_snapshot_status == "approved"
+    ).all()
+    total_ledgers = len(approved_ledgers)
+
+    # 统计每个已审批合集在快照时间点之前已审批的阀门数量
+    total_valves = 0
+    for ledger in approved_ledgers:
+        if ledger.approved_snapshot_at:
+            count = Valve.query.filter(
+                Valve.ledger_id == ledger.id,
+                Valve.status == "approved",
+                Valve.approved_at <= ledger.approved_snapshot_at,
+            ).count()
+        else:
+            count = Valve.query.filter(
+                Valve.ledger_id == ledger.id, Valve.status == "approved"
+            ).count()
+        total_valves += count
 
     # 我的台账 - 用户创建的合集和记录数
     my_ledger_count = Ledger.query.filter_by(created_by=current_user.id).count()
