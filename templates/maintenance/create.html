@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block page_title %}新建维护记录{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('valves.maintenance_list') }}" class="btn" style="background: #e2e8f0; color: #475569;"><i class="bi bi-arrow-left"></i> 返回列表</a>
+{% endblock %}
+
+{% block content %}
+<div class="modern-card">
+    <div class="card-header-custom"><i class="bi bi-plus-circle"></i> 新建维护记录</div>
+    <div class="card-body-custom">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 设备位号</label>
+                    <select name="valve_id" class="form-control form-control-modern" required>
+                        <option value="">请选择位号</option>
+                        {% for v in valves %}
+                        <option value="{{ v.id }}">{{ v.位号 }} - {{ v.名称 or '' }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" style="font-weight: 500;">类型</label>
+                    <select name="类型" class="form-control form-control-modern">
+                        <option value="维修">维修</option>
+                        <option value="检定">检定</option>
+                        <option value="保养">保养</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修时间</label>
+                    <input type="datetime-local" name="检修时间" class="form-control form-control-modern" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" style="font-weight: 500;">所属中心</label>
+                    <input type="text" name="所属中心" class="form-control form-control-modern" placeholder="请输入所属中心">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" style="font-weight: 500;">检修人员</label>
+                    <input type="text" name="检修人员" class="form-control form-control-modern" placeholder="请输入检修人员">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" style="font-weight: 500;">检修内容</label>
+                <textarea name="检修内容" class="form-control form-control-modern" rows="4" placeholder="请输入检修内容"></textarea>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary-custom"><i class="bi bi-check-lg"></i> 保存</button>
+                <a href="{{ url_for('valves.maintenance_list') }}" class="btn" style="background: #e2e8f0; color: #475569;">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

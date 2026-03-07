@@ -108,9 +108,88 @@ def maintenance_list():
         page=page, per_page=per_page, error_out=False
     )
 
+    valves = Valve.query.filter(Valve.status != "draft").all()
+
     return render_template(
-        "maintenance/list.html", records=pagination.items, pagination=pagination
+        "maintenance/list.html", records=pagination.items, pagination=pagination, valves=valves
     )
+
+
+def maintenance_create():
+    """新建维护记录"""
+    valves = Valve.query.filter(Valve.status != "draft").order_by(Valve.位号).all()
+
+    if request.method == "POST":
+        valve_id = request.form.get("valve_id")
+        valve = Valve.query.get(valve_id)
+        if not valve:
+            flash("请选择设备位号")
+            return redirect(url_for("valves.maintenance_create"))
+
+        检修时间_str = request.form.get("检修时间")
+        检修时间 = None
+        if 检修时间_str:
+            for fmt in ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S"]:
+                try:
+                    检修时间 = datetime.strptime(检修时间_str, fmt)
+                    break
+                except ValueError:
+                    continue
+
+        record = MaintenanceRecord(
+            valve_id=valve.id,
+            设备位号=valve.位号,
+            设备名称=valve.名称,
+            所属中心=request.form.get("所属中心"),
+            检修时间=检修时间,
+            检修内容=request.form.get("检修内容"),
+            检修人员=request.form.get("检修人员"),
+            类型=request.form.get("类型"),
+            created_by=current_user.id,
+        )
+        db.session.add(record)
+        db.session.commit()
+        flash("添加成功")
+        return redirect(url_for("valves.maintenance_list"))
+
+    return render_template("maintenance/create.html", valves=valves)
+
+
+def maintenance_edit(id):
+    """编辑维护记录"""
+    record = MaintenanceRecord.query.get_or_404(id)
+    valves = Valve.query.filter(Valve.status != "draft").order_by(Valve.位号).all()
+
+    if request.method == "POST":
+        valve_id = request.form.get("valve_id")
+        valve = Valve.query.get(valve_id)
+        if not valve:
+            flash("请选择设备位号")
+            return redirect(url_for("valves.maintenance_edit", id=id))
+
+        检修时间_str = request.form.get("检修时间")
+        检修时间 = None
+        if 检修时间_str:
+            for fmt in ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S"]:
+                try:
+                    检修时间 = datetime.strptime(检修时间_str, fmt)
+                    break
+                except ValueError:
+                    continue
+
+        record.valve_id = valve.id
+        record.设备位号 = valve.位号
+        record.设备名称 = valve.名称
+        record.所属中心 = request.form.get("所属中心")
+        record.检修时间 = 检修时间
+        record.检修内容 = request.form.get("检修内容")
+        record.检修人员 = request.form.get("检修人员")
+        record.类型 = request.form.get("类型")
+        db.session.commit()
+        flash("保存成功")
+        return redirect(url_for("valves.maintenance_list"))
+
+    return render_template("maintenance/edit.html", record=record, valves=valves)
 
 
 def maintenance_batch_delete():
@@ -282,6 +361,8 @@ def register_attachment_routes(bp):
         login_required(maintenance)
     )
     bp.route("/maintenance")(login_required(maintenance_list))
+    bp.route("/maintenance/new", methods=["GET", "POST"])(login_required(maintenance_create))
+    bp.route("/maintenance/edit/<int:id>", methods=["GET", "POST"])(login_required(maintenance_edit))
     bp.route("/maintenance/batch-delete", methods=["POST"])(
         login_required(maintenance_batch_delete)
     )

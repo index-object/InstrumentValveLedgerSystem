@@ -4,6 +4,12 @@
 
 {% block header_actions %}
 <form method="get" class="d-flex gap-2">
+    <select name="valve_id" class="form-control form-control-modern" style="width: 180px;" onchange="this.form.submit()">
+        <option value="">全部位号</option>
+        {% for v in valves %}
+        <option value="{{ v.id }}" {% if request.args.get('valve_id')|int == v.id %}selected{% endif %}>{{ v.位号 }}</option>
+        {% endfor %}
+    </select>
     <div class="search-box">
         <i class="bi bi-search"></i>
         <input type="text" name="search" class="form-control form-control-modern" placeholder="搜索检修内容..." value="{{ request.args.get('search', '') }}">
@@ -11,6 +17,7 @@
     <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
 </form>
 <div class="d-flex gap-2">
+    <a href="{{ url_for('valves.maintenance_create') }}" class="btn btn-primary-custom"><i class="bi bi-plus-lg"></i> 新建</a>
     <div class="btn-group">
         <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
             批量操作
@@ -37,7 +44,9 @@
                     <th>所属中心</th>
                     <th>检修时间</th>
                     <th>检修人员</th>
+                    <th>类型</th>
                     <th>检修内容</th>
+                    <th style="width: 100px;">操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -49,11 +58,13 @@
                     <td>{{ record.所属中心 or '-' }}</td>
                     <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>
                     <td>{{ record.检修人员 or '-' }}</td>
+                    <td>{{ record.类型 or '-' }}</td>
                     <td>{{ record.检修内容[:15] if record.检修内容 else '-' }}{% if record.检修内容 and record.检修内容|length > 15 %}...{% endif %}</td>
+                    <td><a href="{{ url_for('valves.maintenance_edit', id=record.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> 编辑</a></td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7">
+                    <td colspan="9">
                         <div class="empty-state">
                             <i class="bi bi-wrench"></i>
                             <p>暂无维护记录</p>
