@@ -401,16 +401,17 @@ body {
     background: white;
     border: 2px solid var(--primary-color);
     color: var(--primary-color);
-    padding: 8px 16px;
-    border-radius: 10px;
-    font-size: 14px;
+    padding: 4px 14px;
+    border-radius: 8px;
+    font-size: 13px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     text-decoration: none;
     transition: all 0.25s ease;
     box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);
+    margin-right: 12px;
 }
 
 .btn-back-header:hover {
