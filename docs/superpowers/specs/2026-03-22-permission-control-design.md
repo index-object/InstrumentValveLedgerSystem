@@ -46,6 +46,37 @@
 | 删除记录 | ✅(自己的) | ❌ | ✅ |
 | 导出记录 | ✅ | ✅ | ✅ |
 
+### 阀门操作权限（按状态）
+
+| 状态 | 员工(自己的) | 领导 | 管理员 |
+|------|--------------|------|--------|
+| draft - 查看 | ✅ | ✅ | ✅ |
+| draft - 编辑 | ✅ | ❌ | ✅ |
+| draft - 删除 | ✅ | ❌ | ✅ |
+| draft - 提交 | ✅ | ❌ | ✅ |
+| pending - 查看 | ✅ | ✅ | ✅ |
+| pending - 编辑 | ❌ | ❌ | ✅ |
+| pending - 删除 | ❌ | ❌ | ✅ |
+| pending - 审批 | ❌ | ✅ | ✅ |
+| approved - 查看 | ✅ | ✅ | ✅ |
+| approved - 编辑 | ✅ | ❌ | ✅ |
+| approved - 删除 | ✅ | ❌ | ✅ |
+| rejected - 查看 | ✅ | ✅ | ✅ |
+| rejected - 编辑 | ✅ | ❌ | ✅ |
+| rejected - 删除 | ✅ | ❌ | ✅ |
+
+### 附件和照片操作权限
+
+| 操作 | 员工(自己的阀门) | 员工(他人阀门) | 领导 | 管理员 |
+|------|------------------|----------------|------|--------|
+| 查看附件 | ✅ | ✅ | ✅ | ✅ |
+| 新增附件 | ✅ | ❌ | ❌ | ✅ |
+| 编辑附件 | ✅ | ❌ | ❌ | ✅ |
+| 删除附件 | ✅ | ❌ | ❌ | ✅ |
+| 查看照片 | ✅ | ✅ | ✅ | ✅ |
+| 上传照片 | ✅ | ❌ | ❌ | ✅ |
+| 删除照片 | ✅ | ❌ | ❌ | ✅ |
+
 ## 实现方案
 
 ### 核心安全原则
@@ -143,8 +174,14 @@ def can_submit_valve(valve):
         return True
     return False
 
-def can_approve_valve():
-    """检查是否可以审批阀门"""
+def can_approve_valve(valve):
+    """
+    检查是否可以审批阀门
+
+    只有 pending 状态的阀门才能被审批
+    """
+    if valve.status != 'pending':
+        return False
     return current_user.role in ['leader', 'admin']
 ```
 
@@ -320,6 +357,7 @@ return render_template('...',
 |------|----------|
 | `app/routes/ledgers.py` | 删除调试日志代码（debug_form.log 相关） |
 | `app/routes/ledgers.py` | 删除重复定义的 can_edit_ledger, can_edit_valve, can_delete_valve 函数 |
+| `app/routes/valves/permissions.py` | 移除未使用的装饰器 require_leader, require_employee（权限检查改为函数调用方式） |
 
 ## 测试要点
 
@@ -343,6 +381,16 @@ return render_template('...',
 
 3. 管理员权限测试
    - 所有功能正常
+
+4. 阀门状态权限测试
+   - pending 状态阀门不能编辑/删除
+   - pending 状态阀门可以被审批
+   - approved 状态阀门编辑后状态变更为 draft
+
+5. 附件和照片权限测试
+   - 员工可以管理自己阀门的附件和照片
+   - 员工不能管理他人阀门的附件和照片
+   - 领导不能管理任何附件和照片
 
 ### 安全测试
 
