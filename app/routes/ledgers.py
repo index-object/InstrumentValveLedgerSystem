@@ -691,7 +691,7 @@ def delete_valve(ledger_id, id):
         flash("无权删除")
         return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
-    if valve.status not in ["draft", "rejected"]:
+    if valve.status not in ["draft", "rejected", "approved"]:
         flash("当前状态无法删除")
         return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
@@ -794,7 +794,7 @@ def batch_delete_valve(id):
         flash(f"当前有 {pending_count} 条待审批记录，无法删除")
         return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
-    valve_ids = request.form.getlist("valve_ids")
+    valve_ids = request.form.getlist("ids")
     if not valve_ids:
         flash("请选择要删除的台账")
         return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
@@ -802,7 +802,7 @@ def batch_delete_valve(id):
     deleted_count = Valve.query.filter(
         Valve.id.in_(valve_ids),
         Valve.ledger_id == id,
-        Valve.status.in_(["draft", "rejected"]),
+        Valve.status.in_(["draft", "rejected", "approved"]),
     ).delete(synchronize_session=False)
 
     ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()

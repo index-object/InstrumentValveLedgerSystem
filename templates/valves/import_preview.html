@@ -3,11 +3,33 @@
 {% block content %}
 <div class="container-fluid">
     <h2>导入预览</h2>
-    
+
+    {% if errors %}
+    <div class="alert alert-danger">
+        <strong>错误信息：</strong>
+        <ul class="mb-0">
+            {% for err in errors %}
+            <li>{{ err }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if warnings %}
+    <div class="alert alert-warning">
+        <strong>警告信息：</strong>
+        <ul class="mb-0">
+            {% for warn in warnings %}
+            <li>{{ warn }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     <div class="alert alert-info">
         共 {{ total }} 条记录，其中 {{ conflicts|length }} 条位号冲突，{{ new_records|length }} 条新记录
     </div>
-    
+
     {% if conflicts %}
     <div class="card mb-4">
         <div class="card-header bg-warning">位号冲突 ({{ conflicts|length }} 条)</div>
@@ -16,16 +38,16 @@
                 <thead>
                     <tr>
                         <th>位号</th>
-                        <th>现有设备名称</th>
                         <th>导入设备名称</th>
+                        <th>附件数</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for c in conflicts %}
                     <tr>
                         <td>{{ c.位号 }}</td>
-                        <td>{{ c.existing_name }}</td>
-                        <td>{{ c.new_data.名称 }}</td>
+                        <td>{{ c.valve_data.名称 }}</td>
+                        <td>{{ c.attachments|length }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -33,7 +55,35 @@
         </div>
     </div>
     {% endif %}
-    
+
+    {% if new_records %}
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">新记录 ({{ new_records|length }} 条)</div>
+        <div class="card-body">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>位号</th>
+                        <th>名称</th>
+                        <th>设备等级</th>
+                        <th>附件数</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in new_records %}
+                    <tr>
+                        <td>{{ r.valve_data.位号 }}</td>
+                        <td>{{ r.valve_data.名称 }}</td>
+                        <td>{{ r.valve_data.设备等级 }}</td>
+                        <td>{{ r.attachments|length }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
     <form method="POST" action="{{ url_for('valves.import_execute') }}">
         <div class="mb-3">
             <label class="form-label">冲突处理方式</label>
@@ -50,7 +100,7 @@
                 <label class="form-check-label" for="modeSkip">只导入不重复部分（跳过冲突）</label>
             </div>
         </div>
-        
+
         <button type="submit" class="btn btn-primary">确认导入</button>
         <a href="{{ url_for('valves.import_data') }}" class="btn btn-secondary">重新选择文件</a>
     </form>

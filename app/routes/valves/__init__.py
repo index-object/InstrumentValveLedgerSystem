@@ -309,7 +309,7 @@ def batch_delete():
     count = 0
     for id in ids:
         valve = Valve.query.get(int(id))
-        if valve and valve.status in ["draft", "rejected"] and can_delete_valve(valve):
+        if valve and valve.status in ["draft", "rejected", "approved"] and can_delete_valve(valve):
             ApprovalLog.query.filter_by(valve_id=valve.id).delete()
             db.session.delete(valve)
             count += 1

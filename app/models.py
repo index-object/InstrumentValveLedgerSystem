@@ -79,6 +79,7 @@ class Valve(db.Model):
     阀体_材质 = db.Column(db.String(50))
     # 阀内件
     阀内件_阀座直径 = db.Column(db.String(50))
+    阀内件_阀座序列号 = db.Column(db.String(50))
     阀内件_阀芯材质 = db.Column(db.String(50))
     阀内件_阀座材质 = db.Column(db.String(50))
     阀内件_阀杆材质 = db.Column(db.String(50))

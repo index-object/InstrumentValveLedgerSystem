@@ -45,11 +45,13 @@
                 </button>
                 {% endif %}
                 {% if current_user.role in ['leader', 'admin'] %}
-                <a href="{{ url_for('valves.import_data') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
-                    <i class="bi bi-upload"></i> 导入
-                </a>
                 <a href="{{ url_for('valves.export_data') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导出全部">
                     <i class="bi bi-download"></i> 导出
+                </a>
+                {% endif %}
+                {% if current_user.role == 'employee' %}
+                <a href="{{ url_for('valves.import_data', ledger_id=ledger.id) }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
+                    <i class="bi bi-upload"></i> 导入
                 </a>
                 {% endif %}
             </div>
@@ -61,9 +63,11 @@
                 <button type="button" class="btn btn-sm btn-outline-danger" style="padding: 4px 12px; font-size: 12px;" onclick="batchDelete()" title="批量删除">
                     <i class="bi bi-trash"></i> 删除
                 </button>
+                {% if current_user.role == 'employee' %}
                 <a href="{{ url_for('valves.import_data') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
                     <i class="bi bi-upload"></i> 导入
                 </a>
+                {% endif %}
                 <a href="{{ url_for('valves.export_data') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导出全部">
                     <i class="bi bi-download"></i> 导出
                 </a>
@@ -264,7 +268,11 @@
 <script>
 window.filterOptions = {{ filter_options | tojson | safe }};
 window.activeFilters = {{ active_filters | tojson | safe }};
+{% if ledger %}
+window.batchDeleteUrl = "{{ url_for('ledgers.batch_delete_valve', id=ledger.id, from=from_param|default(request.args.get('from', 'all'))) }}";
+{% else %}
 window.batchDeleteUrl = "{{ url_for('valves.batch_delete') }}";
+{% endif %}
 window.batchExportUrl = "{{ url_for('valves.export_data') }}";
 </script>
 <script src="{{ url_for('static', filename='js/list.js') }}"></script>

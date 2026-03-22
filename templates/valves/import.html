@@ -3,7 +3,11 @@
 {% block page_title %}导入数据{% endblock %}
 
 {% block header_actions %}
+{% if ledger_id %}
+<a href="{{ url_for('ledgers.detail', id=ledger_id) }}" class="btn" style="background: #e2e8f0; color: #475569;"><i class="bi bi-arrow-left"></i> 返回</a>
+{% else %}
 <a href="{{ url_for('valves.list') }}" class="btn" style="background: #e2e8f0; color: #475569;"><i class="bi bi-arrow-left"></i> 返回</a>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -11,17 +15,18 @@
     <div class="card-header-custom"><i class="bi bi-upload"></i> 导入数据 - 第1步：选择文件</div>
     <div class="card-body-custom">
         <form method="POST" enctype="multipart/form-data" id="importForm">
+            <input type="hidden" id="ledgerId" value="{{ ledger_id or '' }}">
             <div class="mb-4">
                 <label class="form-label" style="font-weight: 500;">选择 Excel 文件</label>
                 <input type="file" name="file" id="excelFile" class="form-control form-control-modern" accept=".xlsx,.xls" required style="padding: 12px;">
             </div>
-            
+
             <div class="mb-4 p-3" style="background: #f8fafc; border-radius: 8px; border-left: 3px solid var(--accent-color);">
                 <small class="text-muted">
                     <i class="bi bi-info-circle"></i> 支持 .xlsx 和 .xls 格式，文件应包含以下列：位号、名称、装置名称等
                 </small>
             </div>
-            
+
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-primary-custom" onclick="previewExcel()">
                     <i class="bi bi-eye"></i> 预览数据
@@ -88,6 +93,7 @@
 
 <script>
 let previewData = [];
+const ledgerId = document.getElementById('ledgerId').value;
 
 function previewExcel() {
     const fileInput = document.getElementById('excelFile');
@@ -95,11 +101,14 @@ function previewExcel() {
         alert('请先选择文件');
         return;
     }
-    
+
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
     formData.append('action', 'preview');
-    
+    if (ledgerId) {
+        formData.append('ledger_id', ledgerId);
+    }
+
     fetch("{{ url_for('valves.import_data') }}", {
         method: 'POST',
         body: formData
@@ -107,7 +116,15 @@ function previewExcel() {
     .then(response => response.json())
     .then(data => {
         if (data.error) {
-            alert(data.error);
+            // 构建详细错误信息
+            let errorMsg = data.error;
+            if (data.errors && data.errors.length > 0) {
+                errorMsg += '\n\n具体问题：\n' + data.errors.join('\n');
+            }
+            if (data.warnings && data.warnings.length > 0) {
+                errorMsg += '\n\n警告：\n' + data.warnings.join('\n');
+            }
+            alert(errorMsg);
             return;
         }
         previewData = data.preview || [];
@@ -115,16 +132,16 @@ function previewExcel() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('预览失败，请确保文件格式正确');
+        alert('预览失败：' + error.message);
     });
 }
 
 function showPreview(data) {
     document.getElementById('previewSection').style.display = 'block';
-    
+
     const tbody = document.getElementById('previewTableBody');
     tbody.innerHTML = '';
-    
+
     (data.preview || []).forEach(row => {
         const tr = document.createElement('tr');
         if (row.is_duplicate) {
@@ -140,7 +157,7 @@ function showPreview(data) {
         `;
         tbody.appendChild(tr);
     });
-    
+
     document.getElementById('totalCount').textContent = `总计: ${data.total_count || 0} 条`;
     document.getElementById('duplicateCount').textContent = `重复: ${data.duplicate_count || 0} 条`;
 }
@@ -150,20 +167,21 @@ function confirmImport() {
         alert('请先预览数据');
         return;
     }
-    
+
     const conflictMode = document.querySelector('input[name="conflict_mode"]:checked').value;
-    
+
     if (conflictMode === 'cancel') {
         document.getElementById('previewSection').style.display = 'none';
         return;
     }
-    
+
     const formData = new FormData();
-    formData.append('file', document.getElementById('excelFile').files[0]);
-    formData.append('action', 'import');
     formData.append('conflict_mode', conflictMode);
-    
-    fetch("{{ url_for('valves.import_data') }}", {
+    if (ledgerId) {
+        formData.append('ledger_id', ledgerId);
+    }
+
+    fetch("{{ url_for('valves.import_execute') }}", {
         method: 'POST',
         body: formData
     })
@@ -171,14 +189,23 @@ function confirmImport() {
     .then(data => {
         if (data.success) {
             alert(data.message);
-            window.location.href = "{{ url_for('valves.list') }}";
+            if (ledgerId) {
+                window.location.href = "{{ url_for('ledgers.detail', id=0) }}".replace('/0', '/' + ledgerId);
+            } else {
+                window.location.href = "{{ url_for('valves.list') }}";
+            }
         } else {
-            alert(data.error || '导入失败');
+            // 显示详细错误信息
+            let errorMsg = data.error || '导入失败';
+            if (data.errors && data.errors.length > 0) {
+                errorMsg += '\n\n具体问题：\n' + data.errors.join('\n');
+            }
+            alert(errorMsg);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('导入失败');
+        alert('导入失败：' + error.message);
     });
 }
 </script>

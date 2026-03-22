@@ -51,6 +51,19 @@ def require_leader(f):
     return decorated_function
 
 
+def require_employee(f):
+    """装饰器：要求员工权限（所有登录用户都有）"""
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.role not in ["employee", "leader", "admin"]:
+            flash("需要员工权限")
+            return redirect(url_for("valves.list"))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
 def require_edit_permission(valve):
     """检查编辑权限，返回错误信息或None"""
     if not can_edit_valve(valve):
@@ -64,6 +77,6 @@ def require_delete_permission(valve):
     """检查删除权限，返回错误信息或None"""
     if not can_delete_valve(valve):
         return "无权删除"
-    if valve.status not in ["draft", "rejected"]:
+    if valve.status not in ["draft", "rejected", "approved"]:
         return "当前状态无法删除"
     return None
