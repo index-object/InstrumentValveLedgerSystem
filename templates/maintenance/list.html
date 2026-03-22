@@ -71,7 +71,7 @@
                 {% for record in records %}
                 <tr>
                     <td><input type="checkbox" name="ids" value="{{ record.id }}" class="form-check-input item-checkbox"></td>
-                    <td><a href="{{ url_for('valves.detail', id=record.valve_id) }}" style="color: var(--primary-color); font-weight: 500;">{{ record.设备位号 or '-' }}</a></td>
+                    <td><a href="{{ url_for('valves.detail', id=record.valve_id, from='maintenance') }}" style="color: var(--primary-color); font-weight: 500;">{{ record.设备位号 or '-' }}</a></td>
                     <td>{{ record.设备名称 or '-' }}</td>
                     <td>{{ record.所属中心 or '-' }}</td>
                     <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>

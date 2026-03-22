@@ -12,6 +12,10 @@
 <a href="{{ url_for('ledgers.detail', id=valve.ledger_id) }}?from=approvals" class="btn-back-header">
     <i class="bi bi-arrow-left"></i> 返回
 </a>
+{% elif from_param == 'maintenance' %}
+<a href="{{ url_for('valves.maintenance_list') }}" class="btn-back-header">
+    <i class="bi bi-arrow-left"></i> 返回
+</a>
 {% else %}
 <a href="{{ url_for('ledgers.detail', id=valve.ledger_id) }}" class="btn-back-header">
     <i class="bi bi-arrow-left"></i> 返回

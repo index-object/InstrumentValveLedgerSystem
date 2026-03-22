@@ -91,7 +91,9 @@ def maintenance(id):
 
 def maintenance_list():
     """维护记录列表"""
-    query = MaintenanceRecord.query
+    valid_valve_ids = [v.id for v in Valve.query.filter(Valve.status != "draft").all()]
+    
+    query = MaintenanceRecord.query.filter(MaintenanceRecord.valve_id.in_(valid_valve_ids)) if valid_valve_ids else MaintenanceRecord.query.filter(False)
 
     search = request.args.get("search")
     if search:
@@ -109,9 +111,10 @@ def maintenance_list():
     )
 
     valves = Valve.query.filter(Valve.status != "draft").all()
+    valve_map = {v.id: v for v in valves}
 
     return render_template(
-        "maintenance/list.html", records=pagination.items, pagination=pagination, valves=valves
+        "maintenance/list.html", records=pagination.items, pagination=pagination, valves=valves, valve_map=valve_map
     )
 
 
