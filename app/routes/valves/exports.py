@@ -163,14 +163,14 @@ def import_execute():
             if ledger_id:
                 valve.ledger_id = ledger_id
 
-            # 设置审批状态
+            # 设置审批状态 - 默认为草稿
             auto_approve = Setting.query.get("auto_approval")
             if auto_approve and auto_approve.value == "true":
                 valve.status = "approved"
                 valve.approved_by = current_user.id
                 valve.approved_at = datetime.utcnow()
             else:
-                valve.status = "approved"
+                valve.status = "draft"
 
             db.session.add(valve)
             db.session.flush()  # 获取 valve.id
