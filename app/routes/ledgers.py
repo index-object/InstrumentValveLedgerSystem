@@ -15,19 +15,17 @@ from app.routes.valves.permissions import (
     can_view_ledger,
     can_view_valve,
 )
+from app.utils.navigation import (
+    get_from_param,
+    get_context,
+    get_back_url,
+    redirect_to_list,
+)
 from sqlalchemy import or_
 from datetime import datetime
 import json
 
 ledgers = Blueprint("ledgers", __name__)
-
-
-def get_back_url(from_param):
-    if from_param == "mine":
-        return url_for("valves.my_ledgers")
-    elif from_param == "approvals":
-        return url_for("approvals.index")
-    return url_for("ledgers.list")
 
 
 def update_ledger_status(ledger):

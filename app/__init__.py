@@ -42,6 +42,10 @@ def create_app(config_class=Config):
             pending_count = 0
         return dict(pending_count=pending_count)
 
+    # 注册导航上下文处理器
+    from app.utils.navigation import inject_navigation
+    app.context_processor(inject_navigation)
+
     from app.routes import bp
     from app.routes.auth import auth
     from app.routes.approvals import approvals

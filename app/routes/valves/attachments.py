@@ -10,6 +10,7 @@ from flask import (
 from flask_login import login_required, current_user
 from app.models import db, Valve, ValveAttachment, ValvePhoto, MaintenanceRecord
 from app.routes.valves.permissions import can_edit_valve
+from app.utils.navigation import get_from_param
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
@@ -52,6 +53,7 @@ def photos(id):
 
 def maintenance(id):
     """维护记录"""
+    from_param = get_from_param()
     valve = Valve.query.get_or_404(id)
 
     if request.method == "POST":
@@ -79,14 +81,22 @@ def maintenance(id):
         db.session.add(record)
         db.session.commit()
         flash("添加成功")
-        return redirect(url_for("valves.maintenance", id=id))
+        # 返回到阀门详情页，保持上下文
+        if valve.ledger_id:
+            return redirect(url_for(
+                'ledgers.valve_detail',
+                ledger_id=valve.ledger_id,
+                id=id,
+                **{'from': from_param}
+            ))
+        return redirect(url_for("valves.detail", id=id, **{'from': from_param}))
 
     records = (
         MaintenanceRecord.query.filter_by(valve_id=id)
         .order_by(MaintenanceRecord.检修时间.desc())
         .all()
     )
-    return render_template("valves/maintenance.html", valve=valve, records=records)
+    return render_template("valves/maintenance.html", valve=valve, records=records, from_param=from_param)
 
 
 def maintenance_list():
@@ -275,19 +285,41 @@ def attachments(id):
 
 def delete_attachment(valve_id, att_id):
     """删除附件"""
+    from_param = get_from_param()
     attachment = ValveAttachment.query.get_or_404(att_id)
     if attachment.valve_id != valve_id:
         flash("附件不存在")
-        return redirect(url_for("valves.detail", id=valve_id))
+        if attachment.valve and attachment.valve.ledger_id:
+            return redirect(url_for(
+                'ledgers.valve_detail',
+                ledger_id=attachment.valve.ledger_id,
+                id=valve_id,
+                **{'from': from_param}
+            ))
+        return redirect(url_for("valves.detail", id=valve_id, **{'from': from_param}))
 
     if not can_edit_valve(attachment.valve):
         flash("无权删除")
-        return redirect(url_for("valves.detail", id=valve_id))
+        if attachment.valve.ledger_id:
+            return redirect(url_for(
+                'ledgers.valve_detail',
+                ledger_id=attachment.valve.ledger_id,
+                id=valve_id,
+                **{'from': from_param}
+            ))
+        return redirect(url_for("valves.detail", id=valve_id, **{'from': from_param}))
 
     db.session.delete(attachment)
     db.session.commit()
     flash("附件删除成功")
-    return redirect(url_for("valves.detail", id=valve_id))
+    if attachment.valve and attachment.valve.ledger_id:
+        return redirect(url_for(
+            'ledgers.valve_detail',
+            ledger_id=attachment.valve.ledger_id,
+            id=valve_id,
+            **{'from': from_param}
+        ))
+    return redirect(url_for("valves.detail", id=valve_id, **{'from': from_param}))
 
 
 def my_ledgers():

@@ -221,7 +221,7 @@
 <td style="position: sticky; right: 0; z-index: 2; background: #fff;">
                             <a href="{% if ledger %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ from_param|default(request.args.get('from', 'all')) }}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i></a>
                             {% if (valve.created_by == current_user.id or current_user.role in ['leader', 'admin']) and valve.status in ['draft', 'rejected', 'approved'] %}
-                            <a href="{% if ledger %}{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i></a>
+                            <a href="{% if ledger %}{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id, from=from_param|default(request.args.get('from', 'all'))) }}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i></a>
                             {% endif %}
                         </td>
                     </tr>

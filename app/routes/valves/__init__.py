@@ -29,6 +29,12 @@ from app.routes.valves.forms import (
     parse_attachments_data,
     create_attachment_from_data,
 )
+from app.utils.navigation import (
+    get_from_param,
+    get_context,
+    redirect_to_list,
+    url_with_from,
+)
 
 valves = Blueprint("valves", __name__)
 
@@ -68,11 +74,12 @@ def list():
 @valves.route("/valve/<int:id>")
 @login_required
 def detail(id):
+    from_param = get_from_param()
     valve = Valve.query.get_or_404(id)
     if not can_view_valve(valve):
         flash("无权访问")
-        return redirect(url_for("valves.list"))
-    return render_template("valves/detail.html", valve=valve)
+        return redirect_to_list(from_param)
+    return render_template("valves/detail.html", valve=valve, from_param=from_param)
 
 
 @valves.route("/valve/new", methods=["GET", "POST"])
@@ -254,12 +261,21 @@ def save_draft():
 @valves.route("/valve/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def edit(id):
+    from_param = get_from_param()
     valve = Valve.query.get_or_404(id)
 
     error = require_edit_permission(valve)
     if error:
         flash(error)
-        return redirect(url_for("valves.detail", id=id))
+        # 如果有 ledger，返回到 ledger 的阀门详情页
+        if valve.ledger_id:
+            return redirect(url_for(
+                'ledgers.valve_detail',
+                ledger_id=valve.ledger_id,
+                id=id,
+                **{'from': from_param}
+            ))
+        return redirect(url_for("valves.detail", id=id, **{'from': from_param}))
 
     if request.method == "POST":
         位号 = request.form.get("位号")
@@ -269,7 +285,7 @@ def edit(id):
             ).first()
             if existing:
                 flash("位号已存在，请使用其他位号")
-                return redirect(url_for("valves.edit", id=id))
+                return redirect(url_for("valves.edit", id=id, **{'from': from_param}))
 
         populate_valve_from_form(valve, request.form)
 
@@ -277,34 +293,60 @@ def edit(id):
         db.session.commit()
 
         flash("保存成功")
-        return redirect(url_for("valves.detail", id=id))
+        # 如果有 ledger，返回到 ledger 的阀门详情页
+        if valve.ledger_id:
+            return redirect(url_for(
+                'ledgers.valve_detail',
+                ledger_id=valve.ledger_id,
+                id=id,
+                **{'from': from_param}
+            ))
+        return redirect(url_for("valves.detail", id=id, **{'from': from_param}))
 
-    return render_template("valves/form.html", valve=valve)
+    # 对于有 ledger 的阀门，获取 ledger 信息传递给模板
+    ledger = None
+    if valve.ledger_id:
+        ledger = Ledger.query.get(valve.ledger_id)
+    return render_template("valves/form.html", valve=valve, ledger=ledger, from_param=from_param)
 
 
 @valves.route("/valve/delete/<int:id>", methods=["POST"])
 @login_required
 def delete(id):
+    from_param = get_from_param()
     valve = Valve.query.get_or_404(id)
 
     error = require_delete_permission(valve)
     if error:
         flash(error)
-        return redirect(url_for("valves.detail", id=id))
+        if valve.ledger_id:
+            return redirect(url_for(
+                'ledgers.valve_detail',
+                ledger_id=valve.ledger_id,
+                id=id,
+                **{'from': from_param}
+            ))
+        return redirect(url_for("valves.detail", id=id, **{'from': from_param}))
 
+    ledger_id = valve.ledger_id
     db.session.delete(valve)
     db.session.commit()
     flash("删除成功")
-    return redirect(url_for("valves.list"))
+
+    # 如果有 ledger，返回到 ledger 详情页
+    if ledger_id:
+        return redirect(url_for('ledgers.detail', id=ledger_id, **{'from': from_param}))
+    return redirect_to_list(from_param)
 
 
 @valves.route("/valves/batch-delete", methods=["POST"])
 @login_required
 def batch_delete():
+    from_param = get_from_param()
     ids = request.form.getlist("ids")
     if not ids:
         flash("请选择要删除的记录")
-        return redirect(url_for("valves.list"))
+        return redirect_to_list(from_param)
 
     count = 0
     for id in ids:
@@ -316,7 +358,7 @@ def batch_delete():
 
     db.session.commit()
     flash(f"成功删除 {count} 条记录")
-    return redirect(url_for("valves.list"))
+    return redirect_to_list(from_param)
 
 
 @valves.route("/my-applications")
