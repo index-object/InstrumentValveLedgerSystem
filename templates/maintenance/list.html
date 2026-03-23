@@ -14,14 +14,15 @@
 <div class="table-toolbar-card">
     <div class="table-toolbar">
         <div class="toolbar-left">
+            {# 新建按钮：仅员工和管理员可见 #}
+            {% if current_user.role in ['employee', 'admin'] %}
             <a href="{{ url_for('valves.maintenance_create') }}" class="toolbar-btn toolbar-btn-primary">
                 <i class="bi bi-plus-lg"></i> 新建
             </a>
+            {% endif %}
+            {# 导出按钮：所有用户可见 #}
             <button type="button" class="toolbar-btn toolbar-btn-secondary" onclick="batchExport()">
                 <i class="bi bi-download"></i> 导出选中
-            </button>
-            <button type="button" class="toolbar-btn toolbar-btn-danger" onclick="batchDelete()">
-                <i class="bi bi-trash"></i> 删除选中
             </button>
             <a href="{{ url_for('valves.maintenance_export') }}" class="toolbar-btn toolbar-btn-secondary">
                 <i class="bi bi-download"></i> 导出全部
@@ -78,7 +79,14 @@
                     <td>{{ record.检修人员 or '-' }}</td>
                     <td>{{ record.类型 or '-' }}</td>
                     <td>{{ record.检修内容[:15] if record.检修内容 else '-' }}{% if record.检修内容 and record.检修内容|length > 15 %}...{% endif %}</td>
-                    <td><a href="{{ url_for('valves.maintenance_edit', id=record.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> 编辑</a></td>
+                    <td>
+                        {# 编辑按钮：仅管理员和创建者可见 #}
+                        {% if current_user.role == 'admin' or (current_user.role == 'employee' and record.created_by == current_user.id) %}
+                        <a href="{{ url_for('valves.maintenance_edit', id=record.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> 编辑</a>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
@@ -125,15 +133,6 @@
 document.getElementById('selectAll').addEventListener('change', function() {
     document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
 });
-
-function batchDelete() {
-    const checked = document.querySelectorAll('.item-checkbox:checked');
-    if (checked.length === 0) { alert('请先选择要删除的记录'); return; }
-    if (confirm('确定要删除选中的 ' + checked.length + ' 条记录吗？')) {
-        document.getElementById('batchForm').action = "{{ url_for('valves.maintenance_batch_delete') }}";
-        document.getElementById('batchForm').submit();
-    }
-}
 
 function batchExport() {
     const checked = document.querySelectorAll('.item-checkbox:checked');
