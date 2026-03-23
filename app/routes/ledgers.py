@@ -10,6 +10,9 @@ from flask import (
 from flask_login import login_required, current_user
 from app.models import db, Ledger, Valve, ApprovalLog, Setting, ValveAttachment
 from app.routes.valves.permissions import (
+    can_edit_ledger,
+    can_delete_ledger,
+    can_create_valve,
     can_edit_valve,
     can_delete_valve,
     can_view_ledger,
@@ -52,22 +55,6 @@ def update_ledger_status(ledger):
         ledger.approved_snapshot_at = datetime.utcnow()
 
 
-def can_edit_ledger(ledger):
-    return ledger.created_by == current_user.id or current_user.role in [
-        "leader",
-        "admin",
-    ]
-
-
-def can_edit_valve(valve):
-    return valve.created_by == current_user.id or current_user.role in [
-        "leader",
-        "admin",
-    ]
-
-
-def can_delete_valve(valve):
-    return can_edit_valve(valve)
 
 
 @ledgers.route("/ledgers")
@@ -504,8 +491,8 @@ def new_valve(id):
     from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)
 
-    if not can_edit_ledger(ledger):
-        flash("无权操作")
+    if not can_create_valve(ledger):
+        flash("无权在此台账中创建阀门")
         return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     if request.method == "POST":
@@ -521,13 +508,6 @@ def new_valve(id):
                 )
 
         valve = Valve()
-        with open("debug_form.log", "a", encoding="utf-8") as f:
-            f.write("=== DEBUG FORM DATA ===\n")
-            for key in request.form:
-                f.write(
-                    f"  {key}: {request.form.get(key)[:200] if request.form.get(key) else 'None'}...\n"
-                )
-            f.write("=======================\n")
         for key in request.form:
             if key == "attachments":
                 continue
@@ -547,13 +527,9 @@ def new_valve(id):
             return redirect(url_for("ledgers.new_valve", id=id, **{"from": from_param}))
 
         attachments_json = request.form.get("attachments")
-        with open("debug_form.log", "a", encoding="utf-8") as f:
-            f.write(f"DEBUG: attachments_json = {repr(attachments_json)}\n")
         if attachments_json:
             try:
                 attachments = json.loads(attachments_json)
-                with open("debug_form.log", "a", encoding="utf-8") as f:
-                    f.write(f"DEBUG: parsed attachments = {attachments}\n")
                 for att in attachments:
                     att_type = att.get("attachment_type") or att.get("type")
                     if att_type:
@@ -567,9 +543,8 @@ def new_valve(id):
                         )
                         db.session.add(attachment)
                 db.session.commit()
-            except json.JSONDecodeError as e:
-                with open("debug_form.log", "a", encoding="utf-8") as f:
-                    f.write(f"DEBUG: JSON decode error: {e}\n")
+            except json.JSONDecodeError:
+                pass
 
         ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
         db.session.commit()
@@ -783,30 +758,44 @@ def batch_delete_valve(id):
     from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)
 
-    if not can_edit_ledger(ledger):
-        flash("无权操作")
-        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
-
-    pending_count = Valve.query.filter_by(ledger_id=id, status="pending").count()
-    if pending_count > 0:
-        flash(f"当前有 {pending_count} 条待审批记录，无法删除")
-        return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
-
     valve_ids = request.form.getlist("ids")
     if not valve_ids:
         flash("请选择要删除的台账")
         return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
-    deleted_count = Valve.query.filter(
-        Valve.id.in_(valve_ids),
-        Valve.ledger_id == id,
-        Valve.status.in_(["draft", "rejected", "approved"]),
-    ).delete(synchronize_session=False)
+    # 检查每个阀门的删除权限
+    valves_to_delete = []
+    unauthorized_count = 0
+    pending_count = 0
 
-    ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
+    for valve_id in valve_ids:
+        valve = Valve.query.filter_by(id=valve_id, ledger_id=id).first()
+        if not valve:
+            continue
+        if not can_delete_valve(valve):
+            unauthorized_count += 1
+            continue
+        if valve.status == "pending":
+            pending_count += 1
+            continue
+        valves_to_delete.append(valve.id)
 
-    db.session.commit()
-    flash(f"成功删除 {deleted_count} 项台账")
+    if unauthorized_count > 0:
+        flash(f"有 {unauthorized_count} 项台账无权删除")
+    if pending_count > 0:
+        flash(f"有 {pending_count} 项待审批记录无法删除")
+
+    if valves_to_delete:
+        deleted_count = Valve.query.filter(
+            Valve.id.in_(valves_to_delete),
+        ).delete(synchronize_session=False)
+
+        ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
+        db.session.commit()
+        flash(f"成功删除 {deleted_count} 项台账")
+    elif unauthorized_count == 0 and pending_count == 0:
+        flash("没有可删除的台账")
+
     return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
 
