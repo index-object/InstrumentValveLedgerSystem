@@ -17,6 +17,36 @@
 {% endif %}
 {% endblock %}
 
+{% block header_actions %}
+{% set from_param = from_param|default(request.args.get('from', 'all')) %}
+<div class="d-flex gap-2">
+    {# Edit: admin or owner #}
+    {% if current_user.role == 'admin' or (current_user.role == 'employee' and ledger.created_by == current_user.id) %}
+    <a href="{{ url_for('ledgers.edit', id=ledger.id, from=from_param) }}" class="btn btn-outline-primary">
+        <i class="bi bi-pencil"></i> 编辑
+    </a>
+    {% endif %}
+
+    {# Submit: employee owner + has drafts #}
+    {% if current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.draft_count > 0 %}
+    <form method="POST" action="{{ url_for('ledgers.submit', id=ledger.id, from=from_param) }}" style="display:inline;">
+        <button type="submit" class="btn btn-primary-custom">
+            <i class="bi bi-send"></i> 提交审批
+        </button>
+    </form>
+    {% endif %}
+
+    {# Delete: admin or owner + no pending valves #}
+    {% if (current_user.role == 'admin' or (current_user.role == 'employee' and ledger.created_by == current_user.id)) and ledger.pending_count == 0 %}
+    <form method="POST" action="{{ url_for('ledgers.delete', id=ledger.id, from=from_param) }}" style="display:inline;" onsubmit="return confirm('确定删除？');">
+        <button type="submit" class="btn btn-outline-danger">
+            <i class="bi bi-trash"></i> 删除
+        </button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}
+
 {% block toolbar %}
 {% set from_param = from_param|default(request.args.get('from', 'all')) %}
 <div class="table-toolbar-compact">
