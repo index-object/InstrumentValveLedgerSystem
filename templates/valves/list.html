@@ -36,7 +36,8 @@
             <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
             {% if ledger %}
             <div class="d-flex align-items-center gap-1">
-                {% if (ledger.created_by == current_user.id or current_user.role in ['leader', 'admin']) and ledger.display_status != 'pending' %}
+                {# 新增/删除按钮：仅员工且自己的台账且非待审批状态显示 #}
+                {% if current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.display_status != 'pending' %}
                 <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=from_param) }}" class="btn btn-sm btn-primary" style="padding: 4px 12px; font-size: 12px;" title="新增台账">
                     <i class="bi bi-plus-lg"></i> 新增
                 </a>
@@ -44,12 +45,12 @@
                     <i class="bi bi-trash"></i> 删除
                 </button>
                 {% endif %}
-                {% if current_user.role in ['leader', 'admin'] %}
+                {# 导出按钮：所有用户可见 #}
                 <a href="{{ url_for('valves.export_data') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导出全部">
                     <i class="bi bi-download"></i> 导出
                 </a>
-                {% endif %}
-                {% if current_user.role == 'employee' %}
+                {# 导入按钮：仅员工且自己的台账显示 #}
+                {% if current_user.role == 'employee' and ledger.created_by == current_user.id %}
                 <a href="{{ url_for('valves.import_data', ledger_id=ledger.id) }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
                     <i class="bi bi-upload"></i> 导入
                 </a>
@@ -220,7 +221,8 @@
                         </td>
 <td style="position: sticky; right: 0; z-index: 2; background: #fff;">
                             <a href="{% if ledger %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ from_param|default(request.args.get('from', 'all')) }}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i></a>
-                            {% if (valve.created_by == current_user.id or current_user.role in ['leader', 'admin']) and valve.status in ['draft', 'rejected', 'approved'] %}
+                            {# 编辑按钮：仅员工且自己的阀门且可编辑状态显示 #}
+                            {% if current_user.role == 'employee' and valve.created_by == current_user.id and valve.status in ['draft', 'rejected', 'approved'] %}
                             <a href="{% if ledger %}{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id, from=from_param|default(request.args.get('from', 'all'))) }}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i></a>
                             {% endif %}
                         </td>
