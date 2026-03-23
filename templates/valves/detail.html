@@ -25,7 +25,8 @@
 
 {% block header_actions %}
 {% set from_param = from_param|default(request.args.get('from', 'all')) %}
-{% if (valve.created_by == current_user.id or current_user.role in ['leader', 'admin']) and valve.status in ['draft', 'rejected', 'approved'] %}
+{# Edit button: employee + owner + editable status #}
+{% if current_user.role == 'employee' and valve.created_by == current_user.id and valve.status in ['draft', 'rejected', 'approved'] %}
 <a href="{{ url_for('valves.edit', id=valve.id, from=from_param) }}" class="toolbar-btn toolbar-btn-primary">
     <i class="bi bi-pencil"></i> 编辑
 </a>
