@@ -20,9 +20,7 @@
 <div class="table-toolbar-card">
     <div class="table-toolbar">
         <div class="toolbar-left">
-            <a href="{{ url_for('ledgers.new') }}" class="toolbar-btn toolbar-btn-primary">
-                <i class="bi bi-plus-circle-fill"></i> 新建合集
-            </a>
+            {# 创建按钮已移至"我的台账"视图，全部台账视图不显示 #}
         </div>
         <div class="toolbar-right">
             <form method="get" class="d-flex gap-2 align-items-center">
@@ -118,7 +116,7 @@
                         <div class="empty-state">
                             <i class="bi bi-inbox"></i>
                             <p>暂无台账合集</p>
-                            <a href="{{ url_for('ledgers.new') }}" class="btn-new">创建第一个合集</a>
+                            {# 创建按钮已移至"我的台账"视图 #}
                         </div>
                     </td>
                 </tr>
