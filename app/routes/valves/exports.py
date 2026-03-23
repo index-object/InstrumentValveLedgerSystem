@@ -1,7 +1,7 @@
 from flask import flash, redirect, url_for, request, render_template, make_response, session, jsonify
 from flask_login import login_required, current_user
 from app.models import db, Valve, Ledger, Setting, ValveAttachment
-from app.routes.valves.permissions import require_employee
+from app.routes.valves.permissions import require_employee_or_admin
 from app.routes.valves.forms import get_valve_export_data
 from app.routes.valves.import_processor import ImportDataProcessor, process_import_preview
 from datetime import datetime
@@ -362,10 +362,10 @@ def export_valve_pdf(id):
 def register_export_routes(bp):
     """注册导出相关路由到蓝图"""
     bp.route("/import", methods=["GET", "POST"])(
-        login_required(require_employee(import_data))
+        login_required(require_employee_or_admin(import_data))
     )
     bp.route("/import/execute", methods=["POST"])(
-        login_required(require_employee(import_execute))
+        login_required(require_employee_or_admin(import_execute))
     )
     bp.route("/export")(login_required(export_data))
     bp.route("/valve/<int:id>/export-pdf")(login_required(export_valve_pdf))
