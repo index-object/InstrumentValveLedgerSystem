@@ -9,7 +9,12 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from app.models import db, Valve, ValveAttachment, ValvePhoto, MaintenanceRecord
-from app.routes.valves.permissions import can_edit_valve
+from app.routes.valves.permissions import (
+    can_edit_valve,
+    can_create_maintenance,
+    can_edit_maintenance,
+    can_delete_maintenance,
+)
 from app.utils.navigation import get_from_param
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -57,6 +62,16 @@ def maintenance(id):
     valve = Valve.query.get_or_404(id)
 
     if request.method == "POST":
+        # 权限检查：只有员工和管理员可以创建维护记录
+        if not can_create_maintenance():
+            flash("无权创建维护记录")
+            return redirect(url_for(
+                'ledgers.valve_detail',
+                ledger_id=valve.ledger_id,
+                id=id,
+                **{'from': from_param}
+            ) if valve.ledger_id else url_for("valves.detail", id=id, **{'from': from_param}))
+
         检修时间_str = request.form.get("检修时间")
         检修时间 = None
         if 检修时间_str:
@@ -130,6 +145,11 @@ def maintenance_list():
 
 def maintenance_create():
     """新建维护记录"""
+    # 权限检查：只有员工和管理员可以创建维护记录
+    if not can_create_maintenance():
+        flash("无权创建维护记录")
+        return redirect(url_for("valves.maintenance_list"))
+
     valves = Valve.query.filter(Valve.status != "draft").order_by(Valve.位号).all()
 
     if request.method == "POST":
@@ -171,6 +191,12 @@ def maintenance_create():
 def maintenance_edit(id):
     """编辑维护记录"""
     record = MaintenanceRecord.query.get_or_404(id)
+
+    # 权限检查：只有创建者和管理员可以编辑维护记录
+    if not can_edit_maintenance(record):
+        flash("无权编辑此维护记录")
+        return redirect(url_for("valves.maintenance_list"))
+
     valves = Valve.query.filter(Valve.status != "draft").order_by(Valve.位号).all()
 
     if request.method == "POST":
@@ -212,9 +238,12 @@ def maintenance_batch_delete():
         flash("请选择要删除的记录")
         return redirect(url_for("valves.maintenance_list"))
 
-    count = MaintenanceRecord.query.filter(MaintenanceRecord.id.in_(ids)).delete(
-        synchronize_session=False
-    )
+    count = 0
+    for record_id in ids:
+        record = MaintenanceRecord.query.get(int(record_id))
+        if record and can_delete_maintenance(record):
+            db.session.delete(record)
+            count += 1
     db.session.commit()
     flash(f"成功删除 {count} 条记录")
     return redirect(url_for("valves.maintenance_list"))
