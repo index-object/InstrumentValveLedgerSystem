@@ -19,15 +19,17 @@
 
 {% block header_actions %}
 {% set from_param = from_param|default(request.args.get('from', 'all')) %}
+{# 以下按钮仅在"我的台账"界面显示 #}
+{% if from_param == 'mine' %}
 <div class="d-flex gap-2">
-    {# Edit: admin or owner #}
+    {# 编辑：员工所有者和管理员 #}
     {% if current_user.role == 'admin' or (current_user.role == 'employee' and ledger.created_by == current_user.id) %}
     <a href="{{ url_for('ledgers.edit', id=ledger.id, from=from_param) }}" class="btn btn-outline-primary">
         <i class="bi bi-pencil"></i> 编辑
     </a>
     {% endif %}
 
-    {# Submit: employee owner + has drafts #}
+    {# 提交审批：员工所有者且有草稿 #}
     {% if current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.draft_count > 0 %}
     <form method="POST" action="{{ url_for('ledgers.submit', id=ledger.id, from=from_param) }}" style="display:inline;">
         <button type="submit" class="btn btn-primary-custom">
@@ -36,7 +38,7 @@
     </form>
     {% endif %}
 
-    {# Delete: admin or owner + no pending valves #}
+    {# 删除：员工所有者或管理员，且无待审批阀门 #}
     {% if (current_user.role == 'admin' or (current_user.role == 'employee' and ledger.created_by == current_user.id)) and ledger.pending_count == 0 %}
     <form method="POST" action="{{ url_for('ledgers.delete', id=ledger.id, from=from_param) }}" style="display:inline;" onsubmit="return confirm('确定删除？');">
         <button type="submit" class="btn btn-outline-danger">
@@ -45,6 +47,7 @@
     </form>
     {% endif %}
 </div>
+{% endif %}
 {% endblock %}
 
 {% block toolbar %}
@@ -56,7 +59,8 @@
                 <input type="checkbox" class="form-check-input" id="selectAll">
             </div>
             <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
-            {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+            {# 新增/提交按钮：仅在"我的台账"界面显示 #}
+            {% if from_param == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
                 {% if ledger.display_status != 'pending' %}
                 <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=from_param) }}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
                     <i class="bi bi-plus-lg"></i> 新增台账
@@ -96,7 +100,8 @@
                 </div>
                 <span style="font-size: 14px;">已选 <span id="selectedCount">0</span> 项</span>
             </div>
-            {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+            {# 新增按钮：仅在"我的台账"界面显示 #}
+            {% if from_param|default(request.args.get('from', 'all')) == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
             {% if ledger.display_status != 'pending' %}
             <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=request.args.get('from', 'all')) }}" class="btn btn-accent">
                 <i class="bi bi-plus-lg"></i> 新增台账
@@ -197,7 +202,8 @@
                             <a href="{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ request.args.get('from', 'all') }}" class="btn-action" style="background: #e2e8f0; color: #475569;">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            {% if (valve.created_by == current_user.id or current_user.role in ['leader', 'admin']) and valve.status in ['draft', 'rejected', 'approved'] %}
+                            {# 编辑按钮：仅在"我的台账"界面显示 #}
+                            {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id and valve.status in ['draft', 'rejected', 'approved'] %}
                             <a href="{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
                                 <i class="bi bi-pencil"></i>
                             </a>
@@ -210,7 +216,8 @@
                             <div class="empty-state">
                                 <i class="bi bi-inbox"></i>
                                 <p>暂无台账内容</p>
-                                {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
+                                {# 添加按钮：仅在"我的台账"界面显示 #}
+                                {% if from_param|default(request.args.get('from', 'all')) == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
                                 <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=request.args.get('from', 'all')) }}" class="btn btn-accent">添加第一个台账</a>
                                 {% endif %}
                             </div>
