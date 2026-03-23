@@ -17,7 +17,7 @@ from app.routes.valves.permissions import (
     can_edit_valve,
     can_delete_valve,
     can_view_valve,
-    require_leader,
+    can_submit_valve,
     require_edit_permission,
     require_delete_permission,
 )
@@ -351,7 +351,7 @@ def batch_delete():
     count = 0
     for id in ids:
         valve = Valve.query.get(int(id))
-        if valve and valve.status in ["draft", "rejected", "approved"] and can_delete_valve(valve):
+        if valve and can_delete_valve(valve):
             ApprovalLog.query.filter_by(valve_id=valve.id).delete()
             db.session.delete(valve)
             count += 1
