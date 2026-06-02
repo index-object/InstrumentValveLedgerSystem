@@ -1,6 +1,7 @@
 from flask import Flask, send_from_directory
 from config import Config
 from app.models import db, User, Valve
+from app.devices import DeviceTypeRegistry
 from flask_login import LoginManager, current_user
 import os
 
@@ -36,6 +37,9 @@ def create_app(config_class=Config):
                 "admin",
             ]:
                 pending_count = Valve.query.filter_by(status="pending").count()
+                for config in DeviceTypeRegistry.exclude_valve():
+                    if config.model_class:
+                        pending_count += config.model_class.query.filter_by(status="pending").count()
             else:
                 pending_count = 0
         except:
@@ -59,5 +63,11 @@ def create_app(config_class=Config):
     app.register_blueprint(valves)
     app.register_blueprint(admin)
     app.register_blueprint(ledgers)
+
+    from app.devices.types import register_all
+    register_all()
+
+    from app.routes.devices import devices_bp
+    app.register_blueprint(devices_bp)
 
     return app
