@@ -447,6 +447,30 @@ def submit(id):
         flash("无权操作")
         return redirect(get_back_url(from_param))
 
+    if ledger.类型 != "valve":
+        config = DeviceTypeRegistry.get(ledger.类型)
+        if not config or not config.model_class:
+            flash("类型配置错误")
+            return redirect(get_back_url(from_param))
+        model = config.model_class
+        draft_devices = model.query.filter_by(ledger_id=id, status="draft").all()
+        if not draft_devices:
+            flash("没有可提交的台账")
+            return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
+        for device in draft_devices:
+            device.status = "pending"
+            log = ApprovalLog(
+                ledger_id=ledger.id,
+                device_type=ledger.类型,
+                device_id=device.id,
+                action="submit",
+                user_id=current_user.id,
+            )
+            db.session.add(log)
+        db.session.commit()
+        flash(f"已提交 {len(draft_devices)} 项台账内容审批")
+        return redirect(get_back_url(from_param))
+
     valve_ids = request.form.getlist("valve_ids")
 
     if valve_ids:
@@ -488,6 +512,28 @@ def approve(id):
 
     ledger = Ledger.query.get_or_404(id)
 
+    if ledger.类型 != "valve":
+        config = DeviceTypeRegistry.get(ledger.类型)
+        if config and config.model_class:
+            model = config.model_class
+            pending_devices = model.query.filter_by(ledger_id=id, status="pending").all()
+            for device in pending_devices:
+                device.status = "approved"
+                device.approved_by = current_user.id
+                device.approved_at = datetime.utcnow()
+                log = ApprovalLog(
+                    ledger_id=ledger.id,
+                    device_type=ledger.类型,
+                    device_id=device.id,
+                    action="approve",
+                    user_id=current_user.id,
+                    comment=request.form.get("comment", ""),
+                )
+                db.session.add(log)
+            db.session.commit()
+            flash(f"已审批通过，共 {len(pending_devices)} 项台账内容")
+            return redirect(get_back_url(from_param))
+
     pending_valves = Valve.query.filter_by(ledger_id=id, status="pending").all()
     for valve in pending_valves:
         valve.status = "approved"
@@ -518,6 +564,26 @@ def reject(id):
         return redirect(get_back_url(from_param))
 
     ledger = Ledger.query.get_or_404(id)
+
+    if ledger.类型 != "valve":
+        config = DeviceTypeRegistry.get(ledger.类型)
+        if config and config.model_class:
+            model = config.model_class
+            pending_devices = model.query.filter_by(ledger_id=id, status="pending").all()
+            for device in pending_devices:
+                device.status = "rejected"
+                log = ApprovalLog(
+                    ledger_id=ledger.id,
+                    device_type=ledger.类型,
+                    device_id=device.id,
+                    action="reject",
+                    user_id=current_user.id,
+                    comment=request.form.get("comment", ""),
+                )
+                db.session.add(log)
+            db.session.commit()
+            flash(f"已驳回，共 {len(pending_devices)} 项台账内容")
+            return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
     pending_valves = Valve.query.filter_by(ledger_id=id, status="pending").all()
     for valve in pending_valves:
