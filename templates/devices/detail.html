@@ -17,6 +17,25 @@
 {% endblock %}
 {% block header_actions %}
 {% set from_param = from_param|default(request.args.get('from', '')) %}
+{% if device.status == 'draft' and (current_user.role == 'admin' or device.created_by == current_user.id) %}
+<form method="POST" action="{{ url_for('devices.submit', type_code=config.code, id=device.id) }}" style="display:inline;">
+  <button type="submit" class="toolbar-btn toolbar-btn-success">
+    <i class="bi bi-send"></i> 提交审批
+  </button>
+</form>
+{% endif %}
+{% if device.status == 'pending' and current_user.role in ['leader', 'admin'] %}
+<form method="POST" action="{{ url_for('devices.approve', type_code=config.code, id=device.id) }}" style="display:inline;">
+  <button type="submit" class="toolbar-btn toolbar-btn-success">
+    <i class="bi bi-check-lg"></i> 审批通过
+  </button>
+</form>
+<form method="POST" action="{{ url_for('devices.reject', type_code=config.code, id=device.id) }}" style="display:inline;" onsubmit="return confirm('确认驳回？')">
+  <button type="submit" class="toolbar-btn toolbar-btn-danger">
+    <i class="bi bi-x-lg"></i> 驳回
+  </button>
+</form>
+{% endif %}
 <a href="{{ url_for('devices.edit', type_code=config.code, id=device.id, from=from_param) }}" class="toolbar-btn toolbar-btn-primary">
   <i class="bi bi-pencil"></i> 编辑
 </a>

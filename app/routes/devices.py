@@ -102,27 +102,7 @@ def new(type_code):
         db.session.add(device)
         db.session.commit()
 
-        log = ApprovalLog(
-            valve_id=None,
-            device_type=type_code,
-            device_id=device.id,
-            action="submit",
-            user_id=current_user.id,
-        )
-        db.session.add(log)
-
-        auto_approve = Setting.query.get("auto_approval")
-        if auto_approve and auto_approve.value == "true":
-            device.status = "approved"
-            device.approved_by = current_user.id
-            device.approved_at = datetime.utcnow()
-            log.action = "approve"
-        else:
-            device.status = "pending"
-
-        db.session.commit()
-
-        flash("提交成功")
+        flash("保存成功，内容已保存为草稿")
         if ledger_id:
             return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
         return redirect(url_for("devices.list", type_code=type_code))
@@ -147,10 +127,16 @@ def edit(type_code, id):
         flash("无权编辑")
         return redirect(url_for("devices.detail", type_code=type_code, id=id, **{"from": from_param}))
 
+    if device.status not in ["draft", "rejected"]:
+        flash("当前状态无法编辑")
+        return redirect(url_for("devices.detail", type_code=type_code, id=id, **{"from": from_param}))
+
     if request.method == "POST":
         for key, value in request.form.items():
             if hasattr(device, key):
                 setattr(device, key, value)
+        if device.status == "rejected":
+            device.status = "draft"
         device.updated_at = datetime.utcnow()
         db.session.commit()
         flash("保存成功")
@@ -178,6 +164,94 @@ def delete(type_code, id):
     if ledger_id:
         return redirect(url_for("ledgers.detail", id=ledger_id))
     return redirect(url_for("devices.list", type_code=type_code))
+
+
+@devices_bp.route("/<type_code>/<int:id>/submit", methods=["POST"])
+@login_required
+def submit(type_code, id):
+    config = get_config_or_404(type_code)
+    device = config.model_class.query.get_or_404(id)
+
+    if current_user.role == "employee" and device.created_by != current_user.id:
+        flash("无权提交")
+        return redirect(url_for("devices.detail", type_code=type_code, id=id))
+
+    if device.status != "draft":
+        flash("仅草稿状态可提交")
+        return redirect(url_for("devices.detail", type_code=type_code, id=id))
+
+    device.status = "pending"
+    log = ApprovalLog(
+        valve_id=None,
+        device_type=type_code,
+        device_id=device.id,
+        action="submit",
+        user_id=current_user.id,
+    )
+    db.session.add(log)
+    db.session.commit()
+    flash("提交审批成功")
+    return redirect(url_for("devices.detail", type_code=type_code, id=id))
+
+
+@devices_bp.route("/<type_code>/<int:id>/approve", methods=["POST"])
+@login_required
+def approve(type_code, id):
+    if current_user.role not in ["leader", "admin"]:
+        flash("需要领导权限")
+        return redirect(url_for("devices.detail", type_code=type_code, id=id))
+
+    config = get_config_or_404(type_code)
+    device = config.model_class.query.get_or_404(id)
+
+    if device.status != "pending":
+        flash("仅待审批状态可审批")
+        return redirect(url_for("devices.detail", type_code=type_code, id=id))
+
+    device.status = "approved"
+    device.approved_by = current_user.id
+    device.approved_at = datetime.utcnow()
+    log = ApprovalLog(
+        valve_id=None,
+        device_type=type_code,
+        device_id=device.id,
+        action="approve",
+        user_id=current_user.id,
+        comment=request.form.get("comment", ""),
+    )
+    db.session.add(log)
+    db.session.commit()
+    flash("审批通过")
+    return redirect(url_for("devices.detail", type_code=type_code, id=id))
+
+
+@devices_bp.route("/<type_code>/<int:id>/reject", methods=["POST"])
+@login_required
+def reject(type_code, id):
+    if current_user.role not in ["leader", "admin"]:
+        flash("需要领导权限")
+        return redirect(url_for("devices.detail", type_code=type_code, id=id))
+
+    config = get_config_or_404(type_code)
+    device = config.model_class.query.get_or_404(id)
+
+    if device.status != "pending":
+        flash("仅待审批状态可驳回")
+        return redirect(url_for("devices.detail", type_code=type_code, id=id))
+
+    device.status = "rejected"
+    log = ApprovalLog(
+        valve_id=None,
+        device_type=type_code,
+        device_id=device.id,
+        action="reject",
+        user_id=current_user.id,
+        comment=request.form.get("comment", ""),
+    )
+    db.session.add(log)
+    db.session.commit()
+    flash("已驳回")
+    return redirect(url_for("devices.detail", type_code=type_code, id=id))
 
 
 @devices_bp.route("/<type_code>/export")

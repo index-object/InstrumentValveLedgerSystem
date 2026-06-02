@@ -108,14 +108,21 @@
             <span class="badge-status badge-draft">草稿</span>
             {% endif %}
           </td>
-          <td style="position: sticky; right: 0; z-index: 2; background: #fff; border-left: 1px solid #dee2e6;">
+          <td style="position: sticky; right: 0; z-index: 2; background: #fff; border-left: 1px solid #dee2e6; white-space: nowrap;">
             <a href="{{ url_for('devices.detail', type_code=type_code, id=device.id, from=from_param) }}"
                class="btn-action" style="background: #e2e8f0; color: #475569;" title="查看">
               <i class="bi bi-eye"></i>
             </a>
-            {% if current_user.role == 'admin' or device.created_by == current_user.id %}
+            {% if device.status == 'draft' and (current_user.role == 'admin' or device.created_by == current_user.id) %}
+            <form method="POST" action="{{ url_for('devices.submit', type_code=type_code, id=device.id) }}" style="display:inline;">
+              <button type="submit" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);" title="提交审批">
+                <i class="bi bi-send"></i>
+              </button>
+            </form>
+            {% endif %}
+            {% if device.status in ['draft', 'rejected'] and (current_user.role == 'admin' or device.created_by == current_user.id) %}
             <a href="{{ url_for('devices.edit', type_code=type_code, id=device.id, from=from_param) }}"
-               class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);" title="编辑">
+               class="btn-action" style="background: rgba(59,130,246,0.1); color: #3b82f6;" title="编辑">
               <i class="bi bi-pencil"></i>
             </a>
             {% endif %}

@@ -46,10 +46,9 @@
     </div>
     {% endfor %}
 
-    <input type="hidden" name="status" value="draft">
     <div class="d-flex gap-2 justify-content-center mt-4">
       <button type="submit" class="btn-submit">
-        <i class="bi bi-check-circle"></i> 提交
+        <i class="bi bi-check-circle"></i> 保存草稿
       </button>
       {% set back_url = url_for('ledgers.detail', id=ledger.id, from=from_param) if ledger else (url_for('ledgers.detail', id=device.ledger_id, from=from_param) if device and device.ledger_id else url_for('devices.list', type_code=config.code)) %}
       <a href="{{ back_url }}" class="btn-back">
