@@ -36,8 +36,8 @@
             <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
             {% if ledger %}
             <div class="d-flex align-items-center gap-1">
-                {# 新增/删除按钮：仅员工且自己的台账且非待审批状态显示 #}
-                {% if current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.display_status != 'pending' %}
+                {# 新增/删除按钮：仅在"我的台账"界面，且员工且自己的台账且非待审批状态显示 #}
+                {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.display_status != 'pending' %}
                 <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=from_param) }}" class="btn btn-sm btn-primary" style="padding: 4px 12px; font-size: 12px;" title="新增台账">
                     <i class="bi bi-plus-lg"></i> 新增
                 </a>
@@ -49,8 +49,8 @@
                 <a href="{{ url_for('valves.export_data') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导出全部">
                     <i class="bi bi-download"></i> 导出
                 </a>
-                {# 导入按钮：仅员工且自己的台账显示 #}
-                {% if current_user.role == 'employee' and ledger.created_by == current_user.id %}
+                {# 导入按钮：仅在"我的台账"界面，且员工且自己的台账显示 #}
+                {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and ledger.created_by == current_user.id %}
                 <a href="{{ url_for('valves.import_data', ledger_id=ledger.id) }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
                     <i class="bi bi-upload"></i> 导入
                 </a>

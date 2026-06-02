@@ -102,11 +102,7 @@
                             <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-action" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px;">
                                 <i class="bi bi-eye"></i><span>查看</span>
                             </a>
-                            {% if ledger.created_by == current_user.id or current_user.role in ['leader', 'admin'] %}
-                            <a href="{{ url_for('ledgers.edit', id=ledger.id) }}" class="btn-action" style="background: rgba(56,178,172,0.15); color: var(--accent-color); border: 1px solid rgba(56,178,172,0.3); border-radius: 6px;">
-                                <i class="bi bi-pencil"></i><span>编辑</span>
-                            </a>
-                            {% endif %}
+                            {# 全部台账界面为只读，不显示编辑按钮 #}
                         </div>
                     </td>
                 </tr>

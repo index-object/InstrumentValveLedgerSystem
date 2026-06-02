@@ -319,9 +319,12 @@
                 <div class="media-section">
                     <div class="media-header">
                         <h5><i class="bi bi-camera"></i> 设备照片</h5>
+                        {# 照片管理按钮：仅在"我的台账"界面显示 #}
+                        {% if from_param == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id %}
                         <a href="{{ url_for('valves.photos', id=valve.id) }}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-pencil"></i> 管理
                         </a>
+                        {% endif %}
                     </div>
                     <div class="photo-grid">
                         {% if valve.photos %}
@@ -345,9 +348,12 @@
                 <div class="media-section">
                     <div class="media-header">
                         <h5><i class="bi bi-wrench-adjustable"></i> 维护记录</h5>
+                        {# 添加维护记录按钮：仅在"我的台账"界面显示 #}
+                        {% if from_param == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id %}
                         <a href="{{ url_for('valves.maintenance', id=valve.id) }}" class="btn btn-sm btn-primary">
                             <i class="bi bi-plus"></i> 添加
                         </a>
+                        {% endif %}
                     </div>
                     <div class="maintenance-list">
                         {% if valve.maintenance_records %}
