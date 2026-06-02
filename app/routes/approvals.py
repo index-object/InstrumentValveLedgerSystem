@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from app.models import db, Ledger, Valve, ApprovalLog
+from app.devices import DeviceTypeRegistry
 from app.routes.valves.permissions import require_leader
 from datetime import datetime
 
@@ -13,6 +14,9 @@ approvals = Blueprint("approvals", __name__)
 def index():
     tab = request.args.get("tab", "pending")
     pending_count = Valve.query.filter_by(status="pending").count()
+    for config in DeviceTypeRegistry.exclude_valve():
+        if config.model_class:
+            pending_count += config.model_class.query.filter_by(status="pending").count()
 
     if tab == "pending":
         ledgers = (
