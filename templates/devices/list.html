@@ -95,7 +95,7 @@
             <input type="checkbox" name="ids" value="{{ device.id }}" class="form-check-input item-checkbox">
           </td>
           {% for field in all_fields %}
-          <td>{{ device|attr(field) or '-' }}</td>
+          <td>{% if field == '位号' %}<a href="{{ url_for('devices.detail', type_code=type_code, id=device.id, from=from_param) }}" style="color: var(--primary-color); font-weight: 500;">{{ device|attr(field) or '-' }}</a>{% else %}{{ device|attr(field) or '-' }}{% endif %}</td>
           {% endfor %}
           <td>
             {% if device.status == 'approved' %}

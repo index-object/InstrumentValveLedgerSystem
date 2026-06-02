@@ -1,74 +1,95 @@
 {% extends "base.html" %}
 {% block page_title %}{{ config.name }}详情{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
+{% endblock %}
 {% block back_btn %}
 {% set from_param = from_param|default(request.args.get('from', '')) %}
 {% if device.ledger_id %}
 <a href="{{ url_for('ledgers.detail', id=device.ledger_id, from=from_param) }}" class="btn-back-header" title="返回台账合集">
-  <i class="bi bi-arrow-left"></i>
+  <i class="bi bi-arrow-left"></i> 返回
 </a>
 {% else %}
 <a href="{{ url_for('devices.list', type_code=config.code) }}" class="btn-back-header" title="返回列表">
-  <i class="bi bi-arrow-left"></i>
+  <i class="bi bi-arrow-left"></i> 返回
 </a>
 {% endif %}
 {% endblock %}
 {% block header_actions %}
+{% set from_param = from_param|default(request.args.get('from', '')) %}
 <a href="{{ url_for('devices.edit', type_code=config.code, id=device.id, from=from_param) }}" class="toolbar-btn toolbar-btn-primary">
   <i class="bi bi-pencil"></i> 编辑
 </a>
 {% endblock %}
 {% block content %}
-<div class="modern-card">
-  <div class="detail-header" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%); padding: 24px 32px; border-radius: 12px 12px 0 0; color: white;">
-    <div class="d-flex justify-content-between align-items-center">
-      <div class="d-flex align-items-center gap-3">
-        <div class="detail-icon" style="width: 56px; height: 56px; background: rgba(255,255,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
-          <i class="bi bi-gear"></i>
-        </div>
-        <div>
-          <div class="d-flex align-items-center gap-2 mb-1">
-            <span style="font-size: 13px; opacity: 0.8;">{{ config.name }}</span>
-            {% if device.status == 'approved' %}
-            <span class="badge-status badge-approved" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">已审批</span>
-            {% elif device.status == 'pending' %}
-            <span class="badge-status badge-pending" style="background: rgba(245,158,11,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">待审批</span>
-            {% elif device.status == 'rejected' %}
-            <span class="badge-status badge-rejected" style="background: rgba(239,68,68,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">已驳回</span>
-            {% else %}
-            <span class="badge-status badge-draft" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);">草稿</span>
-            {% endif %}
-          </div>
-          <h5 style="margin: 0; font-weight: 600; font-size: 18px;">{{ device|attr('位号') or '#' ~ device.id }}</h5>
+{% set section_colors = ['', 'section-header-cyan', 'section-header-orange', 'section-header-green', 'section-header-gray'] %}
+<div class="modern-card mb-4">
+  <div class="detail-header">
+    <div class="detail-header-main">
+      <div class="detail-icon">
+        <i class="bi bi-gear"></i>
+      </div>
+      <div class="detail-header-info">
+        <h2 class="detail-title-text">
+          <span class="valve-tag">{{ device|attr('位号') or '#' ~ device.id }}</span>
+          <span class="valve-name">{{ device|attr('设备名称') or device|attr('名称') or '-' }}</span>
+        </h2>
+        <div class="detail-meta">
+          <span><i class="bi bi-building"></i> {{ device|attr('装置名称') or '-' }}</span>
+          <span class="meta-divider">|</span>
+          <span><i class="bi bi-award"></i> {{ device|attr('设备分级') or device|attr('分级') or '-' }}</span>
+          <span class="meta-divider">|</span>
+          <span><i class="bi bi-box-seam"></i> {{ device|attr('生产厂家') or '-' }}</span>
         </div>
       </div>
-      <div style="text-align: right; font-size: 13px; opacity: 0.8;">
-        <div>创建人: {{ device.creator.real_name if device.creator else '未知' }}</div>
-        <div>创建时间: {{ device.created_at.strftime('%Y-%m-%d %H:%M') if device.created_at else '' }}</div>
-      </div>
+    </div>
+    <div class="detail-header-status">
+      {% if device.status == 'approved' %}
+      <span class="badge-status badge-approved"><i class="bi bi-check-circle"></i> 已审批</span>
+      {% elif device.status == 'pending' %}
+      <span class="badge-status badge-pending"><i class="bi bi-clock"></i> 待审批</span>
+      {% elif device.status == 'rejected' %}
+      <span class="badge-status badge-rejected"><i class="bi bi-x-circle"></i> 已驳回</span>
+      {% else %}
+      <span class="badge-status badge-draft"><i class="bi bi-file-earmark"></i> 草稿</span>
+      {% endif %}
     </div>
   </div>
+</div>
 
-  <div class="p-4">
-    {% for group in config.field_groups %}
-    <div class="form-section">
-      <div class="form-section-header">
-        <i class="bi bi-info-circle"></i>
-        <h5>{{ group.title }}</h5>
-      </div>
-      <div class="form-section-body">
-        <div class="detail-grid-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0;">
-          {% for chunk in group.fields | batch(2) %}
-          {% for field in chunk %}
-          <div class="info-row" style="display: grid; grid-template-columns: 140px 1fr; border-bottom: 1px solid var(--border-color); padding: 10px 0; margin: 0;">
-            <div style="font-size: 13px; font-weight: 600; color: var(--text-muted);">{{ field }}</div>
-            <div style="font-size: 14px; color: var(--text-dark);">{{ device|attr(field) or '-' }}</div>
+<div class="modern-card">
+  <ul class="nav nav-tabs detail-tabs" id="detailTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-panel" type="button" role="tab">
+        <i class="bi bi-clipboard-data"></i> 数据详情
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content detail-tab-content" id="detailTabContent">
+    <div class="tab-pane fade show active" id="data-panel" role="tabpanel">
+      <div class="detail-grid-layout">
+        <div class="detail-column">
+          {% for group in config.field_groups %}
+          <div class="info-section {% if loop.last and group.fields|length <= 3 %}info-section-compact{% endif %}">
+            <div class="section-header {{ section_colors[loop.index0 % section_colors|length] }}">
+              <i class="bi bi-info-circle"></i>
+              <span>{{ group.title }}</span>
+              <span class="section-count">{{ group.fields|length }}项</span>
+            </div>
+            <div class="info-list">
+              {% for field in group.fields %}
+              <div class="info-row">
+                <span class="info-label">{{ field }}</span>
+                <span class="info-value">{{ device|attr(field) or '-' }}</span>
+              </div>
+              {% endfor %}
+            </div>
           </div>
-          {% endfor %}
           {% endfor %}
         </div>
       </div>
     </div>
-    {% endfor %}
   </div>
 </div>
 {% endblock %}
