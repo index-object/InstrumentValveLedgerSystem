@@ -162,8 +162,13 @@ def detail(id):
         model = config.model_class
         page = request.args.get("page", 1, type=int)
         search = request.args.get("search", "").strip()
+        status_filter = request.args.get("status", "").strip()
 
         query = model.query.filter_by(ledger_id=ledger.id)
+
+        if status_filter:
+            query = query.filter(model.status == status_filter)
+
         if search:
             keyword = f"%{search}%"
             filters = []
@@ -181,7 +186,7 @@ def detail(id):
         return render_template("ledgers/device_detail.html",
             ledger=ledger, config=config,
             devices=pagination.items, pagination=pagination,
-            search=search, from_param=from_param)
+            search=search, status_filter=status_filter, from_param=from_param)
 
     ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
     ledger.pending_count = Valve.query.filter_by(ledger_id=id, status="pending").count()
