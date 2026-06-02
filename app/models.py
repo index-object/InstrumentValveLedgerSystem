@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.orm import declared_attr
 
 db = SQLAlchemy()
 
@@ -68,8 +69,13 @@ class DeviceBase(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    creator = db.relationship("User", foreign_keys=[created_by])
-    approver = db.relationship("User", foreign_keys=[approved_by])
+    @declared_attr
+    def creator(cls):
+        return db.relationship("User", foreign_keys=[cls.created_by])
+
+    @declared_attr
+    def approver(cls):
+        return db.relationship("User", foreign_keys=[cls.approved_by])
 
 
 class Valve(db.Model):
