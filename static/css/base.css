@@ -47,22 +47,7 @@ body {
 .sidebar-menu-item:hover { background: rgba(255,255,255,0.08); color: white; }
 .sidebar-menu-item.active { background: rgba(255,255,255,0.12); color: white; border-left-color: var(--accent-color); }
 .sidebar-menu-item i { font-size: 18px; width: 24px; text-align: center; }
-.sidebar-menu-label {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: rgba(255,255,255,0.4);
-    padding: 20px 20px 8px;
-    cursor: default;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.sidebar-menu-label i { font-size: 14px; opacity: 0.6; }
-.sidebar-menu-sub {
-    padding: 8px 20px 8px 44px;
-    font-size: 13px;
-}
+
 .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.15); }
 .user-info { display: flex; align-items: center; gap: 12px; }
 .user-avatar {
