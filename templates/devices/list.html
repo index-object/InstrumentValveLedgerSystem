@@ -26,9 +26,11 @@
 {% block toolbar %}
 {% set type_code = ledger.类型 if ledger else config.code %}
 {% set from_param = from_param|default(request.args.get('from', '')) %}
+{% set is_mine = (from_param == 'mine') %}
 <div class="table-toolbar-compact">
   <div class="table-toolbar">
     <div class="toolbar-left">
+      {% if is_mine %}
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="selectAll">
       </div>
@@ -39,12 +41,13 @@
       <a href="{{ url_for('devices.import_data', type_code=type_code) }}" class="toolbar-btn toolbar-btn-secondary toolbar-btn-compact">
         <i class="bi bi-upload"></i> 导入
       </a>
-      <a href="{{ url_for('devices.export', type_code=type_code) }}" class="toolbar-btn toolbar-btn-secondary toolbar-btn-compact">
-        <i class="bi bi-download"></i> 导出
-      </a>
       <button type="submit" form="batch-form" class="toolbar-btn toolbar-btn-danger toolbar-btn-compact" onclick="return confirm('确认删除选中记录？')">
         <i class="bi bi-trash"></i> 删除
       </button>
+      {% endif %}
+      <a href="{{ url_for('devices.export', type_code=type_code) }}" class="toolbar-btn toolbar-btn-secondary toolbar-btn-compact">
+        <i class="bi bi-download"></i> 导出
+      </a>
     </div>
     <div class="toolbar-right">
       <form method="GET" class="d-flex gap-2 align-items-center">
@@ -73,14 +76,18 @@
 {% set type_code = ledger.类型 if ledger else config.code %}
 {% set all_fields = config.get_fields_flat() %}
 {% set total_data_cols = all_fields | length %}
+{% set from_param = from_param|default(request.args.get('from', '')) %}
+{% set is_mine = (from_param == 'mine') %}
 <div class="modern-card">
   <div class="table-responsive" style="max-height: calc(100vh - 300px); overflow-y: auto;">
     <table class="modern-table table-sm table-bordered" style="min-width: {{ 800 + total_data_cols * 100 }}px;">
       <thead class="table-light">
         <tr>
+          {% if is_mine %}
           <th style="width: 50px; min-width: 50px; position: sticky; left: 0; z-index: 3; background: #f8f9fa; border-right: 1px solid #dee2e6;">
             <input type="checkbox" class="form-check-input" id="selectAllTop">
           </th>
+          {% endif %}
           {% for field in all_fields %}
           <th style="min-width: 100px;">{{ field }}</th>
           {% endfor %}
@@ -91,9 +98,11 @@
       <tbody>
         {% for device in devices %}
         <tr>
+          {% if is_mine %}
           <td style="position: sticky; left: 0; z-index: 2; background: #fff; border-right: 1px solid #dee2e6;">
             <input type="checkbox" name="ids" value="{{ device.id }}" class="form-check-input item-checkbox">
           </td>
+          {% endif %}
           {% for field in all_fields %}
           <td>{% if field == '位号' %}<a href="{{ url_for('devices.detail', type_code=type_code, id=device.id, from=from_param) }}" style="color: var(--primary-color); font-weight: 500;">{{ device|attr(field) or '-' }}</a>{% else %}{{ device|attr(field) or '-' }}{% endif %}</td>
           {% endfor %}
@@ -113,6 +122,7 @@
                class="btn-action" style="background: #e2e8f0; color: #475569;" title="查看">
               <i class="bi bi-eye"></i>
             </a>
+            {% if is_mine %}
             {% if device.status == 'draft' and (current_user.role == 'admin' or device.created_by == current_user.id) %}
             <form method="POST" action="{{ url_for('devices.submit', type_code=type_code, id=device.id) }}" style="display:inline;">
               <button type="submit" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);" title="提交审批">
@@ -126,15 +136,18 @@
               <i class="bi bi-pencil"></i>
             </a>
             {% endif %}
+            {% endif %}
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="{{ 2 + total_data_cols + 1 }}">
+          <td colspan="{{ (1 if is_mine else 0) + total_data_cols + 2 }}">
             <div class="empty-state">
               <i class="bi bi-inbox"></i>
               <p>暂无{{ config.name }}数据</p>
+              {% if is_mine %}
               <a href="{{ url_for('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none, from=from_param) }}" class="btn btn-accent">添加第一个{{ config.name }}</a>
+              {% endif %}
             </div>
           </td>
         </tr>
@@ -168,7 +181,9 @@
   {% endif %}
 </div>
 
+{% if is_mine %}
 <form id="batch-form" method="POST" action="{{ url_for('devices.batch_delete', type_code=type_code) }}"></form>
+{% endif %}
 {% endblock %}
 {% block extra_js %}
 <script>
