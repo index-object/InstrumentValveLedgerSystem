@@ -6,6 +6,7 @@
 
 from flask import request, url_for, redirect
 from functools import wraps
+from app.devices import DeviceTypeRegistry
 
 
 # 定义所有合法的入口点及其返回目标
@@ -192,4 +193,6 @@ def inject_navigation():
         'get_context': get_context,
         'get_back_url': get_back_url,
         'url_with_from': url_with_from,
+        'get_device_types': DeviceTypeRegistry.exclude_valve,
+        'get_device_type_config': DeviceTypeRegistry.get,
     }

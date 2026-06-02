@@ -28,6 +28,17 @@
             <a href="{{ url_for('ledgers.list') }}" class="sidebar-menu-item {% if request.endpoint == 'ledgers.list' %}active{% endif %}">
                 <i class="bi bi-collection"></i><span>全部台账</span>
             </a>
+            {% set device_types = get_device_types() %}
+            {% if device_types %}
+            <div class="sidebar-menu-item sidebar-menu-label">
+                <i class="bi bi-microchip"></i><span>仪表管理</span>
+            </div>
+            {% for dt in device_types %}
+            <a href="{{ url_for('devices.list', type_code=dt.code) }}" class="sidebar-menu-item sidebar-menu-sub {% if request.endpoint == 'devices.list' and request.view_args.get('type_code') == dt.code %}active{% endif %}">
+                <i class="bi bi-dot"></i><span>{{ dt.name }}</span>
+            </a>
+            {% endfor %}
+            {% endif %}
             {% if current_user.role in ['leader', 'admin'] %}
             <a href="{{ url_for('approvals.index') }}" class="sidebar-menu-item {% if request.endpoint and 'approvals' in request.endpoint %}active{% endif %}">
                 <i class="bi bi-check-circle"></i><span>审批中心</span>
