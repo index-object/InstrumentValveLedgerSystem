@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block page_title %}{{ '编辑' if device else '新建' }}{{ config.name }}{% endblock %}
+{% block back_btn %}
+{% set from_param = from_param|default(request.args.get('from', '')) %}
+{% if ledger %}
+<a href="{{ url_for('ledgers.detail', id=ledger.id, from=from_param) }}" class="btn-back-header" title="返回台账合集">
+  <i class="bi bi-arrow-left"></i>
+</a>
+{% elif device and device.ledger_id %}
+<a href="{{ url_for('ledgers.detail', id=device.ledger_id, from=from_param) }}" class="btn-back-header" title="返回台账合集">
+  <i class="bi bi-arrow-left"></i>
+</a>
+{% else %}
+<a href="{{ url_for('devices.list', type_code=config.code) }}" class="btn-back-header" title="返回列表">
+  <i class="bi bi-arrow-left"></i>
+</a>
+{% endif %}
+{% endblock %}
+{% block header_actions %}{% endblock %}
+{% block content %}
+{% set section_colors = ['', 'section-header-cyan', 'section-header-orange', 'section-header-green', 'section-header-gray'] %}
+<div class="modern-card p-4" style="max-width: 900px; margin: 0 auto;">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
+  <form method="POST" id="device-form">
+    {% for group in config.field_groups %}
+    <div class="form-section">
+      <div class="section-header {{ section_colors[loop.index0 % section_colors|length] }}" style="padding: 14px 20px;">
+        <i class="bi bi-info-circle"></i>
+        <span style="font-weight: 600;">{{ group.title }}</span>
+        <span class="section-count">{{ group.fields|length }}项</span>
+      </div>
+      <div class="form-section-body">
+        <div class="row">
+          {% for field in group.fields %}
+          <div class="col-md-{{ 12 // group.cols }} mb-3">
+            <label class="form-label">{{ field }}</label>
+            <input type="text"
+                   name="{{ field }}"
+                   value="{{ device[field] if device else '' }}"
+                   class="form-control form-control-modern"
+                   {% if field == '位号' %}data-check-tag="true" data-type="{{ config.code }}"{% endif %}>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="d-flex gap-2 justify-content-center mt-4">
+      <button type="submit" class="btn-submit">
+        <i class="bi bi-check-circle"></i> 保存草稿
+      </button>
+      {% set back_url = url_for('ledgers.detail', id=ledger.id, from=from_param) if ledger else (url_for('ledgers.detail', id=device.ledger_id, from=from_param) if device and device.ledger_id else url_for('devices.list', type_code=config.code)) %}
+      <a href="{{ back_url }}" class="btn-back">
+        <i class="bi bi-x"></i> 取消
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.querySelectorAll('[data-check-tag]').forEach(input => {
+  input.addEventListener('blur', function() {
+    const tag = this.value.trim();
+    const type = this.dataset.type;
+    if (!tag) return;
+    fetch(`/device/${type}/check-tag?%E4%BD%8D%E5%8F%B7=${encodeURIComponent(tag)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!data.valid) {
+          alert(data.message || '位号已存在');
+        }
+      });
+  });
+});
+</script>
+{% endblock %}

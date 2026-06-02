@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block page_title %}{{ config.name }}详情{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
+{% endblock %}
+{% block back_btn %}
+{% set from_param = from_param|default(request.args.get('from', '')) %}
+{% if device.ledger_id %}
+<a href="{{ url_for('ledgers.detail', id=device.ledger_id, from=from_param) }}" class="btn-back-header" title="返回台账合集">
+  <i class="bi bi-arrow-left"></i> 返回
+</a>
+{% else %}
+<a href="{{ url_for('devices.list', type_code=config.code) }}" class="btn-back-header" title="返回列表">
+  <i class="bi bi-arrow-left"></i> 返回
+</a>
+{% endif %}
+{% endblock %}
+{% block header_actions %}
+{% set from_param = from_param|default(request.args.get('from', '')) %}
+{% if device.status == 'draft' and (current_user.role == 'admin' or device.created_by == current_user.id) %}
+<form method="POST" action="{{ url_for('devices.submit', type_code=config.code, id=device.id) }}" style="display:inline;">
+  <button type="submit" class="toolbar-btn toolbar-btn-success">
+    <i class="bi bi-send"></i> 提交审批
+  </button>
+</form>
+{% endif %}
+{% if device.status == 'pending' and current_user.role in ['leader', 'admin'] %}
+<form method="POST" action="{{ url_for('devices.approve', type_code=config.code, id=device.id) }}" style="display:inline;">
+  <button type="submit" class="toolbar-btn toolbar-btn-success">
+    <i class="bi bi-check-lg"></i> 审批通过
+  </button>
+</form>
+<form method="POST" action="{{ url_for('devices.reject', type_code=config.code, id=device.id) }}" style="display:inline;" onsubmit="return confirm('确认驳回？')">
+  <button type="submit" class="toolbar-btn toolbar-btn-danger">
+    <i class="bi bi-x-lg"></i> 驳回
+  </button>
+</form>
+{% endif %}
+<a href="{{ url_for('devices.edit', type_code=config.code, id=device.id, from=from_param) }}" class="toolbar-btn toolbar-btn-primary">
+  <i class="bi bi-pencil"></i> 编辑
+</a>
+{% endblock %}
+{% block content %}
+{% set section_colors = ['', 'section-header-cyan', 'section-header-orange', 'section-header-green', 'section-header-gray'] %}
+<div class="modern-card mb-4">
+  <div class="detail-header">
+    <div class="detail-header-main">
+      <div class="detail-icon">
+        <i class="bi bi-gear"></i>
+      </div>
+      <div class="detail-header-info">
+        <h2 class="detail-title-text">
+          <span class="valve-tag">{{ device|attr('位号') or '#' ~ device.id }}</span>
+          <span class="valve-name">{{ device|attr('设备名称') or device|attr('名称') or '-' }}</span>
+        </h2>
+        <div class="detail-meta">
+          <span><i class="bi bi-building"></i> {{ device|attr('装置名称') or '-' }}</span>
+          <span class="meta-divider">|</span>
+          <span><i class="bi bi-award"></i> {{ device|attr('设备分级') or device|attr('分级') or '-' }}</span>
+          <span class="meta-divider">|</span>
+          <span><i class="bi bi-box-seam"></i> {{ device|attr('生产厂家') or '-' }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="detail-header-status">
+      {% if device.status == 'approved' %}
+      <span class="badge-status badge-approved"><i class="bi bi-check-circle"></i> 已审批</span>
+      {% elif device.status == 'pending' %}
+      <span class="badge-status badge-pending"><i class="bi bi-clock"></i> 待审批</span>
+      {% elif device.status == 'rejected' %}
+      <span class="badge-status badge-rejected"><i class="bi bi-x-circle"></i> 已驳回</span>
+      {% else %}
+      <span class="badge-status badge-draft"><i class="bi bi-file-earmark"></i> 草稿</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="modern-card">
+  <ul class="nav nav-tabs detail-tabs" id="detailTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-panel" type="button" role="tab">
+        <i class="bi bi-clipboard-data"></i> 数据详情
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content detail-tab-content" id="detailTabContent">
+    <div class="tab-pane fade show active" id="data-panel" role="tabpanel">
+      <div class="detail-grid-layout">
+        {% set half = (config.field_groups|length + 1)//2 %}
+        {% for col_idx in range(2) %}
+        {% set col_start = col_idx * half %}
+        <div class="detail-column" style="display: flex; flex-direction: column; gap: 20px;">
+          {% for group in config.field_groups %}
+          {% if loop.index0 >= col_start and loop.index0 < col_start + half %}
+          <div class="info-section" style="flex: none;">
+            <div class="section-header {{ section_colors[loop.index0 % section_colors|length] }}">
+              <i class="bi bi-info-circle"></i>
+              <span>{{ group.title }}</span>
+              <span class="section-count">{{ group.fields|length }}项</span>
+            </div>
+            <div class="info-list">
+              {% for field in group.fields %}
+              <div class="info-row">
+                <span class="info-label">{{ field }}</span>
+                <span class="info-value">{{ device|attr(field) or '-' }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
