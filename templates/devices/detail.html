@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ config.name }} - {{ device|attr('位号') or device.id }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+      <i class="{{ config.icon }}"></i> {{ config.name }}详情
+    </h4>
+    <div>
+      <a href="{{ url_for('devices.list', type_code=config.code) }}" class="btn btn-secondary btn-sm">
+        <i class="fa fa-arrow-left"></i> 返回列表
+      </a>
+      <a href="{{ url_for('devices.edit', type_code=config.code, id=device.id) }}"
+         class="btn btn-warning btn-sm">编辑</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="badge badge-{{ 'success' if device.status == 'approved'
+         else 'warning' if device.status == 'pending'
+         else 'danger' if device.status == 'rejected'
+         else 'secondary' }}">
+        {{ device.status }}
+      </span>
+      <small class="ml-2 text-muted">
+        创建人: {{ device.creator.real_name if device.creator else '未知' }} |
+        创建时间: {{ device.created_at.strftime('%Y-%m-%d %H:%M') if device.created_at else '' }}
+      </small>
+    </div>
+    <div class="card-body">
+      {% for group in config.field_groups %}
+      <div class="card mb-3">
+        <div class="card-header bg-primary text-white">{{ group.title }}</div>
+        <div class="card-body p-0">
+          <table class="table table-bordered mb-0">
+            <tbody>
+              {% for chunk in group.fields | batch(group.cols) %}
+              <tr>
+                {% for field in chunk %}
+                <th class="bg-light w-25">{{ field }}</th>
+                <td class="w-25">{{ device|attr(field) or '' }}</td>
+                {% endfor %}
+                {% if chunk|length < group.cols %}
+                <td colspan="{{ (group.cols - chunk|length) * 2 }}"></td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

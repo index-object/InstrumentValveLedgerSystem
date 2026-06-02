@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{{ config.name }}管理{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+      <i class="{{ config.icon }}"></i> {{ config.name }}管理
+    </h4>
+    <div>
+      <a href="{{ url_for('devices.export', type_code=config.code) }}" class="btn btn-success btn-sm">
+        <i class="fa fa-download"></i> 导出
+      </a>
+      <a href="{{ url_for('devices.import_data', type_code=config.code) }}" class="btn btn-info btn-sm">
+        <i class="fa fa-upload"></i> 导入
+      </a>
+      <a href="{{ url_for('devices.new', type_code=config.code) }}" class="btn btn-primary btn-sm">
+        <i class="fa fa-plus"></i> 新增{{ config.name }}
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="GET" class="row mb-3">
+        <div class="col-md-4">
+          <input type="text" name="search" class="form-control form-control-sm"
+                 placeholder="搜索位号/设备名称..." value="{{ search or '' }}">
+        </div>
+        <div class="col-md-2">
+          <select name="status" class="form-control form-control-sm">
+            <option value="">全部状态</option>
+            <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>草稿</option>
+            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>待审批</option>
+            <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>已审批</option>
+            <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>已驳回</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-sm btn-primary">搜索</button>
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover table-sm">
+          <thead class="thead-light">
+            <tr>
+              <th><input type="checkbox" id="select-all"></th>
+              {% for field in config.field_groups[0].fields[:5] %}
+              <th>{{ field }}</th>
+              {% endfor %}
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for device in devices %}
+            <tr>
+              <td><input type="checkbox" name="ids" value="{{ device.id }}" form="batch-form"></td>
+              {% for field in config.field_groups[0].fields[:5] %}
+              <td>{{ device|attr(field) or '' }}</td>
+              {% endfor %}
+              <td>
+                {% if device.status == 'draft' %}
+                  <span class="badge badge-secondary">草稿</span>
+                {% elif device.status == 'pending' %}
+                  <span class="badge badge-warning">待审批</span>
+                {% elif device.status == 'approved' %}
+                  <span class="badge badge-success">已审批</span>
+                {% elif device.status == 'rejected' %}
+                  <span class="badge badge-danger">已驳回</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('devices.detail', type_code=config.code, id=device.id) }}"
+                   class="btn btn-sm btn-info">查看</a>
+                {% if current_user.role == 'admin' or device.created_by == current_user.id %}
+                <a href="{{ url_for('devices.edit', type_code=config.code, id=device.id) }}"
+                   class="btn btn-sm btn-warning">编辑</a>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if pagination.pages > 1 %}
+      <nav>
+        <ul class="pagination pagination-sm justify-content-center">
+          {% for p in range(1, pagination.pages + 1) %}
+          <li class="page-item {% if p == pagination.page %}active{% endif %}">
+            <a class="page-link" href="?page={{ p }}&search={{ search or '' }}&status={{ status_filter }}">{{ p }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </nav>
+      {% endif %}
+
+      <form id="batch-form" method="POST" action="{{ url_for('devices.batch_delete', type_code=config.code) }}">
+        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('确认删除选中记录？')">
+          <i class="fa fa-trash"></i> 批量删除
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('select-all')?.addEventListener('change', function() {
+  document.querySelectorAll('input[name="ids"]').forEach(cb => cb.checked = this.checked);
+});
+</script>
+{% endblock %}
