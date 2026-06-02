@@ -1,9 +1,15 @@
 {% extends "base.html" %}
 {% block page_title %}{{ config.name }}详情{% endblock %}
 {% block back_btn %}
+{% if device.ledger_id %}
+<a href="{{ url_for('ledgers.detail', id=device.ledger_id) }}" class="btn-back-header" title="返回台账合集">
+  <i class="bi bi-arrow-left"></i>
+</a>
+{% else %}
 <a href="{{ url_for('devices.list', type_code=config.code) }}" class="btn-back-header" title="返回列表">
   <i class="bi bi-arrow-left"></i>
 </a>
+{% endif %}
 {% endblock %}
 {% block header_actions %}
 <a href="{{ url_for('devices.edit', type_code=config.code, id=device.id) }}" class="toolbar-btn toolbar-btn-primary">
