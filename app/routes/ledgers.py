@@ -77,19 +77,25 @@ def list():
     ledgers_list = query.order_by(Ledger.created_at.desc()).all()
 
     for ledger in ledgers_list:
-        ledger.valve_count = Valve.query.filter_by(ledger_id=ledger.id).count()
-        ledger.pending_count = Valve.query.filter_by(
-            ledger_id=ledger.id, status="pending"
-        ).count()
-        ledger.rejected_count = Valve.query.filter_by(
-            ledger_id=ledger.id, status="rejected"
-        ).count()
-        ledger.approved_count = Valve.query.filter_by(
-            ledger_id=ledger.id, status="approved"
-        ).count()
-        ledger.draft_count = Valve.query.filter_by(
-            ledger_id=ledger.id, status="draft"
-        ).count()
+        if ledger.类型 == "valve":
+            total_q = Valve.query.filter_by(ledger_id=ledger.id)
+            ledger.valve_count = total_q.count()
+            ledger.pending_count = total_q.filter_by(status="pending").count()
+            ledger.rejected_count = total_q.filter_by(status="rejected").count()
+            ledger.approved_count = total_q.filter_by(status="approved").count()
+            ledger.draft_count = total_q.filter_by(status="draft").count()
+        else:
+            config = DeviceTypeRegistry.get(ledger.类型)
+            if config and config.model_class:
+                model = config.model_class
+                total_q = model.query.filter_by(ledger_id=ledger.id)
+                ledger.valve_count = total_q.count()
+                ledger.pending_count = total_q.filter_by(status="pending").count()
+                ledger.rejected_count = total_q.filter_by(status="rejected").count()
+                ledger.approved_count = total_q.filter_by(status="approved").count()
+                ledger.draft_count = total_q.filter_by(status="draft").count()
+            else:
+                ledger.valve_count = ledger.pending_count = ledger.rejected_count = ledger.approved_count = ledger.draft_count = 0
 
         if ledger.approved_snapshot_status:
             ledger.display_status = ledger.approved_snapshot_status
