@@ -67,7 +67,6 @@ def list(type_code):
 def detail(type_code, id):
     config = get_config_or_404(type_code)
     device = config.model_class.query.get_or_404(id)
-
     from_param = request.args.get("from", "")
 
     return render_template(
@@ -82,6 +81,7 @@ def detail(type_code, id):
 @login_required
 def new(type_code):
     config = get_config_or_404(type_code)
+    from_param = request.args.get("from", "")
     ledger_id = request.args.get("ledger_id", type=int)
     ledger = None
     if ledger_id:
@@ -124,7 +124,7 @@ def new(type_code):
 
         flash("提交成功")
         if ledger_id:
-            return redirect(url_for("ledgers.detail", id=ledger_id))
+            return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
         return redirect(url_for("devices.list", type_code=type_code))
 
     return render_template(
@@ -132,6 +132,7 @@ def new(type_code):
         config=config,
         device=None,
         ledger=ledger,
+        from_param=from_param,
     )
 
 
@@ -140,10 +141,11 @@ def new(type_code):
 def edit(type_code, id):
     config = get_config_or_404(type_code)
     device = config.model_class.query.get_or_404(id)
+    from_param = request.args.get("from", "")
 
     if current_user.role == "employee" and device.created_by != current_user.id:
         flash("无权编辑")
-        return redirect(url_for("devices.detail", type_code=type_code, id=id))
+        return redirect(url_for("devices.detail", type_code=type_code, id=id, **{"from": from_param}))
 
     if request.method == "POST":
         for key, value in request.form.items():
@@ -152,12 +154,13 @@ def edit(type_code, id):
         device.updated_at = datetime.utcnow()
         db.session.commit()
         flash("保存成功")
-        return redirect(url_for("devices.detail", type_code=type_code, id=id))
+        return redirect(url_for("devices.detail", type_code=type_code, id=id, **{"from": from_param}))
 
     return render_template(
         "devices/form.html",
         config=config,
         device=device,
+        from_param=from_param,
     )
 
 

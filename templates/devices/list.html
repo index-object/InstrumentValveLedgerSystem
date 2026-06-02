@@ -25,6 +25,7 @@
 {% block header_actions %}{% endblock %}
 {% block toolbar %}
 {% set type_code = ledger.类型 if ledger else config.code %}
+{% set from_param = from_param|default(request.args.get('from', '')) %}
 <div class="table-toolbar-compact">
   <div class="table-toolbar">
     <div class="toolbar-left">
@@ -32,7 +33,7 @@
         <input type="checkbox" class="form-check-input" id="selectAll">
       </div>
       <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
-      <a href="{{ url_for('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
+      <a href="{{ url_for('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none, from=from_param) }}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
         <i class="bi bi-plus-lg"></i> 新增
       </a>
       <a href="{{ url_for('devices.import_data', type_code=type_code) }}" class="toolbar-btn toolbar-btn-secondary toolbar-btn-compact">
@@ -106,12 +107,12 @@
             {% endif %}
           </td>
           <td style="position: sticky; right: 0; z-index: 2; background: #fff; border-left: 1px solid #dee2e6;">
-            <a href="{{ url_for('devices.detail', type_code=type_code, id=device.id) }}"
+            <a href="{{ url_for('devices.detail', type_code=type_code, id=device.id, from=from_param) }}"
                class="btn-action" style="background: #e2e8f0; color: #475569;" title="查看">
               <i class="bi bi-eye"></i>
             </a>
             {% if current_user.role == 'admin' or device.created_by == current_user.id %}
-            <a href="{{ url_for('devices.edit', type_code=type_code, id=device.id) }}"
+            <a href="{{ url_for('devices.edit', type_code=type_code, id=device.id, from=from_param) }}"
                class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);" title="编辑">
               <i class="bi bi-pencil"></i>
             </a>
@@ -124,7 +125,7 @@
             <div class="empty-state">
               <i class="bi bi-inbox"></i>
               <p>暂无{{ config.name }}数据</p>
-              <a href="{{ url_for('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="btn btn-accent">添加第一个{{ config.name }}</a>
+              <a href="{{ url_for('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none, from=from_param) }}" class="btn btn-accent">添加第一个{{ config.name }}</a>
             </div>
           </td>
         </tr>
