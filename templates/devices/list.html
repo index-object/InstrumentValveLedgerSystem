@@ -73,7 +73,6 @@
 {% set type_code = ledger.类型 if ledger else config.code %}
 {% set all_fields = config.get_fields_flat() %}
 {% set total_data_cols = all_fields | length %}
-{% set group_header_colors = ['table-secondary', 'table-info', 'table-warning', 'table-success', 'table-primary'] %}
 <div class="modern-card">
   <div class="table-responsive" style="max-height: calc(100vh - 300px); overflow-y: auto;">
     <table class="modern-table table-sm table-bordered" style="min-width: {{ 800 + total_data_cols * 100 }}px;">
@@ -82,14 +81,6 @@
           <th style="width: 50px; min-width: 50px; position: sticky; left: 0; z-index: 3; background: #f8f9fa; border-right: 1px solid #dee2e6;">
             <input type="checkbox" class="form-check-input" id="selectAllTop">
           </th>
-          {% for group in config.field_groups %}
-          <th colspan="{{ group.fields | length }}" class="text-center {{ group_header_colors[loop.index0] }}">{{ group.title }}</th>
-          {% endfor %}
-          <th style="width: 100px;" class="text-center">状态</th>
-          <th style="width: 120px; position: sticky; right: 0; z-index: 3; background: #f8f9fa; border-left: 1px solid #dee2e6;" class="text-center">操作</th>
-        </tr>
-        <tr>
-          <th style="width: 50px; min-width: 50px; position: sticky; left: 0; z-index: 3; background: #f8f9fa; border-right: 1px solid #dee2e6;"></th>
           {% for field in all_fields %}
           <th style="min-width: 100px;">{{ field }}</th>
           {% endfor %}
