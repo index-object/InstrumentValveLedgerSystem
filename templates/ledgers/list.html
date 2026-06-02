@@ -51,10 +51,11 @@
         <table class="modern-table">
             <thead>
                 <tr>
-                    <th style="width: 30%;">合集名称</th>
-                    <th style="width: 15%;">台账</th>
-                    <th style="width: 20%;">创建人</th>
-                    <th style="width: 20%;">创建时间</th>
+                    <th style="width: 25%;">合集名称</th>
+                    <th style="width: 12%;">类型</th>
+                    <th style="width: 12%;">台账</th>
+                    <th style="width: 18%;">创建人</th>
+                    <th style="width: 18%;">创建时间</th>
                     <th style="width: 15%;">操作</th>
                 </tr>
             </thead>
@@ -65,6 +66,10 @@
                         <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="ledger-name-link">
                             <i class="bi bi-folder2 folder-icon" style="color: #3b82f6;"></i>{{ ledger.名称 }}
                         </a>
+                    </td>
+                    <td>
+                        {% set dt_config = get_device_type_config(ledger.类型) %}
+                        <span class="badge-status" style="background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); color: #4338ca; border: 1px solid #a5b4fc;">{{ dt_config.name if dt_config else ledger.类型 }}</span>
                     </td>
                     <td>
                         {% if ledger.valve_count >= 500 %}
@@ -108,7 +113,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5">
+                    <td colspan="6">
                         <div class="empty-state">
                             <i class="bi bi-inbox"></i>
                             <p>暂无台账合集</p>

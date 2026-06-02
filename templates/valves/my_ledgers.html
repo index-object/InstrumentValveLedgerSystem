@@ -66,14 +66,15 @@
                     <th style="width: 5%;">
                         <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
                     </th>
-                    <th style="width: 17%;">合集名称</th>
-                    <th style="9%;">台账</th>
-                    <th style="9%;">待审批</th>
-                    <th style="9%;">已通过</th>
-                    <th style="9%;">草稿</th>
+                    <th style="width: 15%;">合集名称</th>
+                    <th style="10%;">类型</th>
+                    <th style="8%;">台账</th>
+                    <th style="8%;">待审批</th>
+                    <th style="8%;">已通过</th>
+                    <th style="8%;">草稿</th>
                     <th style="10%;">状态</th>
-                    <th style="12%;">创建时间</th>
-                    <th style="20%;">操作</th>
+                    <th style="10%;">创建时间</th>
+                    <th style="18%;">操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -86,6 +87,10 @@
                         <a href="{{ url_for('ledgers.detail', id=ledger.id, from='mine') }}" class="ledger-name-link">
                             <i class="bi bi-folder2-open folder-icon" style="color: #10b981;"></i>{{ ledger.名称 }}
                         </a>
+                    </td>
+                    <td>
+                        {% set dt_config = get_device_type_config(ledger.类型) %}
+                        <span class="badge-status" style="background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); color: #4338ca; border: 1px solid #a5b4fc;">{{ dt_config.name if dt_config else ledger.类型 }}</span>
                     </td>
                     <td><span class="count-cell">{{ ledger.valve_count }}</span></td>
                     <td>
@@ -145,7 +150,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="9">
+                    <td colspan="10">
                         <div class="empty-state">
                             <i class="bi bi-inbox"></i>
                             <p>暂无台账合集</p>
