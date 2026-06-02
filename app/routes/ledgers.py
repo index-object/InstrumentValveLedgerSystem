@@ -183,7 +183,7 @@ def detail(id):
             page=page, per_page=20, error_out=False
         )
 
-        return render_template("ledgers/device_detail.html",
+        return render_template("devices/list.html",
             ledger=ledger, config=config,
             devices=pagination.items, pagination=pagination,
             search=search, status_filter=status_filter, from_param=from_param)

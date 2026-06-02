@@ -1,12 +1,30 @@
 {% extends "base.html" %}
-{% block page_title %}{{ config.name }}管理{% endblock %}
+{% block page_title %}{{ ledger.名称 if ledger else config.name + '管理' }}{% endblock %}
 {% block back_btn %}
+{% if ledger %}
+{% set from_param = from_param|default(request.args.get('from', 'all')) %}
+{% if from_param == 'mine' %}
+<a href="{{ url_for('valves.my_ledgers') }}" class="btn-back-header" title="返回我的台账">
+  <i class="bi bi-arrow-left"></i>
+</a>
+{% elif from_param == 'approvals' %}
+<a href="{{ url_for('approvals.index') }}" class="btn-back-header" title="返回审批中心">
+  <i class="bi bi-arrow-left"></i>
+</a>
+{% else %}
+<a href="{{ url_for('ledgers.list') }}" class="btn-back-header" title="返回台账列表">
+  <i class="bi bi-arrow-left"></i>
+</a>
+{% endif %}
+{% else %}
 <a href="{{ url_for('main.index') }}" class="btn-back-header" title="返回首页">
   <i class="bi bi-arrow-left"></i>
 </a>
+{% endif %}
 {% endblock %}
 {% block header_actions %}{% endblock %}
 {% block toolbar %}
+{% set type_code = ledger.类型 if ledger else config.code %}
 <div class="table-toolbar-compact">
   <div class="table-toolbar">
     <div class="toolbar-left">
@@ -14,13 +32,13 @@
         <input type="checkbox" class="form-check-input" id="selectAll">
       </div>
       <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
-      <a href="{{ url_for('devices.new', type_code=config.code) }}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
+      <a href="{{ url_for('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
         <i class="bi bi-plus-lg"></i> 新增
       </a>
-      <a href="{{ url_for('devices.import_data', type_code=config.code) }}" class="toolbar-btn toolbar-btn-secondary toolbar-btn-compact">
+      <a href="{{ url_for('devices.import_data', type_code=type_code) }}" class="toolbar-btn toolbar-btn-secondary toolbar-btn-compact">
         <i class="bi bi-upload"></i> 导入
       </a>
-      <a href="{{ url_for('devices.export', type_code=config.code) }}" class="toolbar-btn toolbar-btn-secondary toolbar-btn-compact">
+      <a href="{{ url_for('devices.export', type_code=type_code) }}" class="toolbar-btn toolbar-btn-secondary toolbar-btn-compact">
         <i class="bi bi-download"></i> 导出
       </a>
       <button type="submit" form="batch-form" class="toolbar-btn toolbar-btn-danger toolbar-btn-compact" onclick="return confirm('确认删除选中记录？')">
@@ -51,6 +69,7 @@
 </div>
 {% endblock %}
 {% block content %}
+{% set type_code = ledger.类型 if ledger else config.code %}
 <div class="modern-card">
   <div class="table-responsive" style="max-height: calc(100vh - 300px); overflow-y: auto;">
     <table class="modern-table table-sm table-bordered" style="min-width: 800px;">
@@ -87,12 +106,12 @@
             {% endif %}
           </td>
           <td style="position: sticky; right: 0; z-index: 2; background: #fff; border-left: 1px solid #dee2e6;">
-            <a href="{{ url_for('devices.detail', type_code=config.code, id=device.id) }}"
+            <a href="{{ url_for('devices.detail', type_code=type_code, id=device.id) }}"
                class="btn-action" style="background: #e2e8f0; color: #475569;" title="查看">
               <i class="bi bi-eye"></i>
             </a>
             {% if current_user.role == 'admin' or device.created_by == current_user.id %}
-            <a href="{{ url_for('devices.edit', type_code=config.code, id=device.id) }}"
+            <a href="{{ url_for('devices.edit', type_code=type_code, id=device.id) }}"
                class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);" title="编辑">
               <i class="bi bi-pencil"></i>
             </a>
@@ -101,11 +120,11 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="{{ 8 }}">
+          <td colspan="8">
             <div class="empty-state">
               <i class="bi bi-inbox"></i>
               <p>暂无{{ config.name }}数据</p>
-              <a href="{{ url_for('devices.new', type_code=config.code) }}" class="btn btn-accent">添加第一个{{ config.name }}</a>
+              <a href="{{ url_for('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="btn btn-accent">添加第一个{{ config.name }}</a>
             </div>
           </td>
         </tr>
@@ -139,7 +158,7 @@
   {% endif %}
 </div>
 
-<form id="batch-form" method="POST" action="{{ url_for('devices.batch_delete', type_code=config.code) }}"></form>
+<form id="batch-form" method="POST" action="{{ url_for('devices.batch_delete', type_code=type_code) }}"></form>
 {% endblock %}
 {% block extra_js %}
 <script>
