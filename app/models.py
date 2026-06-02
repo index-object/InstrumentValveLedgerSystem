@@ -34,6 +34,7 @@ class Ledger(db.Model):
 
     名称 = db.Column(db.String(100), nullable=False)
     描述 = db.Column(db.Text)
+    类型 = db.Column(db.String(50), nullable=False, default="valve")
 
     status = db.Column(db.String(20), default="draft")
 
@@ -54,6 +55,21 @@ class Ledger(db.Model):
     creator = db.relationship("User", foreign_keys=[created_by])
     approver = db.relationship("User", foreign_keys=[approved_by])
     valves = db.relationship("Valve", backref="ledger", lazy="dynamic")
+
+
+class DeviceBase(db.Model):
+    __abstract__ = True
+    id = db.Column(db.Integer, primary_key=True)
+    ledger_id = db.Column(db.Integer, db.ForeignKey("ledgers.id"), nullable=True)
+    status = db.Column(db.String(20), default="draft")
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    approved_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    approved_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    creator = db.relationship("User", foreign_keys=[created_by])
+    approver = db.relationship("User", foreign_keys=[approved_by])
 
 
 class Valve(db.Model):
@@ -180,7 +196,9 @@ class ApprovalLog(db.Model):
     __tablename__ = "approval_logs"
     id = db.Column(db.Integer, primary_key=True)
     ledger_id = db.Column(db.Integer, db.ForeignKey("ledgers.id"))
-    valve_id = db.Column(db.Integer, db.ForeignKey("valves.id"), nullable=False)
+    valve_id = db.Column(db.Integer, db.ForeignKey("valves.id"), nullable=True)
+    device_type = db.Column(db.String(50), nullable=True)
+    device_id = db.Column(db.Integer, nullable=True)
     action = db.Column(db.String(20))  # submit/approve/reject
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     comment = db.Column(db.String(500))
