@@ -6,9 +6,11 @@ from flask import (
     request,
     flash,
     jsonify,
+    abort,
 )
 from flask_login import login_required, current_user
 from app.models import db, Ledger, Valve, ApprovalLog, Setting, ValveAttachment
+from app.devices import DeviceTypeRegistry
 from app.routes.valves.permissions import (
     can_edit_ledger,
     can_delete_ledger,
@@ -101,20 +103,35 @@ def list():
 @login_required
 def new():
     from_param = request.args.get("from", "all")
+    all_types = DeviceTypeRegistry.all()
+
     if request.method == "POST":
+        名称 = request.form.get("名称")
+        描述 = request.form.get("描述")
+        type_code = request.form.get("类型")
+
+        if not 名称:
+            flash("请填写台账合集名称")
+            return render_template("ledgers/create.html", all_types=all_types, from_param=from_param)
+
+        if not type_code:
+            flash("请选择设备类型")
+            return render_template("ledgers/create.html", all_types=all_types, from_param=from_param)
+
         ledger = Ledger()
-        ledger.名称 = request.form.get("名称")
-        ledger.描述 = request.form.get("描述")
+        ledger.名称 = 名称
+        ledger.描述 = 描述
+        ledger.类型 = type_code
         ledger.created_by = current_user.id
         ledger.status = "draft"
 
         db.session.add(ledger)
         db.session.commit()
 
-        flash("台账集合创建成功")
-        return redirect(get_back_url(from_param))
+        flash("台账合集创建成功")
+        return redirect(url_for("ledgers.detail", id=ledger.id, from_param=from_param))
 
-    return render_template("ledgers/form.html", ledger=None)
+    return render_template("ledgers/create.html", all_types=all_types, from_param=from_param)
 
 
 @ledgers.route("/ledger/<int:id>", methods=["GET", "POST"])
@@ -135,6 +152,36 @@ def detail(id):
     if from_param != "mine" and not is_owner:
         flash("无权访问")
         return redirect(url_for("ledgers.list"))
+
+    # 非阀门类型使用通用渲染
+    if ledger.类型 != "valve":
+        config = DeviceTypeRegistry.get(ledger.类型)
+        if not config:
+            abort(404)
+
+        model = config.model_class
+        page = request.args.get("page", 1, type=int)
+        search = request.args.get("search", "").strip()
+
+        query = model.query.filter_by(ledger_id=ledger.id)
+        if search:
+            keyword = f"%{search}%"
+            filters = []
+            if hasattr(model, "位号"):
+                filters.append(model.位号.like(keyword))
+            if hasattr(model, "设备名称"):
+                filters.append(model.设备名称.like(keyword))
+            if filters:
+                query = query.filter(or_(*filters))
+
+        pagination = query.order_by(model.created_at.desc()).paginate(
+            page=page, per_page=20, error_out=False
+        )
+
+        return render_template("ledgers/device_detail.html",
+            ledger=ledger, config=config,
+            devices=pagination.items, pagination=pagination,
+            search=search, from_param=from_param)
 
     ledger.valve_count = Valve.query.filter_by(ledger_id=id).count()
     ledger.pending_count = Valve.query.filter_by(ledger_id=id, status="pending").count()

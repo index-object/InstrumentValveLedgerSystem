@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block page_title %}新建台账合集{% endblock %}
+{% block content %}
+<div class="modern-card" style="max-width: 800px; margin: 0 auto;">
+  <div class="p-4">
+    <h5 class="mb-4">新建台账合集</h5>
+
+    <form method="POST" id="ledger-form">
+      <div class="mb-4">
+        <h6 class="fw-bold mb-3">第一步：选择设备类型</h6>
+        <div class="row">
+          {% for dt in all_types %}
+          <div class="col-md-4 mb-3">
+            <div class="card type-card {% if loop.first %}border-primary{% endif %}"
+                 data-type="{{ dt.code }}" style="cursor:pointer;"
+                 onclick="selectType('{{ dt.code }}', this)">
+              <div class="card-body text-center py-4">
+                <i class="bi bi-gear"></i>
+                <h6 class="mb-0 mt-2">{{ dt.name }}</h6>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="类型" id="selected-type"
+               value="{{ all_types[0].code if all_types else '' }}">
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-3">第二步：填写基本信息</h6>
+        <div class="mb-3">
+          <label class="form-label">合集名称 <span class="text-danger">*</span></label>
+          <input type="text" name="名称" class="form-control form-control-modern" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">描述</label>
+          <textarea name="描述" class="form-control form-control-modern" rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="text-center">
+        <button type="submit" class="btn btn-primary-custom px-5">
+          <i class="bi bi-check-lg"></i> 创建
+        </button>
+        <a href="{{ url_for('ledgers.list') }}" class="btn btn-outline-secondary">取消</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.type-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.type-card.border-primary { border-width: 2px; }
+</style>
+{% endblock %}
+{% block extra_js %}
+<script>
+function selectType(code, el) {
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('border-primary'));
+  el.classList.add('border-primary');
+  document.getElementById('selected-type').value = code;
+}
+</script>
+{% endblock %}
