@@ -18,13 +18,16 @@
 {% endblock %}
 {% block header_actions %}{% endblock %}
 {% block content %}
+{% set section_colors = ['', 'section-header-cyan', 'section-header-orange', 'section-header-green', 'section-header-gray'] %}
 <div class="modern-card p-4" style="max-width: 900px; margin: 0 auto;">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
   <form method="POST" id="device-form">
     {% for group in config.field_groups %}
     <div class="form-section">
-      <div class="form-section-header">
+      <div class="section-header {{ section_colors[loop.index0 % section_colors|length] }}" style="padding: 14px 20px;">
         <i class="bi bi-info-circle"></i>
-        <h5>{{ group.title }}</h5>
+        <span style="font-weight: 600;">{{ group.title }}</span>
+        <span class="section-count">{{ group.fields|length }}项</span>
       </div>
       <div class="form-section-body">
         <div class="row">
