@@ -69,9 +69,13 @@
   <div class="tab-content detail-tab-content" id="detailTabContent">
     <div class="tab-pane fade show active" id="data-panel" role="tabpanel">
       <div class="detail-grid-layout">
-        <div class="detail-column">
+        {% set half = (config.field_groups|length + 1)//2 %}
+        {% for col_idx in range(2) %}
+        {% set col_start = col_idx * half %}
+        <div class="detail-column" style="display: flex; flex-direction: column; gap: 20px;">
           {% for group in config.field_groups %}
-          <div class="info-section {% if loop.last and group.fields|length <= 3 %}info-section-compact{% endif %}">
+          {% if loop.index0 >= col_start and loop.index0 < col_start + half %}
+          <div class="info-section" style="flex: none;">
             <div class="section-header {{ section_colors[loop.index0 % section_colors|length] }}">
               <i class="bi bi-info-circle"></i>
               <span>{{ group.title }}</span>
@@ -86,8 +90,10 @@
               {% endfor %}
             </div>
           </div>
+          {% endif %}
           {% endfor %}
         </div>
+        {% endfor %}
       </div>
     </div>
   </div>
