@@ -1,81 +1,128 @@
 {% extends "base.html" %}
 {% block page_title %}{{ ledger.名称 }}{% endblock %}
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h4 class="mb-0">
-    <i class="bi bi-gear"></i> {{ ledger.名称 }}
-    <small class="text-muted">({{ config.name }})</small>
-  </h4>
-  <div>
-    <a href="{{ url_for('ledgers.list') }}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left"></i> 返回
-    </a>
-    <a href="{{ url_for('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}"
-       class="btn btn-primary btn-sm">
-      <i class="bi bi-plus-lg"></i> 新增{{ config.name }}
-    </a>
+{% block back_btn %}
+{% set from_param = from_param|default(request.args.get('from', 'all')) %}
+{% if from_param == 'mine' %}
+<a href="{{ url_for('valves.my_ledgers') }}" class="btn-back-header" title="返回我的台账">
+  <i class="bi bi-arrow-left"></i>
+</a>
+{% elif from_param == 'approvals' %}
+<a href="{{ url_for('approvals.index') }}" class="btn-back-header" title="返回审批中心">
+  <i class="bi bi-arrow-left"></i>
+</a>
+{% else %}
+<a href="{{ url_for('ledgers.list') }}" class="btn-back-header" title="返回台账列表">
+  <i class="bi bi-arrow-left"></i>
+</a>
+{% endif %}
+{% endblock %}
+{% block header_actions %}
+<a href="{{ url_for('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
+  <i class="bi bi-plus-lg"></i> 新增{{ config.name }}
+</a>
+{% endblock %}
+{% block toolbar %}
+<div class="table-toolbar-compact">
+  <div class="table-toolbar">
+    <div class="toolbar-left">
+      <span class="text-muted" style="font-size: 13px;">
+        <i class="bi bi-file-earmark-text"></i> {{ config.name }}数量：{{ devices|length }}
+      </span>
+    </div>
+    <div class="toolbar-right">
+      <form method="GET" class="d-flex gap-2 align-items-center">
+        <div class="toolbar-search">
+          <i class="bi bi-search"></i>
+          <input type="text" name="search" class="form-control form-control-modern"
+                 placeholder="搜索位号/设备名称..." value="{{ search or '' }}"
+                 style="height: 32px; padding-left: 32px; width: 180px;">
+        </div>
+        <button type="submit" class="toolbar-btn toolbar-btn-primary" style="height: 32px; padding: 0 12px;">
+          <i class="bi bi-search"></i>
+        </button>
+      </form>
+    </div>
   </div>
 </div>
-
-<div class="card">
-  <div class="card-body">
-    <div class="table-responsive">
-      <table class="table table-bordered table-hover table-sm">
-        <thead class="thead-light">
-          <tr>
-            {% for field in config.field_groups[0].fields[:5] %}
-            <th>{{ field }}</th>
-            {% endfor %}
-            <th>状态</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for device in devices %}
-          <tr>
-            {% for field in config.field_groups[0].fields[:5] %}
-            <td>{{ device|attr(field) or '-' }}</td>
-            {% endfor %}
-            <td>
-              {% if device.status == 'approved' %}
-                <span class="badge badge-success">已审批</span>
-              {% elif device.status == 'pending' %}
-                <span class="badge badge-warning">待审批</span>
-              {% elif device.status == 'rejected' %}
-                <span class="badge badge-danger">已驳回</span>
-              {% else %}
-                <span class="badge badge-secondary">草稿</span>
-              {% endif %}
-            </td>
-            <td>
-              <a href="{{ url_for('devices.detail', type_code=ledger.类型, id=device.id) }}"
-                 class="btn btn-sm btn-info"><i class="bi bi-eye"></i></a>
-              <a href="{{ url_for('devices.edit', type_code=ledger.类型, id=device.id) }}"
-                 class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="7" class="text-center text-muted">
-              暂无数据，请点击"新增{{ config.name }}"添加
-            </td>
-          </tr>
+{% endblock %}
+{% block content %}
+<div class="modern-card">
+  <div class="table-responsive" style="max-height: calc(100vh - 320px); overflow-y: auto;">
+    <table class="modern-table table-sm table-bordered" style="min-width: 800px;">
+      <thead class="table-light">
+        <tr>
+          {% for field in config.field_groups[0].fields[:5] %}
+          <th>{{ field }}</th>
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    {% if pagination and pagination.pages > 1 %}
+          <th style="width: 100px;">状态</th>
+          <th style="width: 120px; position: sticky; right: 0; z-index: 3; background: #f8f9fa; border-left: 1px solid #dee2e6;">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for device in devices %}
+        <tr>
+          {% for field in config.field_groups[0].fields[:5] %}
+          <td>{{ device|attr(field) or '-' }}</td>
+          {% endfor %}
+          <td>
+            {% if device.status == 'approved' %}
+            <span class="badge-status badge-approved">已审批</span>
+            {% elif device.status == 'pending' %}
+            <span class="badge-status badge-pending">待审批</span>
+            {% elif device.status == 'rejected' %}
+            <span class="badge-status badge-rejected">已驳回</span>
+            {% else %}
+            <span class="badge-status badge-draft">草稿</span>
+            {% endif %}
+          </td>
+          <td style="position: sticky; right: 0; z-index: 2; background: #fff; border-left: 1px solid #dee2e6;">
+            <a href="{{ url_for('devices.detail', type_code=ledger.类型, id=device.id) }}"
+               class="btn-action" style="background: #e2e8f0; color: #475569;" title="查看">
+              <i class="bi bi-eye"></i>
+            </a>
+            <a href="{{ url_for('devices.edit', type_code=ledger.类型, id=device.id) }}"
+               class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);" title="编辑">
+              <i class="bi bi-pencil"></i>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8">
+            <div class="empty-state">
+              <i class="bi bi-inbox"></i>
+              <p>暂无数据，请点击"新增{{ config.name }}"添加</p>
+              <a href="{{ url_for('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}" class="btn btn-accent">添加第一个{{ config.name }}</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pagination and pagination.pages > 1 %}
+  <div class="p-3 border-top">
     <nav>
-      <ul class="pagination pagination-sm justify-content-center">
+      <ul class="pagination-custom pagination mb-2">
+        {% if pagination.has_prev %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ pagination.prev_num }}&search={{ search or '' }}">上一页</a>
+        </li>
+        {% endif %}
         {% for p in range(1, pagination.pages + 1) %}
         <li class="page-item {% if p == pagination.page %}active{% endif %}">
-          <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+          <a class="page-link" href="?page={{ p }}&search={{ search or '' }}">{{ p }}</a>
         </li>
         {% endfor %}
+        {% if pagination.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ pagination.next_num }}&search={{ search or '' }}">下一页</a>
+        </li>
+        {% endif %}
       </ul>
     </nav>
-    {% endif %}
+    <small class="text-muted">共 {{ pagination.total }} 条记录</small>
   </div>
+  {% endif %}
 </div>
 {% endblock %}
