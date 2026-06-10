@@ -8,6 +8,7 @@ from openpyxl import load_workbook
 def safe_read_excel(filepath):
     """安全读取 Excel，移除 externalLinks 避免 openpyxl 挂起"""
     tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+    tmp.close()
     try:
         with zipfile.ZipFile(filepath) as zin:
             with zipfile.ZipFile(tmp.name, "w") as zout:
@@ -21,6 +22,11 @@ def safe_read_excel(filepath):
                             "",
                             content,
                             flags=re.DOTALL,
+                        )
+                        content = re.sub(
+                            r'<externalReferences\s*/>',
+                            "",
+                            content,
                         )
                         zout.writestr(item, content.encode("utf-8"))
                     else:
@@ -55,5 +61,5 @@ def safe_read_excel(filepath):
     finally:
         try:
             os.unlink(tmp.name)
-        except:
+        except OSError:
             pass
