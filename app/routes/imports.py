@@ -90,14 +90,16 @@ def upload():
     session["multi_import_raw"] = raw_data
 
     if unmatched:
-        all_types = DeviceTypeRegistry.all()
+        all_types = [{"code": t.code, "name": t.name} for t in DeviceTypeRegistry.all()]
         return render_template(
             "imports/import.html",
             unmatched=unmatched,
             all_types=all_types,
+            filename=filename,
         )
 
     session["multi_import_preview"] = preview
+    session["multi_import_filename"] = filename
     return redirect(url_for("imports.preview"))
 
 
@@ -108,10 +110,11 @@ def preview():
     if not preview_data:
         flash("没有预览数据，请重新上传")
         return redirect(url_for("imports.index"))
+    filename = session.get("multi_import_filename", request.args.get("filename", "导入文件"))
     return render_template(
         "imports/import_preview.html",
         preview=preview_data,
-        filename=request.args.get("filename", "导入文件")
+        filename=filename,
     )
 
 
