@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block page_title %}导入管理{% endblock %}
+
+{% block content %}
+<div class="modern-card mb-4">
+    <div class="card-header-custom"><i class="bi bi-upload"></i> 批量导入台账</div>
+    <div class="card-body-custom">
+        <form id="importForm" method="POST" enctype="multipart/form-data" action="{{ url_for('imports.upload') }}">
+            <div class="mb-3">
+                <label class="form-label">选择 Excel 文件（每个 sheet 表示一种设备类型）</label>
+                <input type="file" name="file" accept=".xlsx,.xls" class="form-control form-control-modern" required>
+            </div>
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">上传并预览</button>
+                <a href="{{ url_for('ledgers.list') }}" class="btn btn-secondary">返回台账</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if unmatched %}
+<div class="modal fade show" id="typeModal" tabindex="-1" style="display:block;background:rgba(0,0,0,0.5);" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">选择设备类型</h5>
+            </div>
+            <form method="POST" action="{{ url_for('imports.save_mapping') }}">
+                <div class="modal-body">
+                    <p>以下 Sheet 无法自动识别设备类型，请为每个 Sheet 指定对应类型：</p>
+                    {% for s in unmatched %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ s }}</label>
+                        <select name="mapping_{{ s }}" class="form-select">
+                            <option value="">-- 跳过此 Sheet --</option>
+                            {% for t in all_types %}
+                            <option value="{{ t.code }}">{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ url_for('imports.index') }}" class="btn btn-secondary">取消上传</a>
+                    <button type="submit" class="btn btn-primary">确认</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/import.js') }}"></script>
+{% endblock %}
