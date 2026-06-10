@@ -160,8 +160,6 @@ def save_mapping():
 def execute():
     saved_name = session.get("multi_import_file")
     if not saved_name:
-        if request.accept_mimetypes.accept_json:
-            return jsonify({"error": "找不到已上传的文件，请重新上传"}), 400
         flash("找不到已上传的文件，请重新上传")
         return redirect(url_for("imports.index"))
 
@@ -171,60 +169,84 @@ def execute():
         flash("临时文件丢失，请重新上传")
         return redirect(url_for("imports.index"))
 
+    # 读取文件
     try:
-        import pandas as pd
-        sheets = pd.read_excel(saved_path, sheet_name=None, header=0)
+        sheets_data = safe_read_excel(saved_path)
     except Exception as e:
         flash(f"文件读取失败: {e}")
         return redirect(url_for("imports.index"))
 
+    # 读取用户映射
+    mappings = session.get("import_mappings") or {}
+
+    # 解析合并配置和台账名称
+    merge_config = {}
+    ledger_name_overrides = {}
+    for key, value in request.form.items():
+        if key.startswith("merge_"):
+            sheet_name = key[len("merge_"):]
+            if value == "1":
+                merge_config[sheet_name] = True
+        elif key.startswith("ledger_name_"):
+            sheet_name = key[len("ledger_name_"):]
+            if value:
+                ledger_name_overrides[sheet_name] = value.strip()
+
     total_created = 0
     per_sheet = []
+    type_ledgers = {}
 
-    for sheet_name, df in sheets.items():
-        cfg = detect_device_type(sheet_name)
+    for sd in sheets_data:
+        sheet_name = sd["sheet"]
+
+        # 确定类型：优先使用用户映射
+        cfg = None
+        if sheet_name in mappings and mappings[sheet_name]:
+            cfg = DeviceTypeRegistry.get(mappings[sheet_name])
         if not cfg:
-            # 未识别类型，跳过并记录
+            cfg = detect_device_type(sheet_name)
+        if not cfg:
             per_sheet.append({"sheet": sheet_name, "created": 0, "skipped": True})
             continue
 
         type_code = cfg.code
 
-        # 查找或创建对应的 Ledger
-        ledger = Ledger.query.filter_by(名称=sheet_name, 类型=type_code, created_by=current_user.id).first()
-        if not ledger:
-            ledger = Ledger()
-            ledger.名称 = sheet_name
-            ledger.描述 = f"由用户 {current_user.username} 导入于导入功能创建"
-            ledger.类型 = type_code
-            ledger.created_by = current_user.id
-            ledger.status = "draft"
-            db.session.add(ledger)
-            db.session.flush()
+        # 确定 Ledger
+        if merge_config.get(sheet_name) and type_code in type_ledgers:
+            ledger = type_ledgers[type_code]
+        else:
+            ledger_name = ledger_name_overrides.get(sheet_name, sheet_name)
+            ledger = Ledger.query.filter_by(
+                名称=ledger_name, 类型=type_code, created_by=current_user.id
+            ).first()
+            if not ledger:
+                ledger = Ledger()
+                ledger.名称 = ledger_name
+                ledger.描述 = f"由用户 {current_user.username} 导入于导入功能创建"
+                ledger.类型 = type_code
+                ledger.created_by = current_user.id
+                ledger.status = "draft"
+                db.session.add(ledger)
+                db.session.flush()
+            if merge_config.get(sheet_name):
+                type_ledgers[type_code] = ledger
 
+        # 逐行创建设备记录
         created = 0
         model_cls = cfg.model_class
-        # 遍历有效行
-        df_clean = df.dropna(how="all")
-        for _, row in df_clean.iterrows():
-            # 如果没有 model_cls，跳过（需要注册模型才能持久化）
+        for row in sd["rows"]:
             if not model_cls:
                 continue
             inst = model_cls()
             inst.ledger_id = ledger.id
             inst.created_by = current_user.id
             inst.status = "draft"
-            for col in df_clean.columns:
-                if not hasattr(inst, col):
-                    # 兼容英文列名映射：尝试直接赋值到存在的中文字段
-                    continue
-                val = row.get(col)
-                if pd.isna(val):
-                    continue
-                try:
-                    setattr(inst, col, str(val).strip())
-                except Exception:
-                    pass
+            for col, val in row.items():
+                if hasattr(inst, col) and val:
+                    try:
+                        setattr(inst, col, val)
+                    except Exception:
+                        pass
             db.session.add(inst)
             created += 1
 
@@ -233,16 +255,14 @@ def execute():
 
     db.session.commit()
 
-    # 清理会话与临时文件
+    # 清理
     try:
         os.remove(saved_path)
     except:
         pass
-    session.pop("multi_import_file", None)
-    session.pop("multi_import_preview", None)
-
-    if request.accept_mimetypes.accept_json:
-        return jsonify({"success": True, "created": total_created, "details": per_sheet})
+    for key in ("multi_import_file", "multi_import_preview", "multi_import_raw",
+                 "import_mappings", "multi_import_filename"):
+        session.pop(key, None)
 
     flash(f"导入完成：共创建 {total_created} 条记录")
     return redirect(url_for("ledgers.list"))
