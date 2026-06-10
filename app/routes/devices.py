@@ -1,10 +1,10 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, make_response, abort
 from flask_login import login_required, current_user
-from app.models import db, Ledger, ApprovalLog, Setting
+from app.models import db, Ledger, ApprovalLog
 from app.devices import DeviceTypeRegistry
 from datetime import datetime
 from io import BytesIO
-import pandas as pd
+# 延迟导入 pandas（避免在应用启动时立即加载可能含有本机指令的二进制扩展）
 
 devices_bp = Blueprint("devices", __name__, url_prefix="/device")
 
@@ -274,6 +274,7 @@ def export(type_code):
             row[f] = getattr(r, f, "") or ""
         data.append(row)
 
+    import pandas as pd
     df = pd.DataFrame(data)
     buffer = BytesIO()
     df.to_excel(buffer, index=False, engine="openpyxl")
@@ -348,6 +349,7 @@ def import_data(type_code):
             flash("请选择文件")
             return redirect(request.url)
 
+        import pandas as pd
         df = pd.read_excel(file)
         count = 0
         errors = []

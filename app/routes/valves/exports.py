@@ -1,12 +1,12 @@
 from flask import flash, redirect, url_for, request, render_template, make_response, session, jsonify
 from flask_login import login_required, current_user
-from app.models import db, Valve, Ledger, Setting, ValveAttachment
+from app.models import db, Valve, Setting, ValveAttachment
 from app.routes.valves.permissions import require_employee_or_admin
 from app.routes.valves.forms import get_valve_export_data
-from app.routes.valves.import_processor import ImportDataProcessor, process_import_preview
+from app.routes.valves.import_processor import process_import_preview
 from datetime import datetime
 from io import BytesIO
-import pandas as pd
+
 
 
 def update_ledger_status(ledger):
@@ -245,6 +245,7 @@ def export_data():
         valves = Valve.query.filter_by(status="approved").all()
 
     data = [get_valve_export_data(v) for v in valves]
+    import pandas as pd
     df = pd.DataFrame(data)
 
     buffer = BytesIO()

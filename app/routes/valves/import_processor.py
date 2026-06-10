@@ -6,10 +6,11 @@
 - 附件行：第0列为空，第3列（名称）有值
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, List, Optional
-import pandas as pd
 
 
 class RowType(Enum):
@@ -103,6 +104,9 @@ class ImportDataProcessor:
             ImportResult: 包含阀门组和错误信息的结果对象
         """
         try:
+            # 延迟导入 pandas，避免在应用启动时立即加载可能触发本机指令的二进制扩展
+            global pd
+            import pandas as pd
             # 读取Excel，跳过前两行标题
             df = pd.read_excel(file, header=None, skiprows=2)
             return self.parse_excel(df)
