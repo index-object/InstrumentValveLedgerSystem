@@ -8,6 +8,7 @@ from app.import_engine.classifier import SheetClassifier, TypeConfig
 from app.import_engine.extractor import DataExtractor, SheetData
 from app.import_engine.mapper import ColumnMapper
 from app.import_engine.loader import DataLoader
+from app.models import Valve
 
 
 @dataclass
@@ -157,7 +158,8 @@ class ImportEngine:
         column_mapping = type_cfg.get("column_mapping", {})
         mapped_rows = self._mapper.map_rows(sd.rows, column_mapping)
 
-        records = self._loader.create_records(model_cls, mapped_rows)
+        preserve = model_cls is Valve
+        records = self._loader.create_records(model_cls, mapped_rows, preserve_order=preserve)
 
         sheet_result.type_key = type_key
         sheet_result.type_code = classification.type_code

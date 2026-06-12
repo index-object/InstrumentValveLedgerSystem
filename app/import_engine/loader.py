@@ -16,9 +16,11 @@ class DataLoader:
         self,
         model_class: type,
         rows: list[dict[str, str]],
+        preserve_order: bool = False,
     ) -> list[Any]:
         records = [self.create_record(model_class, row) for row in rows]
-        records.sort(key=lambda r: self._sort_key(r))
+        if not preserve_order:
+            records.sort(key=lambda r: self._sort_key(r))
         return records
 
     def _sort_key(self, record: Any) -> tuple:
