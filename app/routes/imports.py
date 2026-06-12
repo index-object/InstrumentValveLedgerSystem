@@ -242,6 +242,7 @@ def execute():
         device_config = DeviceTypeRegistry.get(type_code)
         is_valve_type = device_config and device_config.model_class and device_config.model_class.__name__ == "Valve"
         if is_valve_type and sr.accessories:
+            db.session.flush()
             acc_idx = 0
             for record in sr.records:
                 if not record.id:

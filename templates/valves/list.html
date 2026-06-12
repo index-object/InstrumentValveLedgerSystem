@@ -51,7 +51,7 @@
                 </a>
                 {# 导入按钮：仅在"我的台账"界面，且员工且自己的台账显示 #}
                 {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and ledger.created_by == current_user.id %}
-                <a href="{{ url_for('valves.import_data', ledger_id=ledger.id) }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
+                <a href="{{ url_for('imports.index') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
                     <i class="bi bi-upload"></i> 导入
                 </a>
                 {% endif %}
@@ -65,7 +65,7 @@
                     <i class="bi bi-trash"></i> 删除
                 </button>
                 {% if current_user.role == 'employee' %}
-                <a href="{{ url_for('valves.import_data') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
+                <a href="{{ url_for('imports.index') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
                     <i class="bi bi-upload"></i> 导入
                 </a>
                 {% endif %}
