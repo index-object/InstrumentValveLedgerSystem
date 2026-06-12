@@ -3,30 +3,20 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app.models import db, Ledger
 from app.devices import DeviceTypeRegistry
-from app.utils.importer import safe_read_excel
+from app.import_engine import ImportEngine
 import os
 import uuid
 
 imports = Blueprint("imports", __name__)
 
+_engine = None
 
-def detect_device_type(sheet_name):
-    # 尝试直接以 code 匹配
-    cfg = DeviceTypeRegistry.get(sheet_name)
-    if cfg:
-        return cfg
 
-    # 尝试以展示名称匹配
-    for c in DeviceTypeRegistry.all():
-        if c.name == sheet_name or c.name.lower() == sheet_name.lower():
-            return c
-
-    # 尝试 code/name 的小写包含匹配
-    for c in DeviceTypeRegistry.all():
-        if sheet_name.lower() in (c.code or "").lower() or sheet_name.lower() in (c.name or "").lower():
-            return c
-
-    return None
+def get_engine():
+    global _engine
+    if _engine is None:
+        _engine = ImportEngine()
+    return _engine
 
 
 @imports.route("/imports")
@@ -59,35 +49,37 @@ def upload():
     saved_path = os.path.join(upload_folder, saved_name)
     file.save(saved_path)
 
+    engine = get_engine()
     try:
-        sheets_data = safe_read_excel(saved_path)
+        result = engine.import_file(saved_path)
     except Exception as e:
         flash(f"文件读取失败: {e}")
         try:
             os.remove(saved_path)
-        except:
+        except Exception:
             pass
         return redirect(url_for("imports.index"))
 
-    raw_data = sheets_data
     preview = []
     unmatched = []
-    for sd in sheets_data:
-        cfg = detect_device_type(sd["sheet"])
-        if cfg:
+    for sr in result.sheets:
+        if sr.type_code and sr.type_code not in ("summary", "cover"):
             preview.append({
-                "sheet": sd["sheet"],
-                "rows": sd["row_count"],
-                "columns": sd["columns"],
-                "sample": sd["sample"],
-                "detected_type": cfg.code,
-                "detected_name": cfg.name,
+                "sheet": sr.sheet_name,
+                "rows": sr.row_count,
+                "headers": sr.headers,
+                "sample": sr.sample_rows,
+                "type_key": sr.type_key,
+                "detected_type": sr.type_code,
+                "detected_name": sr.type_name,
+                "accessory_count": sr.accessory_count,
             })
-        else:
-            unmatched.append(sd["sheet"])
+        elif not sr.type_code:
+            unmatched.append(sr.sheet_name)
 
-    session["multi_import_file"] = saved_name
-    session["multi_import_raw"] = raw_data
+    session["import_file"] = saved_name
+    session["import_filename"] = filename
+    session["import_errors"] = result.errors
 
     if unmatched:
         all_types = [{"code": t.code, "name": t.name} for t in DeviceTypeRegistry.all()]
@@ -96,33 +88,35 @@ def upload():
             unmatched=unmatched,
             all_types=all_types,
             filename=filename,
+            errors=result.errors,
         )
 
-    session["multi_import_preview"] = preview
-    session["multi_import_filename"] = filename
+    session["import_preview"] = preview
     return redirect(url_for("imports.preview"))
 
 
 @imports.route("/imports/preview")
 @login_required
 def preview():
-    preview_data = session.get("multi_import_preview")
+    preview_data = session.get("import_preview")
     if not preview_data:
         flash("没有预览数据，请重新上传")
         return redirect(url_for("imports.index"))
-    filename = session.get("multi_import_filename", request.args.get("filename", "导入文件"))
+    filename = session.get("import_filename", "导入文件")
+    errors = session.get("import_errors", [])
     return render_template(
         "imports/import_preview.html",
         preview=preview_data,
         filename=filename,
+        errors=errors,
     )
 
 
 @imports.route("/imports/save-mapping", methods=["POST"])
 @login_required
 def save_mapping():
-    raw_data = session.get("multi_import_raw")
-    if not raw_data:
+    preview_data = session.get("import_preview")
+    if not preview_data:
         flash("会话过期，请重新上传")
         return redirect(url_for("imports.index"))
 
@@ -135,30 +129,21 @@ def save_mapping():
 
     session["import_mappings"] = mappings
 
-    # Rebuild preview with updated types
-    preview = []
-    for sd in raw_data:
-        cfg = None
-        if sd["sheet"] in mappings:
-            cfg = DeviceTypeRegistry.get(mappings[sd["sheet"]])
-        if not cfg:
-            cfg = detect_device_type(sd["sheet"])
-        preview.append({
-            "sheet": sd["sheet"],
-            "rows": sd["row_count"],
-            "columns": sd["columns"],
-            "sample": sd["sample"],
-            "detected_type": cfg.code if cfg else None,
-            "detected_name": cfg.name if cfg else None,
-        })
-    session["multi_import_preview"] = preview
+    for item in preview_data:
+        if item["sheet"] in mappings:
+            cfg = DeviceTypeRegistry.get(mappings[item["sheet"]])
+            if cfg:
+                item["type_code"] = cfg.code
+                item["type_name"] = cfg.name
+
+    session["import_preview"] = preview_data
     return redirect(url_for("imports.preview"))
 
 
 @imports.route("/imports/execute", methods=["POST"])
 @login_required
 def execute():
-    saved_name = session.get("multi_import_file")
+    saved_name = session.get("import_file")
     if not saved_name:
         flash("找不到已上传的文件，请重新上传")
         return redirect(url_for("imports.index"))
@@ -169,17 +154,15 @@ def execute():
         flash("临时文件丢失，请重新上传")
         return redirect(url_for("imports.index"))
 
-    # 读取文件
+    engine = get_engine()
     try:
-        sheets_data = safe_read_excel(saved_path)
+        result = engine.import_file(saved_path)
     except Exception as e:
         flash(f"文件读取失败: {e}")
         return redirect(url_for("imports.index"))
 
-    # 读取用户映射
     mappings = session.get("import_mappings") or {}
 
-    # 解析合并配置和台账名称
     merge_config = {}
     ledger_name_overrides = {}
     for key, value in request.form.items():
@@ -196,22 +179,17 @@ def execute():
     per_sheet = []
     type_ledgers = {}
 
-    for sd in sheets_data:
-        sheet_name = sd["sheet"]
+    for sr in result.sheets:
+        sheet_name = sr.sheet_name
 
-        # 确定类型：优先使用用户映射
-        cfg = None
-        if sheet_name in mappings and mappings[sheet_name]:
-            cfg = DeviceTypeRegistry.get(mappings[sheet_name])
-        if not cfg:
-            cfg = detect_device_type(sheet_name)
-        if not cfg:
+        type_code = sr.type_code
+        if sr.type_key and sr.type_key in mappings:
+            type_code = mappings[sr.type_key]
+
+        if not type_code or type_code in ("summary", "cover"):
             per_sheet.append({"sheet": sheet_name, "created": 0, "skipped": True})
             continue
 
-        type_code = cfg.code
-
-        # 确定 Ledger
         if merge_config.get(sheet_name) and type_code in type_ledgers:
             ledger = type_ledgers[type_code]
         else:
@@ -231,23 +209,12 @@ def execute():
             if merge_config.get(sheet_name):
                 type_ledgers[type_code] = ledger
 
-        # 逐行创建设备记录
         created = 0
-        model_cls = cfg.model_class
-        for row in sd["rows"]:
-            if not model_cls:
-                continue
-            inst = model_cls()
-            inst.ledger_id = ledger.id
-            inst.created_by = current_user.id
-            inst.status = "draft"
-            for col, val in row.items():
-                if hasattr(inst, col) and val:
-                    try:
-                        setattr(inst, col, val)
-                    except Exception:
-                        pass
-            db.session.add(inst)
+        for record in sr.records:
+            record.ledger_id = ledger.id
+            record.created_by = current_user.id
+            record.status = "draft"
+            db.session.add(record)
             created += 1
 
         per_sheet.append({"sheet": sheet_name, "created": created, "skipped": False})
@@ -255,13 +222,14 @@ def execute():
 
     db.session.commit()
 
-    # 清理
     try:
         os.remove(saved_path)
-    except:
+    except Exception:
         pass
-    for key in ("multi_import_file", "multi_import_preview", "multi_import_raw",
-                 "import_mappings", "multi_import_filename"):
+    for key in (
+        "import_file", "import_preview", "import_errors",
+        "import_mappings", "import_filename",
+    ):
         session.pop(key, None)
 
     flash(f"导入完成：共创建 {total_created} 条记录")
