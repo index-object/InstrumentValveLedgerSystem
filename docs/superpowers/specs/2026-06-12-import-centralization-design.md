@@ -49,33 +49,61 @@
     → SheetClassifier: 识别每个 Sheet 的仪表类型
     → DataExtractor: 提取数据行和附件行
     → ColumnMapper: 列名规范化
-    → DataLoader: 创建模型实例
+    → DataLoader: 创建模型实例（阀门类型不排序，preserve_order=True）
   → 返回 SheetImportResult（含 records + accessories）
   → 预览页面展示各 Sheet 信息
   → 用户确认后 execute():
     → 对每个 Sheet:
       → 查找或创建 Ledger
       → 将 records 写入对应设备表 + 设置 ledger_id
-      → 阀门类型：将 accessories 写入 ValveAttachment 表
+      → 阀门类型：遍历 accessories，写入 ValveAttachment 表并关联到父 Valve
     → 提交事务，清理临时文件
 ```
 
 ## 附件处理
 
-ImportEngine 的 `DataExtractor` 已具备附件行识别能力：数据行中序号为空但其他列有内容的行自动归为附件。`execute()` 路由中增加以下逻辑：
+ImportEngine 的 `DataExtractor` 已具备附件行识别能力：数据行中序号为空但其他列有内容的行自动归为附件。
+
+数据关联问题：`DataLoader.create_records` 按 `sequence_no` 对 records 排序，但 accessories 保持原始顺序。附件必须与其父阀门记录正确关联。
+
+解决方案：修改 `DataLoader` 添加 `preserve_order` 参数，阀门类型不排序以保持附件关联性。`execute()` 路由中使用状态机遍历 records 和 accessories。
+
+注意：accessories 存储的是原始提取的字典（keys 为 Excel 原始列名，如"名称""型号规格"），不经过 ColumnMapper 映射。附件类型通过 `_infer_attachment_type` 逻辑从名称推断：
 
 ```python
 if sr.type_code == "valve" and sr.accessories:
-    for record, acc in zip(sr.records, sr.accessories):
-        attachment = ValveAttachment(
-            valve_id=record.id,
-            name=acc.get("名称"),
-            type=acc.get("type"),
-            model=acc.get("型号规格"),
-            manufacturer=acc.get("生产厂家"),
-            device_grade=acc.get("设备等级"),
-        )
-        db.session.add(attachment)
+    acc_idx = 0
+    for record in sr.records:
+        if not hasattr(record, 'id') or not record.id:
+            continue
+        # 收集当前阀门记录后的所有附件行
+        while acc_idx < len(sr.accessories):
+            acc = sr.accessories[acc_idx]
+            acc_idx += 1
+            name = acc.get("名称", "")
+            attachment = ValveAttachment(
+                valve_id=record.id,
+                name=name,
+                type=_infer_attachment_type(name),
+                model=acc.get("型号规格"),
+                manufacturer=acc.get("生产厂家"),
+                device_grade=acc.get("设备等级"),
+            )
+            db.session.add(attachment)
+
+
+def _infer_attachment_type(name: str) -> str:
+    """从附件名称推断类型"""
+    keywords = {
+        "定位器": ["定位器"], "电磁阀": ["电磁阀"], "过滤器": ["过滤器"],
+        "减压阀": ["减压阀"], "保位阀": ["保位阀"], "放大器": ["放大器"],
+        "转换器": ["转换器"], "限位开关": ["限位开关"],
+    }
+    for att_type, kw_list in keywords.items():
+        for kw in kw_list:
+            if kw in name:
+                return att_type
+    return name
 ```
 
 ## 导航入口
@@ -103,6 +131,20 @@ if sr.type_code == "valve" and sr.accessories:
     </div>
 </a>
 ```
+
+## 需要修改的核心文件
+
+| 文件 | 变更 |
+|------|------|
+| `app/import_engine/loader.py` | `create_records` 增加 `preserve_order` 参数，阀门类型时不排序 |
+| `app/routes/imports.py` | `execute()` 增加附件处理和自动创建 Ledger 逻辑 |
+| `app/routes/devices.py` | `import_data` 改为重定向到 `imports.index` |
+| `app/routes/valves/exports.py` | 删除 `import_data` 和 `import_execute` 函数及路由注册 |
+| `app/__init__.py` | 注册 `imports` 蓝图（当前未注册，需添加 `from app.routes.imports import imports` + `app.register_blueprint(imports)`） |
+| `templates/base.html` | 侧边栏添加"导入数据"菜单项（员工角色） |
+| `templates/index_employee.html` | 首页添加导入数据卡片 |
+| `templates/imports/import.html` | 增强引导说明 |
+| `templates/imports/import_preview.html` | 增加附件数量显示 |
 
 ## 不涉及的范围
 
