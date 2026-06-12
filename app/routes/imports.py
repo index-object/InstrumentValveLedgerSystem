@@ -1,9 +1,10 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, session, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from app.models import db, Ledger
+from app.models import db, Ledger, Valve, ValveAttachment
 from app.devices import DeviceTypeRegistry
 from app.import_engine import ImportEngine
+from datetime import datetime
 import os
 import uuid
 
@@ -17,6 +18,25 @@ def get_engine():
     if _engine is None:
         _engine = ImportEngine()
     return _engine
+
+
+def _infer_attachment_type(name: str) -> str:
+    keywords = {
+        "定位器": ["定位器"],
+        "电磁阀": ["电磁阀"],
+        "过滤器": ["过滤器"],
+        "减压阀": ["减压阀"],
+        "保位阀": ["保位阀"],
+        "放大器": ["放大器"],
+        "转换器": ["转换器"],
+        "限位开关": ["限位开关"],
+        "位置变送器": ["位置变送器"],
+    }
+    for att_type, kw_list in keywords.items():
+        for kw in kw_list:
+            if kw in name:
+                return att_type
+    return name
 
 
 @imports.route("/imports")
@@ -200,7 +220,7 @@ def execute():
             if not ledger:
                 ledger = Ledger()
                 ledger.名称 = ledger_name
-                ledger.描述 = f"由用户 {current_user.username} 导入于导入功能创建"
+                ledger.描述 = f"由用户 {current_user.username} 导入于 {datetime.now().strftime('%Y-%m-%d %H:%M')}"
                 ledger.类型 = type_code
                 ledger.created_by = current_user.id
                 ledger.status = "draft"
@@ -209,6 +229,7 @@ def execute():
             if merge_config.get(sheet_name):
                 type_ledgers[type_code] = ledger
 
+        # 写入记录
         created = 0
         for record in sr.records:
             record.ledger_id = ledger.id
@@ -216,6 +237,28 @@ def execute():
             record.status = "draft"
             db.session.add(record)
             created += 1
+
+        # 阀门附件处理
+        device_config = DeviceTypeRegistry.get(type_code)
+        is_valve_type = device_config and device_config.model_class and device_config.model_class.__name__ == "Valve"
+        if is_valve_type and sr.accessories:
+            acc_idx = 0
+            for record in sr.records:
+                if not record.id:
+                    continue
+                while acc_idx < len(sr.accessories):
+                    acc = sr.accessories[acc_idx]
+                    acc_idx += 1
+                    name = acc.get("名称", "")
+                    attachment = ValveAttachment(
+                        valve_id=record.id,
+                        名称=name,
+                        type=_infer_attachment_type(name),
+                        型号规格=acc.get("型号规格", ""),
+                        生产厂家=acc.get("生产厂家", ""),
+                        设备等级=acc.get("设备等级", ""),
+                    )
+                    db.session.add(attachment)
 
         per_sheet.append({"sheet": sheet_name, "created": created, "skipped": False})
         total_created += created
@@ -233,4 +276,4 @@ def execute():
         session.pop(key, None)
 
     flash(f"导入完成：共创建 {total_created} 条记录")
-    return redirect(url_for("ledgers.list"))
+    return redirect(url_for("imports.index"))
