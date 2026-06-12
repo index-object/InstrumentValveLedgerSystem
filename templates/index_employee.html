@@ -194,6 +194,15 @@
                 <p><span class="stat-value">{{ maintenance_count or 0 }}</span> 条记录</p>
             </div>
         </a>
+        <a href="{{ url_for('imports.index') }}" class="stat-card primary">
+            <div class="stat-icon primary">
+                <i class="bi bi-upload"></i>
+            </div>
+            <div class="stat-content">
+                <h3>导入数据</h3>
+                <p>批量导入仪表阀门台账数据</p>
+            </div>
+        </a>
     </div>
 </div>
 {% endblock %}
