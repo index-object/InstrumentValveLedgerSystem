@@ -4,11 +4,18 @@
 
 {% block content %}
 <div class="modern-card mb-4">
-    <div class="card-header-custom"><i class="bi bi-upload"></i> 批量导入台账</div>
+    <div class="card-header-custom"><i class="bi bi-upload"></i> 批量导入仪表台账</div>
     <div class="card-body-custom">
+        <div class="mb-3 p-3" style="background: #f0fdf4; border-radius: 8px; border-left: 3px solid #22c55e;">
+            <small class="text-muted">
+                <i class="bi bi-info-circle"></i>
+                支持所有设备类型：压力表、温度计、流量计、液位计、调节阀、开关阀、开关、特殊仪表等。
+                系统将自动识别每个 Sheet 对应的设备类型。支持 .xlsx 和 .xls 格式。
+            </small>
+        </div>
         <form id="importForm" method="POST" enctype="multipart/form-data" action="{{ url_for('imports.upload') }}">
             <div class="mb-3">
-                <label class="form-label">选择 Excel 文件（每个 sheet 表示一种设备类型）</label>
+                <label class="form-label">选择 Excel 文件（每个 Sheet 表示一种设备类型）</label>
                 <input type="file" name="file" accept=".xlsx,.xls" class="form-control form-control-modern" required>
             </div>
             <div class="mb-3">

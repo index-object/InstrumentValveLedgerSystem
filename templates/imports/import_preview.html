@@ -17,6 +17,9 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>
                     {{ p.sheet }} — {{ p.detected_name or '未识别类型' }} ({{ p.rows }} 行)
+{% if p.accessory_count > 0 %}
+<span class="badge bg-info ms-2">{{ p.accessory_count }} 个附件</span>
+{% endif %}
                 </span>
                 <div class="form-check">
                     <input class="form-check-input merge-checkbox" type="checkbox"
