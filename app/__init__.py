@@ -56,6 +56,7 @@ def create_app(config_class=Config):
     from app.routes.valves import valves
     from app.routes.admin import admin
     from app.routes.ledgers import ledgers
+    from app.routes.imports import imports
 
     app.register_blueprint(bp)
     app.register_blueprint(auth)
@@ -63,6 +64,7 @@ def create_app(config_class=Config):
     app.register_blueprint(valves)
     app.register_blueprint(admin)
     app.register_blueprint(ledgers)
+    app.register_blueprint(imports)
 
     from app.devices.types import register_all
     register_all()
