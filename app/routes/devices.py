@@ -336,46 +336,5 @@ def batch_delete(type_code):
 @login_required
 def import_data(type_code):
     config = get_config_or_404(type_code)
-    model = config.model_class
-    fields = config.get_fields_flat()
-
-    if request.method == "POST":
-        if "file" not in request.files:
-            flash("请选择文件")
-            return redirect(request.url)
-
-        file = request.files["file"]
-        if file.filename == "":
-            flash("请选择文件")
-            return redirect(request.url)
-
-        import pandas as pd
-        df = pd.read_excel(file)
-        count = 0
-        errors = []
-
-        for idx, row in df.iterrows():
-            try:
-                device = model()
-                device.created_by = current_user.id
-                device.status = "draft"
-
-                for field in fields:
-                    if field in row and pd.notna(row[field]):
-                        setattr(device, field, str(row[field]))
-
-                db.session.add(device)
-                count += 1
-            except Exception as e:
-                errors.append(f"第 {idx + 2} 行: {str(e)}")
-
-        db.session.commit()
-
-        if errors:
-            for err in errors:
-                flash(err, "error")
-
-        flash(f"成功导入 {count} 条记录")
-        return redirect(url_for("devices.list", type_code=type_code))
-
-    return render_template("devices/import.html", config=config)
+    flash(f"导入功能已统一迁移到「导入数据」页面")
+    return redirect(url_for("imports.index"))
