@@ -16,7 +16,7 @@ class SummaryVerifier:
             entry = {"unit_name": "", "grade_a": 0, "grade_b": 0, "grade_c": 0}
             for key, val in row.items():
                 k = key.strip()
-                v = val.strip() if val else "0"
+                v = str(val).strip() if val is not None else "0"
                 if "装置" in k or "中心" in k or "名称" in k:
                     entry["unit_name"] = v
                 elif "A" in k or "a" in k:
@@ -40,6 +40,9 @@ class SummaryVerifier:
         if not summary_rows:
             return result
 
+        summary_data = self.parse_summary(summary_rows)
+        result.summary_data = summary_data
+
         for rec in actual_records:
             grade = getattr(rec, grade_attr, "")
             type_key = type(rec).__tablename__
@@ -49,7 +52,32 @@ class SummaryVerifier:
             if g in ("A", "B", "C"):
                 result.actual_counts[type_key][g] += 1
 
+        for entry in summary_data:
+            for type_key, counts in result.actual_counts.items():
+                mismatches = self.compare(entry, counts, entry["unit_name"])
+                result.mismatches.extend(mismatches)
+
         return result
+
+    @staticmethod
+    def compare(
+        expected: dict,
+        actual: dict[str, int],
+        unit_name: str = "",
+    ) -> list[dict]:
+        mismatches = []
+        grade_map = [("A", "grade_a"), ("B", "grade_b"), ("C", "grade_c")]
+        for grade_short, grade_key in grade_map:
+            exp = expected.get(grade_key, 0)
+            act = actual.get(grade_short, 0)
+            if exp != act:
+                mismatches.append({
+                    "unit": unit_name,
+                    "grade": grade_short,
+                    "expected": exp,
+                    "actual": act,
+                })
+        return mismatches
 
     @staticmethod
     def _parse_int(val: str) -> int:

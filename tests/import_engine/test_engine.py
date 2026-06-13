@@ -21,14 +21,12 @@ class MockModel:
     出厂编号: str = ""
     是否联锁: str = ""
 
+    __tablename__ = "mock_table"
+
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
-
-    @property
-    def __tablename__(self):
-        return "mock_table"
 
 
 class MockLedger:
@@ -216,3 +214,60 @@ class TestImportEngine:
         assert len(pressure_sheets) == 1
         summary_sheets = [s for s in result.sheets if s.type_code == "summary"]
         assert len(summary_sheets) == 1
+
+    def test_verification_with_summary_sheet(self, tmp_path):
+        filepath = os.path.join(tmp_path, "verify.xlsx")
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "汇总"
+        ws.cell(row=1, column=1, value="装置名称")
+        ws.cell(row=1, column=2, value="A级")
+        ws.cell(row=1, column=3, value="B级")
+        ws.cell(row=1, column=4, value="C级")
+        ws.cell(row=2, column=1, value="装置1")
+        ws.cell(row=2, column=2, value=5)
+        ws.cell(row=2, column=3, value=3)
+        ws.cell(row=2, column=4, value=2)
+
+        ws2 = wb.create_sheet("压力变送器")
+        ws2.cell(row=1, column=1, value="序号")
+        ws2.cell(row=1, column=2, value="位号")
+        ws2.cell(row=1, column=3, value="设备等级")
+        ws2.cell(row=2, column=1, value=1)
+        ws2.cell(row=2, column=2, value="PT-001")
+        ws2.cell(row=2, column=3, value="A")
+        ws2.cell(row=3, column=1, value=2)
+        ws2.cell(row=3, column=2, value="PT-002")
+        ws2.cell(row=3, column=3, value="B")
+        wb.save(filepath)
+
+        engine = ImportEngine()
+        engine._load_configs = lambda: None
+        engine._classifier._configs = [
+            TypeConfig(
+                key="pressure_remote", code="pressure_transmitter",
+                name="压力变送器",
+                sheet_keywords=["压力变送器"],
+                column_signatures=[],
+            ),
+            TypeConfig(
+                key="summary", code="summary",
+                name="汇总表",
+                sheet_keywords=["汇总"],
+                column_signatures=[],
+            ),
+        ]
+        engine._types_config = {
+            "pressure_remote": {
+                "code": "pressure_transmitter",
+                "name": "压力变送器",
+                "model_class": MockModel,
+                "column_mapping": {"位号": "位号", "设备等级": "设备等级"},
+            },
+        }
+
+        result = engine.import_file(filepath)
+        assert result.verification is not None
+        assert result.verification.mismatches is not None
+        assert result.summary_data is not None
+        assert result.summary_data.sheet_name == "汇总"

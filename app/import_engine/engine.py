@@ -8,6 +8,7 @@ from app.import_engine.classifier import SheetClassifier, TypeConfig
 from app.import_engine.extractor import DataExtractor, SheetData
 from app.import_engine.mapper import ColumnMapper
 from app.import_engine.loader import DataLoader
+from app.import_engine.verifier import SummaryVerifier, VerificationResult
 from app.models import Valve
 
 
@@ -32,6 +33,7 @@ class ImportResult:
     total_records: int = 0
     errors: list[str] = field(default_factory=list)
     summary_data: Optional[SheetData] = None
+    verification: Optional[VerificationResult] = None
 
 
 class ImportEngine:
@@ -42,6 +44,7 @@ class ImportEngine:
         self._extractor = DataExtractor()
         self._mapper: Optional[ColumnMapper] = None
         self._loader = DataLoader()
+        self._verifier = SummaryVerifier()
         self._types_config: dict = {}
         self._model_cache: dict[str, type] = {}
         self._load_configs()
@@ -83,7 +86,6 @@ class ImportEngine:
                 LocalLevel,
                 ShaftInstrument,
             )
-            from app.models import Valve
 
             model_map: dict[str, type] = {
                 "PressureTransmitter": PressureTransmitter,
@@ -112,15 +114,25 @@ class ImportEngine:
             result.errors.append(f"文件读取失败: {e}")
             return result
 
+        all_records = []
+
         for sd in sheets_data:
             sheet_result = self._process_sheet(sd)
             result.sheets.append(sheet_result)
+            if sheet_result.type_code == "summary":
+                result.summary_data = sd
             if sheet_result.error:
                 result.errors.append(
                     f"[{sheet_result.sheet_name}] {sheet_result.error}"
                 )
             else:
                 result.total_records += sheet_result.row_count
+                all_records.extend(sheet_result.records)
+
+        if result.summary_data and all_records:
+            result.verification = self._verifier.verify(
+                result.summary_data.rows, all_records
+            )
 
         return result
 
