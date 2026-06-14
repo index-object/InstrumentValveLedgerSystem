@@ -219,3 +219,17 @@ class Setting(db.Model):
     __tablename__ = "settings"
     key = db.Column(db.String(50), primary_key=True)
     value = db.Column(db.String(200))
+
+
+class SheetMapping(db.Model):
+    __tablename__ = "sheet_mappings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    sheet_name = db.Column(db.String(200), unique=True, nullable=False)
+    type_code = db.Column(db.String(50), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow,
+                           onupdate=datetime.utcnow)
+
+    creator = db.relationship("User", foreign_keys=[created_by])
