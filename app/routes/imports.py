@@ -219,6 +219,21 @@ def save_mapping():
                 mappings[sheet_name] = value
 
     session["import_mappings"] = mappings
+
+    for sheet_name, type_code in mappings.items():
+        existing = SheetMapping.query.filter_by(sheet_name=sheet_name).first()
+        if existing:
+            existing.type_code = type_code
+            existing.updated_at = datetime.utcnow()
+        else:
+            mapping = SheetMapping(
+                sheet_name=sheet_name,
+                type_code=type_code,
+                created_by=current_user.id,
+            )
+            db.session.add(mapping)
+    db.session.commit()
+
     return redirect(url_for("imports.preview"))
 
 
