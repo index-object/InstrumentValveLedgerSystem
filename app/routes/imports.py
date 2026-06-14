@@ -88,7 +88,7 @@ def upload():
         flash("请选择文件")
         return redirect(url_for("imports.index"))
 
-    filename = file.filename
+    filename = secure_filename(file.filename)
     ext = os.path.splitext(filename)[1].lower()
     if ext not in (".xlsx", ".xls"):
         flash("仅支持 .xlsx / .xls 文件")
