@@ -157,10 +157,10 @@ class ImportEngine:
         type_cfg = self._types_config.get(type_key, {})
 
         if classification.type_code in ("summary", "cover"):
+            sheet_result.type_key = type_key
+            sheet_result.type_code = classification.type_code
+            sheet_result.type_name = type_cfg.get("name", "汇总表" if classification.type_code == "summary" else "封面")
             if classification.type_code == "summary":
-                sheet_result.type_key = type_key
-                sheet_result.type_code = "summary"
-                sheet_result.type_name = type_cfg.get("name", "汇总表")
                 sheet_result.headers = sd.headers
             return sheet_result
 
