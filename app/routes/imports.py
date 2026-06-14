@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, session, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from app.models import db, Ledger, Valve, ValveAttachment
+from app.models import db, Ledger, Valve, ValveAttachment, SheetMapping
 from app.devices import DeviceTypeRegistry
 from app.import_engine import ImportEngine
 from datetime import datetime
@@ -112,6 +112,22 @@ def upload():
         return redirect(url_for("imports.index"))
 
     preview, unmatched = _build_preview(result)
+
+    # 查记忆表，自动填充已学习的映射
+    if unmatched:
+        existing = SheetMapping.query.filter(
+            SheetMapping.sheet_name.in_(unmatched)
+        ).all()
+        auto_mappings = {m.sheet_name: m.type_code for m in existing}
+        new_unmatched = []
+        for name in unmatched:
+            if name in auto_mappings:
+                if "import_mappings" not in session:
+                    session["import_mappings"] = {}
+                session["import_mappings"][name] = auto_mappings[name]
+            else:
+                new_unmatched.append(name)
+        unmatched = new_unmatched
 
     session["import_file"] = saved_name
     session["import_filename"] = filename
