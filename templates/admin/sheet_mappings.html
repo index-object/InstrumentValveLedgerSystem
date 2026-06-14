@@ -2,14 +2,17 @@
 
 {% block page_title %}Sheet 映射记忆管理{% endblock %}
 
+{% block back_btn %}
+<a href="{{ url_for('admin.index') }}" class="btn-back-header">
+    <i class="bi bi-arrow-left"></i> 返回
+</a>
+{% endblock %}
+
+{% block header_actions %}{% endblock %}
+
 {% block content %}
 <div class="modern-card">
-    <div class="card-header-custom d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-bookmark"></i> Sheet 映射记忆列表</span>
-        <a href="{{ url_for('admin.index') }}" class="btn-back-header">
-            <i class="bi bi-arrow-left"></i> 返回管理
-        </a>
-    </div>
+    <div class="card-header-custom"><i class="bi bi-bookmark"></i> Sheet 映射记忆列表</div>
     <div class="card-body-custom">
         <p class="text-muted mb-3">
             系统自动记录用户在导入时手动选择的 Sheet → 设备类型映射。
@@ -18,7 +21,7 @@
 
         {% if mappings %}
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="modern-table">
                 <thead>
                     <tr>
                         <th>Sheet 名称</th>
@@ -42,7 +45,7 @@
                                   action="{{ url_for('admin.delete_sheet_mapping', id=m.id) }}"
                                   style="display:inline;"
                                   onsubmit="return confirm('确认删除映射「{{ m.sheet_name }}→{{ m.type_code }}」？')">
-                                <button type="submit" class="btn btn-sm btn-danger">
+                                <button type="submit" class="btn-action" style="background: #fee2e2; color: #991b1b;">
                                     <i class="bi bi-trash"></i> 删除
                                 </button>
                             </form>
