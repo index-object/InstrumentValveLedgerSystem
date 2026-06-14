@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
-from app.models import db, User, Setting
+from app.models import db, User, Setting, SheetMapping
 from functools import wraps
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
@@ -133,3 +133,27 @@ def settings():
     settings.setdefault("system_name", "仪表阀门台账系统")
 
     return render_template("admin/settings.html", **settings)
+
+
+@admin.route("/sheet-mappings")
+@login_required
+@require_admin
+def sheet_mappings():
+    mappings = SheetMapping.query.order_by(
+        SheetMapping.updated_at.desc()
+    ).all()
+    return render_template(
+        "admin/sheet_mappings.html",
+        mappings=mappings,
+    )
+
+
+@admin.route("/sheet-mappings/<int:id>/delete", methods=["POST"])
+@login_required
+@require_admin
+def delete_sheet_mapping(id):
+    mapping = SheetMapping.query.get_or_404(id)
+    db.session.delete(mapping)
+    db.session.commit()
+    flash(f"已删除映射: {mapping.sheet_name} → {mapping.type_code}")
+    return redirect(url_for("admin.sheet_mappings"))
