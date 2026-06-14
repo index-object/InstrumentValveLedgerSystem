@@ -118,6 +118,27 @@ class TestImportEngine:
         assert len(result.sheets) == 1
         assert result.sheets[0].type_code is None
 
+    def test_unknown_type_preserves_headers_and_samples(self, tmp_path):
+        """验证未匹配类型时仍然保留 headers 和 sample_rows"""
+        filepath = os.path.join(tmp_path, "unknown_headers.xlsx")
+        _make_simple_excel(
+            filepath, "未知类型",
+            ["序号", "位号", "设备名称"],
+            [[1, "TAG-001", "测试设备"], [2, "TAG-002", "测试设备2"]],
+        )
+
+        engine = self._make_engine()
+        result = engine.import_file(filepath)
+        assert len(result.sheets) == 1
+        sr = result.sheets[0]
+        assert sr.type_code is None
+        # key assertion: headers and sample_rows should be preserved
+        assert sr.headers == ["序号", "位号", "设备名称"]
+        assert len(sr.sample_rows) == 2
+        assert sr.sample_rows[0]["序号"] == "1"
+        assert sr.sample_rows[0]["位号"] == "TAG-001"
+        assert sr.sample_rows[1]["设备名称"] == "测试设备2"
+
     def test_multiple_sheets(self, tmp_path):
         filepath = os.path.join(tmp_path, "multi.xlsx")
         wb = Workbook()

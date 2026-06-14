@@ -45,6 +45,37 @@ def index():
     return render_template("imports/import.html")
 
 
+def _build_preview(result):
+    """从 ImportResult 构建预览数据和未匹配列表"""
+    preview = []
+    unmatched = []
+    for sr in result.sheets:
+        if sr.type_code and sr.type_code not in ("summary", "cover"):
+            preview.append({
+                "sheet": sr.sheet_name,
+                "rows": sr.row_count,
+                "headers": sr.headers,
+                "sample": sr.sample_rows,
+                "type_key": sr.type_key,
+                "detected_type": sr.type_code,
+                "detected_name": sr.type_name,
+                "accessory_count": sr.accessory_count,
+            })
+        elif not sr.type_code:
+            unmatched.append(sr.sheet_name)
+    return preview, unmatched
+
+
+def _get_saved_path():
+    """获取 session 中保存的文件路径，不存在时返回 None"""
+    saved_name = session.get("import_file")
+    if not saved_name:
+        return None
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+    path = os.path.join(upload_folder, saved_name)
+    return path if os.path.exists(path) else None
+
+
 @imports.route("/imports/upload", methods=["POST"])
 @login_required
 def upload():
@@ -80,26 +111,12 @@ def upload():
             pass
         return redirect(url_for("imports.index"))
 
-    preview = []
-    unmatched = []
-    for sr in result.sheets:
-        if sr.type_code and sr.type_code not in ("summary", "cover"):
-            preview.append({
-                "sheet": sr.sheet_name,
-                "rows": sr.row_count,
-                "headers": sr.headers,
-                "sample": sr.sample_rows,
-                "type_key": sr.type_key,
-                "detected_type": sr.type_code,
-                "detected_name": sr.type_name,
-                "accessory_count": sr.accessory_count,
-            })
-        elif not sr.type_code:
-            unmatched.append(sr.sheet_name)
+    preview, unmatched = _build_preview(result)
 
     session["import_file"] = saved_name
     session["import_filename"] = filename
     session["import_errors"] = result.errors
+    session.pop("import_mappings", None)
 
     if unmatched:
         all_types = [{"code": t.code, "name": t.name} for t in DeviceTypeRegistry.all()]
@@ -111,22 +128,60 @@ def upload():
             errors=result.errors,
         )
 
-    session["import_preview"] = preview
     return redirect(url_for("imports.preview"))
 
 
 @imports.route("/imports/preview")
 @login_required
 def preview():
-    preview_data = session.get("import_preview")
-    if not preview_data:
+    saved_path = _get_saved_path()
+    if not saved_path:
         flash("没有预览数据，请重新上传")
         return redirect(url_for("imports.index"))
+
+    engine = get_engine()
+    try:
+        result = engine.import_file(saved_path)
+    except Exception as e:
+        flash(f"文件读取失败: {e}")
+        return redirect(url_for("imports.index"))
+
+    preview, unmatched = _build_preview(result)
+    mappings = session.get("import_mappings") or {}
+
+    # 为已手动映射但未自动匹配的 sheet 创建预览条目
+    for sheet_name in unmatched:
+        if sheet_name in mappings:
+            mapped_code = mappings[sheet_name]
+            cfg = DeviceTypeRegistry.get(mapped_code)
+            if cfg:
+                for sr in result.sheets:
+                    if sr.sheet_name == sheet_name:
+                        preview.append({
+                            "sheet": sr.sheet_name,
+                            "rows": sr.row_count,
+                            "headers": sr.headers,
+                            "sample": sr.sample_rows,
+                            "type_key": sr.type_key,
+                            "detected_type": cfg.code,
+                            "detected_name": cfg.name,
+                            "accessory_count": sr.accessory_count,
+                        })
+                        break
+
+    for item in preview:
+        sheet_mapping = mappings.get(item["sheet"]) or mappings.get(item["type_key"])
+        if sheet_mapping:
+            cfg = DeviceTypeRegistry.get(sheet_mapping)
+            if cfg:
+                item["detected_type"] = cfg.code
+                item["detected_name"] = cfg.name
+
     filename = session.get("import_filename", "导入文件")
     errors = session.get("import_errors", [])
     return render_template(
         "imports/import_preview.html",
-        preview=preview_data,
+        preview=preview,
         filename=filename,
         errors=errors,
     )
@@ -135,8 +190,8 @@ def preview():
 @imports.route("/imports/save-mapping", methods=["POST"])
 @login_required
 def save_mapping():
-    preview_data = session.get("import_preview")
-    if not preview_data:
+    saved_path = _get_saved_path()
+    if not saved_path:
         flash("会话过期，请重新上传")
         return redirect(url_for("imports.index"))
 
@@ -148,15 +203,6 @@ def save_mapping():
                 mappings[sheet_name] = value
 
     session["import_mappings"] = mappings
-
-    for item in preview_data:
-        if item["sheet"] in mappings:
-            cfg = DeviceTypeRegistry.get(mappings[item["sheet"]])
-            if cfg:
-                item["type_code"] = cfg.code
-                item["type_name"] = cfg.name
-
-    session["import_preview"] = preview_data
     return redirect(url_for("imports.preview"))
 
 
@@ -203,7 +249,9 @@ def execute():
         sheet_name = sr.sheet_name
 
         type_code = sr.type_code
-        if sr.type_key and sr.type_key in mappings:
+        if sheet_name in mappings:
+            type_code = mappings[sheet_name]
+        elif sr.type_key and sr.type_key in mappings:
             type_code = mappings[sr.type_key]
 
         if not type_code or type_code in ("summary", "cover"):

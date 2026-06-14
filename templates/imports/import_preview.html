@@ -6,7 +6,16 @@
 <div class="container-fluid">
     <h2>导入预览 - {{ filename }}</h2>
 
-    <form method="POST" action="{{ url_for('imports.execute') }}">
+    {% for err in errors %}
+    {% if err %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {{ err }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <form method="POST" action="{{ url_for('imports.execute') }}" id="executeForm">
         <div class="mb-3">
             <button type="submit" class="btn btn-success">确认导入</button>
             <a href="{{ url_for('imports.index') }}" class="btn btn-secondary">重新上传</a>
@@ -72,4 +81,8 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/import.js') }}"></script>
 {% endblock %}

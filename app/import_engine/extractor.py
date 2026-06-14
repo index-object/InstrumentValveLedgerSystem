@@ -5,6 +5,44 @@ from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 
+class _XlrdCell:
+    """适配 xlrd cell 为 openpyxl cell 接口"""
+
+    def __init__(self, value: Any, column: int):
+        self.value = value
+        self.column = column
+
+
+class _XlrdSheet:
+    """将 xlrd sheet 适配为 openpyxl Worksheet 接口"""
+
+    def __init__(self, sheet):
+        self._sheet = sheet
+        self.title = sheet.name
+        self.max_row = sheet.nrows
+        self.max_column = sheet.ncols
+
+    def __getitem__(self, row_idx: int):
+        """返回 1-based row 的 cell 列表"""
+        if row_idx < 1 or row_idx > self.max_row:
+            return ()
+        row = self._sheet.row(row_idx - 1)
+        return tuple(_XlrdCell(cell.value, cell_col + 1) for cell_col, cell in enumerate(row))
+
+    def iter_rows(self, min_row=1, max_row=None, values_only=False):
+        """模拟 openpyxl 的 iter_rows"""
+        if max_row is None:
+            max_row = self.max_row
+        start = max(min_row, 1) - 1
+        end = min(max_row, self.max_row)
+        for row_idx in range(start, end):
+            row = self._sheet.row(row_idx)
+            if values_only:
+                yield tuple(cell.value for cell in row)
+            else:
+                yield tuple(_XlrdCell(cell.value, cell_col + 1) for cell_col, cell in enumerate(row))
+
+
 @dataclass
 class HeaderInfo:
     header_row: int = 0
@@ -25,6 +63,12 @@ class DataExtractor:
     SEQUENCE_KEYWORDS = ["序号", "No", "no", "NO", "序列号"]
 
     def read_excel(self, filepath: str) -> list[SheetData]:
+        ext = filepath.rsplit(".", 1)[-1].lower() if "." in filepath else ""
+        if ext == "xls":
+            return self._read_xls(filepath)
+        return self._read_xlsx(filepath)
+
+    def _read_xlsx(self, filepath: str) -> list[SheetData]:
         wb = load_workbook(filepath, read_only=True, data_only=True)
         results = []
         for sheet_name in wb.sheetnames:
@@ -32,6 +76,17 @@ class DataExtractor:
             result = self.extract_sheet(ws)
             results.append(result)
         wb.close()
+        return results
+
+    def _read_xls(self, filepath: str) -> list[SheetData]:
+        import xlrd
+        wb = xlrd.open_workbook(filepath)
+        results = []
+        for sheet_name in wb.sheet_names():
+            xl_sheet = wb.sheet_by_name(sheet_name)
+            ws = _XlrdSheet(xl_sheet)
+            result = self.extract_sheet(ws)
+            results.append(result)
         return results
 
     def extract_sheet(
@@ -138,12 +193,15 @@ class DataExtractor:
         rows = []
         accessories = []
 
-        for row_idx in range(header_info.data_start_row, max_row + 1):
-            row_data = []
-            for col_idx in range(1, max_col + 1):
-                cell = ws.cell(row=row_idx, column=col_idx)
-                val = self._clean_cell_value(cell.value)
-                row_data.append(val)
+        for row_values in ws.iter_rows(
+            min_row=header_info.data_start_row,
+            max_row=max_row,
+            values_only=True,
+        ):
+            vals = list(row_values)
+            if len(vals) < max_col:
+                vals.extend([""] * (max_col - len(vals)))
+            row_data = [self._clean_cell_value(v) for v in vals[:max_col]]
 
             if all(v == "" for v in row_data):
                 continue

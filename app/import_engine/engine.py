@@ -137,7 +137,11 @@ class ImportEngine:
         return result
 
     def _process_sheet(self, sd: SheetData) -> SheetImportResult:
-        sheet_result = SheetImportResult(sheet_name=sd.sheet_name)
+        sheet_result = SheetImportResult(
+            sheet_name=sd.sheet_name,
+            headers=sd.headers,
+            sample_rows=sd.rows[:5] if sd.rows else [],
+        )
 
         if not sd.headers:
             return sheet_result
