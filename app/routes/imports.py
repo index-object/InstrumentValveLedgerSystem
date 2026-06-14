@@ -113,6 +113,11 @@ def upload():
 
     preview, unmatched = _build_preview(result)
 
+    session["import_file"] = saved_name
+    session["import_filename"] = filename
+    session["import_errors"] = result.errors
+    session.pop("import_mappings", None)
+
     # 查记忆表，自动填充已学习的映射
     if unmatched:
         existing = SheetMapping.query.filter(
@@ -128,11 +133,6 @@ def upload():
             else:
                 new_unmatched.append(name)
         unmatched = new_unmatched
-
-    session["import_file"] = saved_name
-    session["import_filename"] = filename
-    session["import_errors"] = result.errors
-    session.pop("import_mappings", None)
 
     if unmatched:
         all_types = [{"code": t.code, "name": t.name} for t in DeviceTypeRegistry.all()]
