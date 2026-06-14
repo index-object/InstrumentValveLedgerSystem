@@ -21,7 +21,7 @@
 {% block header_actions %}{% endblock %}
 
 {% block toolbar %}
-<div class="table-toolbar-card">
+<div class="table-toolbar-card list-toolbar" data-batch-submit-url="{{ url_for('ledgers.batch_submit_ledgers') }}" data-batch-delete-url="{{ url_for('ledgers.batch_delete_ledgers') }}">
     <div class="table-toolbar">
         <div class="toolbar-left">
             <button type="button" class="toolbar-btn toolbar-btn-success" onclick="batchSubmit()">

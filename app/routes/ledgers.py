@@ -986,19 +986,37 @@ def batch_submit_ledgers():
             failed_ledgers.append(ledger.名称)
             continue
 
-        draft_valves = Valve.query.filter_by(ledger_id=ledger.id, status="draft").all()
-        if not draft_valves:
-            continue
+        if ledger.类型 == "valve":
+            draft_devices = Valve.query.filter_by(ledger_id=ledger.id, status="draft").all()
+            for device in draft_devices:
+                device.status = "pending"
+                log = ApprovalLog(
+                    ledger_id=ledger.id,
+                    valve_id=device.id,
+                    action="submit",
+                    user_id=current_user.id,
+                )
+                db.session.add(log)
+        else:
+            config = DeviceTypeRegistry.get(ledger.类型)
+            if not config or not config.model_class:
+                failed_ledgers.append(f"{ledger.名称}(类型配置错误)")
+                continue
+            model = config.model_class
+            draft_devices = model.query.filter_by(ledger_id=ledger.id, status="draft").all()
+            for device in draft_devices:
+                device.status = "pending"
+                log = ApprovalLog(
+                    ledger_id=ledger.id,
+                    device_type=ledger.类型,
+                    device_id=device.id,
+                    action="submit",
+                    user_id=current_user.id,
+                )
+                db.session.add(log)
 
-        for valve in draft_valves:
-            valve.status = "pending"
-            log = ApprovalLog(
-                ledger_id=ledger.id,
-                valve_id=valve.id,
-                action="submit",
-                user_id=current_user.id,
-            )
-            db.session.add(log)
+        if not draft_devices:
+            continue
 
         update_ledger_status(ledger)
         submitted_count += 1
