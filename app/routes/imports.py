@@ -310,10 +310,31 @@ def execute():
 
         # 写入记录
         created = 0
+        seen_tags = {}
         for record in sr.records:
             record.ledger_id = ledger.id
             record.created_by = current_user.id
             record.status = "draft"
+
+            tag = getattr(record, '位号', None)
+            if tag:
+                tag = tag.strip()
+            if not tag or tag in ('/', '-'):
+                continue
+
+            # 对有位号且数据库有 UNIQUE 约束的表，检查重复
+            tag_unique = False
+            table = getattr(record.__class__, '__table__', None)
+            if table and '位号' in table.c:
+                tag_unique = table.c['位号'].unique
+            if tag_unique:
+                if tag in seen_tags:
+                    continue
+                seen_tags[tag] = True
+                existing = record.__class__.query.filter_by(位号=tag).first()
+                if existing:
+                    continue
+
             db.session.add(record)
             created += 1
 
