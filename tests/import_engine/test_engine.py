@@ -15,7 +15,7 @@ class MockModel:
     型号规格: str = ""
     生产厂家: str = ""
     安装位置及用途: str = ""
-    测量范围Mpa: str = ""
+    测量范围: str = ""
     连接方式及规格: str = ""
     精度: str = ""
     出厂编号: str = ""

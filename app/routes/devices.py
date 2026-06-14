@@ -44,6 +44,8 @@ def list(type_code):
             filters.append(model.设备名称.like(keyword))
         if hasattr(model, "装置名称"):
             filters.append(model.装置名称.like(keyword))
+        if hasattr(model, "名称"):
+            filters.append(model.名称.like(keyword))
         if filters:
             from sqlalchemy import or_
             query = query.filter(or_(*filters))
