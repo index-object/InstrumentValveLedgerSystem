@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block page_title %}Sheet 映射记忆管理{% endblock %}
+
+{% block content %}
+<div class="modern-card">
+    <div class="card-header-custom d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-bookmark"></i> Sheet 映射记忆列表</span>
+        <a href="{{ url_for('admin.index') }}" class="btn-back-header">
+            <i class="bi bi-arrow-left"></i> 返回管理
+        </a>
+    </div>
+    <div class="card-body-custom">
+        <p class="text-muted mb-3">
+            系统自动记录用户在导入时手动选择的 Sheet → 设备类型映射。
+            下次遇到相同 Sheet 名称时将自动应用，不再弹窗。
+        </p>
+
+        {% if mappings %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Sheet 名称</th>
+                        <th>映射类型</th>
+                        <th>创建人</th>
+                        <th>创建时间</th>
+                        <th>更新时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in mappings %}
+                    <tr>
+                        <td><code>{{ m.sheet_name }}</code></td>
+                        <td>{{ m.type_code }}</td>
+                        <td>{{ m.creator.real_name or m.creator.username }}</td>
+                        <td>{{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ m.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <form method="POST"
+                                  action="{{ url_for('admin.delete_sheet_mapping', id=m.id) }}"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('确认删除映射「{{ m.sheet_name }}→{{ m.type_code }}」？')">
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-trash"></i> 删除
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox" style="font-size: 48px;"></i>
+            <p class="mt-2">暂无映射记录</p>
+            <p>用户导入 Excel 时手动选择映射后，记录会出现在这里。</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
