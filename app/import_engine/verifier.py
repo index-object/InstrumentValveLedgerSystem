@@ -44,7 +44,7 @@ class SummaryVerifier:
         result.summary_data = summary_data
 
         for rec in actual_records:
-            grade = getattr(rec, grade_attr, "")
+            grade = getattr(rec, grade_attr, "") or ""
             type_key = type(rec).__tablename__
             if type_key not in result.actual_counts:
                 result.actual_counts[type_key] = {"A": 0, "B": 0, "C": 0}
