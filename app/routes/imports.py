@@ -325,7 +325,7 @@ def execute():
             # 对有位号且数据库有 UNIQUE 约束的表，检查重复
             tag_unique = False
             table = getattr(record.__class__, '__table__', None)
-            if table and '位号' in table.c:
+            if table is not None and '位号' in table.c:
                 tag_unique = table.c['位号'].unique
             if tag_unique:
                 if tag in seen_tags:
