@@ -22,7 +22,12 @@ def require_admin(f):
 @require_admin
 def index():
     user_count = User.query.filter_by(status="active").count()
-    return render_template("admin/index.html", user_count=user_count)
+    mappings_count = SheetMapping.query.count()
+    return render_template(
+        "admin/index.html",
+        user_count=user_count,
+        mappings_count=mappings_count,
+    )
 
 
 @admin.route("/users", methods=["GET", "POST"])

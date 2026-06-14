@@ -19,6 +19,13 @@
             <p>系统配置</p>
         </div>
     </a>
+    <a href="{{ url_for('admin.sheet_mappings') }}" class="stat-card">
+        <div class="stat-icon warning"><i class="bi bi-bookmark"></i></div>
+        <div class="stat-content">
+            <h3>{{ mappings_count }}</h3>
+            <p>Sheet 映射记忆</p>
+        </div>
+    </a>
 </div>
 
 <div class="modern-card">
@@ -40,6 +47,15 @@
                     <div>
                         <div style="font-weight: 600;">系统设置</div>
                         <small class="text-muted">配置系统参数和审批流程</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 mb-3">
+                <a href="{{ url_for('admin.sheet_mappings') }}" class="quick-action-btn w-100" style="background: #f8fafc; color: var(--text-dark); border: 1px solid var(--border-color); justify-content: flex-start; padding: 20px;">
+                    <div class="stat-icon warning" style="width: 48px; height: 48px; font-size: 20px;"><i class="bi bi-bookmark"></i></div>
+                    <div>
+                        <div style="font-weight: 600;">Sheet 映射记忆</div>
+                        <small class="text-muted">管理导入记忆映射</small>
                     </div>
                 </a>
             </div>
