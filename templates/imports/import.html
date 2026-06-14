@@ -10,12 +10,12 @@
             <small class="text-muted">
                 <i class="bi bi-info-circle"></i>
                 支持所有设备类型：压力表、温度计、流量计、液位计、调节阀、开关阀、开关、特殊仪表等。
-                系统将自动识别每个 Sheet 对应的设备类型。支持 .xlsx 和 .xls 格式。
+                系统将自动识别每个数据表对应的设备类型。支持 .xlsx 和 .xls 格式。
             </small>
         </div>
         <form id="importForm" method="POST" enctype="multipart/form-data" action="{{ url_for('imports.upload') }}">
             <div class="mb-3">
-                <label class="form-label">选择 Excel 文件（每个 Sheet 表示一种设备类型）</label>
+                <label class="form-label">选择 Excel 文件（每个数据表为一种设备类型）</label>
                 <input type="file" name="file" accept=".xlsx,.xls" class="form-control form-control-modern" required>
             </div>
             <div class="mb-3">
@@ -26,34 +26,148 @@
     </div>
 </div>
 
-{% if unmatched %}
+{% if unmatched_preview %}
+{% set total = matched_preview|length + unmatched_preview|length %}
+{% set matched_count = matched_preview|length %}
+{% set need_count = unmatched_preview|length %}
 <div class="modal fade show" id="typeModal" tabindex="-1" style="display:block;background:rgba(0,0,0,0.5);" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <form method="POST" action="{{ url_for('imports.save_mapping') }}" style="height:100%;display:flex;flex-direction:column;">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">选择设备类型</h5>
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title"><i class="bi bi-question-circle text-warning me-2"></i>需要您确认设备类型</h5>
             </div>
-            <form method="POST" action="{{ url_for('imports.save_mapping') }}">
-                <div class="modal-body">
-                    <p>以下 Sheet 无法自动识别设备类型，请为每个 Sheet 指定对应类型：</p>
-                    {% for s in unmatched %}
+                <div class="modal-body pt-3">
+
+                    <!-- 状态摘要横幅 -->
+                    <div class="alert d-flex align-items-center gap-3 mb-4 p-3 {% if need_count == total %}alert-warning{% else %}alert-info{% endif %} border-0" style="border-radius:10px;">
+                        <i class="bi {% if need_count == total %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %} fs-4"></i>
+                        <div>
+                            <strong>系统识别了 {{ total }} 个数据表：</strong>
+                            {% if matched_count > 0 %}
+                            <span class="text-success">{{ matched_count }} 个已自动匹配</span>，
+                            {% endif %}
+                            <span class="text-warning-emphasis">{{ need_count }} 个需要您帮忙指定类型</span>。
+                            {% if need_count == total %}
+                            系统未能自动识别这些数据表属于哪种设备，请您根据各表的内容指定类型。
+                            {% else %}
+                            请您为下方列出的数据表选择对应的设备类型，这样才能正确导入。
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 已匹配列表 (折叠) -->
+                    {% if matched_preview %}
                     <div class="mb-3">
-                        <label class="form-label fw-bold">{{ s }}</label>
-                        <select name="mapping_{{ s }}" class="form-select">
-                            <option value="">-- 跳过此 Sheet --</option>
-                            {% for t in all_types %}
-                            <option value="{{ t.code }}">{{ t.name }}</option>
-                            {% endfor %}
-                        </select>
+                        <button class="btn btn-sm btn-outline-success" type="button" data-bs-toggle="collapse" data-bs-target="#matchedList" aria-expanded="false">
+                            <i class="bi bi-check-circle"></i> 已自动匹配的 {{ matched_count }} 个数据表 <i class="bi bi-chevron-down ms-1"></i>
+                        </button>
+                        <div class="collapse mt-2" id="matchedList">
+                            <div class="list-group list-group-flush" style="border-radius:8px;border:1px solid #e2e8f0;">
+                                {% for p in matched_preview %}
+                                <div class="list-group-item d-flex align-items-center gap-2 py-2 px-3">
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                    <span class="fw-medium">{{ p.sheet }}</span>
+                                    <span class="badge bg-light text-dark ms-auto">{{ p.detected_name }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 待处理卡片列表 -->
+                    <p class="fw-medium mb-3"><i class="bi bi-pencil-square me-1"></i>请为以下每个数据表指定设备类型：</p>
+
+                    {% for up in unmatched_preview %}
+                    <div class="card mb-3 border-warning type-select-card" style="border-left:4px solid #f59e0b;">
+                        <div class="card-body py-3 px-4">
+                            <h6 class="fw-bold mb-2" style="font-size:16px;">
+                                <i class="bi bi-file-earmark-spreadsheet text-warning me-2"></i>{{ up.sheet }}
+                            </h6>
+
+                            {% if up.headers %}
+                            <div class="mb-2">
+                                <span class="text-secondary" style="font-size:13px;">检测到的列：</span>
+                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                    {% for h in up.headers %}
+                                    <span class="badge" style="background:#eef2f6;color:#1e293b;font-size:12px;font-weight:500;padding:4px 10px;">{{ h }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if up.sample %}
+                            <div class="mb-3">
+                                <span class="text-secondary" style="font-size:13px;">数据预览：</span>
+                                <div class="mt-1" style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:6px;">
+                                    <table class="table table-sm table-bordered mb-0" style="font-size:13px;">
+                                        <thead>
+                                            <tr>
+                                                {% for h in up.sample[0].keys() %}
+                                                <th class="px-3 py-2" style="background:#f8fafc;white-space:nowrap;">{{ h }}</th>
+                                                {% endfor %}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for r in up.sample[:3] %}
+                                            <tr>
+                                                {% for v in r.values() %}
+                                                <td class="px-3 py-2" style="white-space:nowrap;">{{ v }}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- 搜索框 -->
+                            <div class="mb-2">
+                                <div class="input-group">
+                                    <span class="input-group-text" style="background:white;"><i class="bi bi-search text-muted"></i></span>
+                                    <input type="text" class="form-control type-search-input" placeholder="搜索设备类型..." data-target="{{ loop.index0 }}">
+                                </div>
+                            </div>
+
+                            <!-- 单选列表 -->
+                            <div class="type-options" id="typeOptions{{ loop.index0 }}" style="border:1px solid #e2e8f0;border-radius:8px;">
+                                <div class="row gx-2 gy-0 mx-0 pt-1" style="border-bottom:1px solid #f1f5f9;">
+                                    <div class="col-12 form-check py-2 type-option" style="margin:0;">
+                                        <input class="form-check-input" type="radio" name="mapping_{{ up.sheet }}" value="" id="skip_{{ loop.index0 }}" checked>
+                                        <label class="form-check-label text-secondary" for="skip_{{ loop.index0 }}" style="font-size:14px;">
+                                            暂不导入此数据表
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="row gx-2 gy-0 px-2 pt-1">
+                                {% for t in all_types %}
+                                <div class="col-4 form-check py-2 type-option" style="margin:0;transition:background 0.15s;border-radius:6px;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=''">
+                                    <input class="form-check-input" type="radio" name="mapping_{{ up.sheet }}" value="{{ t.code }}" id="{{ up.sheet }}_{{ t.code }}">
+                                    <label class="form-check-label fw-medium" for="{{ up.sheet }}_{{ t.code }}" style="font-size:14px;cursor:pointer;">
+                                        {{ t.name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
-                <div class="modal-footer">
-                    <a href="{{ url_for('imports.index') }}" class="btn btn-secondary">取消上传</a>
-                    <button type="submit" class="btn btn-primary">确认</button>
+                <div class="modal-footer d-flex justify-content-between">
+                    <a href="{{ url_for('imports.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>取消上传
+                    </a>
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>保存并继续导入
+                        </button>
+                    </div>
                 </div>
-            </form>
         </div>
+        </form>
     </div>
 </div>
 {% endif %}

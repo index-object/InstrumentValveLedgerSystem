@@ -136,9 +136,18 @@ def upload():
 
     if unmatched:
         all_types = [{"code": t.code, "name": t.name} for t in DeviceTypeRegistry.all()]
+        unmatched_preview = []
+        for sr in result.sheets:
+            if sr.sheet_name in unmatched:
+                unmatched_preview.append({
+                    "sheet": sr.sheet_name,
+                    "headers": sr.headers,
+                    "sample": sr.sample_rows,
+                })
         return render_template(
             "imports/import.html",
-            unmatched=unmatched,
+            matched_preview=preview,
+            unmatched_preview=unmatched_preview,
             all_types=all_types,
             filename=filename,
             errors=result.errors,
