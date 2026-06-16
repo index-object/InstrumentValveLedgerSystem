@@ -101,11 +101,11 @@
                             <div class="mb-3">
                                 <span class="text-secondary" style="font-size:13px;">数据预览：</span>
                                 <div class="mt-1" style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:6px;">
-                                    <table class="table table-sm table-bordered mb-0" style="font-size:13px;">
+                                    <table class="table table-sm table-bordered mb-0 preview-table" style="font-size:13px;">
                                         <thead>
                                             <tr>
                                                 {% for h in up.sample[0].keys() %}
-                                                <th class="px-3 py-2" style="background:#f8fafc;white-space:nowrap;">{{ h }}</th>
+                                                <th class="px-3 py-2" style="background:#f8fafc;">{{ h }}</th>
                                                 {% endfor %}
                                             </tr>
                                         </thead>
@@ -113,7 +113,7 @@
                                             {% for r in up.sample[:3] %}
                                             <tr>
                                                 {% for v in r.values() %}
-                                                <td class="px-3 py-2" style="white-space:nowrap;">{{ v }}</td>
+                                                <td class="px-3 py-2">{{ v }}</td>
                                                 {% endfor %}
                                             </tr>
                                             {% endfor %}
