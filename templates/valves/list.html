@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+.main-body { padding-top: 0; }
+</style>
+{% endblock %}
+
 {% set page_title_val = ledger.名称 ~ ' - 台账列表' if ledger else '台账列表' %}
 
 {% block page_title %}{{ page_title_val }}{% endblock %}

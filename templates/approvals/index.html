@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+.main-body { padding-top: 0; }
+</style>
+{% endblock %}
+
 {% block page_title %}
 <span style="display: flex; align-items: center; gap: 8px;">
     <i class="bi bi-check-circle-fill" style="color: #10b981;"></i>
