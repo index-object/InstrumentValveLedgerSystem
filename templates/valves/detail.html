@@ -304,9 +304,9 @@
                         <div class="attachment-info">
                             <span class="attachment-type">{{ att.type }}</span>
                             <h6>{{ att.名称 or '-' }}</h6>
-                            <p><i class="bi bi-award"></i> {{ att.设备等级 or '-' }}</p>
-                            <p><i class="bi bi-box"></i> {{ att.型号规格 or '-' }}</p>
-                            <p><i class="bi bi-building"></i> {{ att.生产厂家 or '-' }}</p>
+                            <p><i class="bi bi-award"></i> 设备等级: {{ att.设备等级 or '-' }}</p>
+                            <p><i class="bi bi-box"></i> 型号规格: {{ att.型号规格 or '-' }}</p>
+                            <p><i class="bi bi-building"></i> 生产厂家: {{ att.生产厂家 or '-' }}</p>
                         </div>
                     </div>
                     {% endfor %}
