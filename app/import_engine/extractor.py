@@ -220,7 +220,8 @@ class DataExtractor:
                     if col_idx < len(headers)
                     else f"col{col_idx}"
                 )
-                row_dict[col_name] = val
+                if col_name not in row_dict or val:
+                    row_dict[col_name] = val
 
             seq_val = row_data[0] if row_data else ""
 
@@ -274,7 +275,8 @@ class DataExtractor:
                     if col_idx < len(headers)
                     else f"col{col_idx}"
                 )
-                row_dict[col_name] = val
+                if col_name not in row_dict or val:
+                    row_dict[col_name] = val
 
             rows.append(row_dict)
 
