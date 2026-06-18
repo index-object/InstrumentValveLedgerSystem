@@ -51,6 +51,7 @@
     </div>
     <div class="toolbar-right">
       <form method="GET" class="d-flex gap-2 align-items-center">
+        {% if from_param %}<input type="hidden" name="from" value="{{ from_param }}">{% endif %}
         <div class="toolbar-search">
           <i class="bi bi-search"></i>
           <input type="text" name="search" class="form-control form-control-modern"
@@ -161,17 +162,17 @@
       <ul class="pagination-custom pagination mb-2">
         {% if pagination.has_prev %}
         <li class="page-item">
-          <a class="page-link" href="?page={{ pagination.prev_num }}&search={{ search or '' }}&status={{ status_filter }}">上一页</a>
+          <a class="page-link" href="?page={{ pagination.prev_num }}&search={{ search or '' }}&status={{ status_filter }}{% if from_param %}&from={{ from_param }}{% endif %}">上一页</a>
         </li>
         {% endif %}
         {% for p in range(1, pagination.pages + 1) %}
         <li class="page-item {% if p == pagination.page %}active{% endif %}">
-          <a class="page-link" href="?page={{ p }}&search={{ search or '' }}&status={{ status_filter }}">{{ p }}</a>
+          <a class="page-link" href="?page={{ p }}&search={{ search or '' }}&status={{ status_filter }}{% if from_param %}&from={{ from_param }}{% endif %}">{{ p }}</a>
         </li>
         {% endfor %}
         {% if pagination.has_next %}
         <li class="page-item">
-          <a class="page-link" href="?page={{ pagination.next_num }}&search={{ search or '' }}&status={{ status_filter }}">下一页</a>
+          <a class="page-link" href="?page={{ pagination.next_num }}&search={{ search or '' }}&status={{ status_filter }}{% if from_param %}&from={{ from_param }}{% endif %}">下一页</a>
         </li>
         {% endif %}
       </ul>
