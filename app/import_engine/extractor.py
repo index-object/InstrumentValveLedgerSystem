@@ -150,6 +150,9 @@ class DataExtractor:
     def _build_headers(
         self, ws: Worksheet, header_info: HeaderInfo, max_col: int
     ) -> list[str]:
+        def _clean(s: str) -> str:
+            return s.strip().replace("\r", "").replace("\n", "")
+
         if header_info.is_double_row:
             top_row = list(ws[header_info.header_row])
             sub_row_idx = header_info.header_row + 1
@@ -157,12 +160,12 @@ class DataExtractor:
             headers = []
             for col_idx in range(1, max_col + 1):
                 top_val = (
-                    str(top_row[col_idx - 1].value).strip()
+                    _clean(str(top_row[col_idx - 1].value))
                     if col_idx <= len(top_row) and top_row[col_idx - 1].value is not None
                     else ""
                 )
                 sub_val = (
-                    str(sub_row[col_idx - 1].value).strip()
+                    _clean(str(sub_row[col_idx - 1].value))
                     if col_idx <= len(sub_row) and sub_row[col_idx - 1].value is not None
                     else ""
                 )
@@ -177,7 +180,7 @@ class DataExtractor:
         else:
             row = list(ws[header_info.header_row])
             return [
-                str(c.value).strip() if c.value is not None else ""
+                _clean(str(c.value)) if c.value is not None else ""
                 for c in row
             ]
 
