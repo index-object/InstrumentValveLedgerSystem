@@ -348,22 +348,34 @@ def detail(id):
     )
     valves_list = pagination.items
 
-    装置列表 = (
-        db.session.query(model.装置名称)
-        .distinct()
-        .filter(model.装置名称.isnot(None), model.ledger_id == id)
-        .all()
-    )
-    装置列表 = [r[0] for r in 装置列表 if r[0]]
+    if ledger.类型 in VALVE_TYPES:
+        装置列表 = (
+            db.session.query(model.装置名称)
+            .distinct()
+            .filter(model.装置名称.isnot(None), model.ledger_id == id)
+            .all()
+        )
+        装置列表 = [r[0] for r in 装置列表 if r[0]]
+
+        return render_template(
+            "ledgers/detail.html",
+            ledger=ledger,
+            valves=valves_list,
+            pagination=pagination,
+            装置列表=装置列表,
+            active_filters=active_filters,
+            filter_options=filter_options,
+            from_param=from_param,
+        )
 
     return render_template(
-        "valves/list.html",
-        ledger=ledger,
-        valves=valves_list,
+        "ledgers/device_detail.html",
+        config=config,
+        devices=valves_list,
         pagination=pagination,
-        装置列表=装置列表,
-        active_filters=active_filters,
-        filter_options=filter_options,
+        search=search or "",
+        status_filter=status or "",
+        ledger=ledger,
         from_param=from_param,
     )
 
