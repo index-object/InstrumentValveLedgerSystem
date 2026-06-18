@@ -80,17 +80,17 @@
 {% set from_param = from_param|default(request.args.get('from', '')) %}
 {% set is_mine = (from_param == 'mine') %}
 <div class="modern-card">
-  <div class="table-responsive" style="max-height: calc(100vh - 300px); overflow-y: auto;">
+  <div class="table-responsive" style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: auto; position: relative;">
     <table class="modern-table table-sm table-bordered" style="min-width: {{ 800 + total_data_cols * 100 }}px;">
-      <thead class="table-light">
+      <thead class="table-light" style="position: sticky; top: 0; z-index: 20;">
         <tr>
           {% if is_mine %}
-          <th style="width: 50px; min-width: 50px; position: sticky; left: 0; z-index: 3; background: #f8f9fa; border-right: 1px solid #dee2e6;">
+          <th style="width: 50px; min-width: 50px; position: sticky; left: 0; z-index: 23; background: #f8f9fa; border-right: 1px solid #dee2e6;">
             <input type="checkbox" class="form-check-input" id="selectAllTop">
           </th>
           {% endif %}
           {% for field in all_fields %}
-          <th class="filter-header" data-field="{{ field }}" style="white-space: nowrap; cursor: pointer; min-width: 100px;" onclick="showFilterDropdown(event, '{{ field }}')">
+          <th class="filter-header" data-field="{{ field }}" style="white-space: nowrap; cursor: pointer; min-width: 100px; position: sticky; top: 0; z-index: 21; background: #f8f9fa;" onclick="showFilterDropdown(event, '{{ field }}')">
             <div class="d-flex align-items-center justify-content-between">
               <span>{{ field }}</span>
               {% if active_filters and field in active_filters %}
@@ -101,8 +101,8 @@
             </div>
           </th>
           {% endfor %}
-          <th style="width: 100px; white-space: nowrap;">状态</th>
-          <th style="width: 120px; white-space: nowrap; position: sticky; right: 0; z-index: 3; background: #f8f9fa; border-left: 1px solid #dee2e6;">操作</th>
+          <th style="width: 100px; white-space: nowrap; position: sticky; top: 0; z-index: 21; background: #f8f9fa;">状态</th>
+          <th style="width: 120px; white-space: nowrap; position: sticky; right: 0; top: 0; z-index: 23; background: #f8f9fa; border-left: 1px solid #dee2e6;">操作</th>
         </tr>
       </thead>
       <tbody>
