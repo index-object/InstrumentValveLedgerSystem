@@ -83,7 +83,7 @@ def detail(type_code, id):
 @login_required
 def new(type_code):
     config = get_config_or_404(type_code)
-    from_param = request.args.get("from", "")
+    from_param = request.args.get("from", request.args.get("from_param", ""))
     ledger_id = request.args.get("ledger_id", type=int)
     ledger = None
     if ledger_id:

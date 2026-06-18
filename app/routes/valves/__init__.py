@@ -163,10 +163,11 @@ def new():
         log.action = action
         db.session.commit()
 
+        device_type = get_valve_ledger_type(valve)
         if valve_id:
-            process_attachments_update(db, valve, request.form.get("attachments"))
+            process_attachments_update(db, device_type, valve, request.form.get("attachments"))
         else:
-            process_attachments_create(db, valve.id, request.form.get("attachments"))
+            process_attachments_create(db, device_type, valve.id, request.form.get("attachments"))
         db.session.commit()
 
         flash("提交成功")
@@ -313,7 +314,8 @@ def edit(id):
 
         populate_valve_from_form(valve, request.form)
 
-        process_attachments_update(db, valve, request.form.get("attachments"))
+        device_type = get_valve_ledger_type(valve)
+        process_attachments_update(db, device_type, valve, request.form.get("attachments"))
         db.session.commit()
 
         flash("保存成功")
@@ -353,6 +355,10 @@ def delete(id):
         return redirect(url_for("valves.detail", id=id, **{'from': from_param}))
 
     ledger_id = valve.ledger_id
+    device_type = get_valve_ledger_type(valve)
+    ValveAttachment.query.filter_by(
+        device_type=device_type, device_id=valve.id
+    ).delete()
     db.session.delete(valve)
     db.session.commit()
     flash("删除成功")
@@ -377,6 +383,9 @@ def batch_delete():
         if valve and can_delete_valve(valve):
             device_type = get_valve_ledger_type(valve)
             ApprovalLog.query.filter_by(
+                device_type=device_type, device_id=valve.id
+            ).delete()
+            ValveAttachment.query.filter_by(
                 device_type=device_type, device_id=valve.id
             ).delete()
             db.session.delete(valve)

@@ -9,8 +9,8 @@ from flask import (
     abort,
 )
 from flask_login import login_required, current_user
-from app.models import db, Ledger, ApprovalLog, Setting
-from app.devices.valve_helper import get_valve_model, get_valve_by_id, has_duplicate_tag, get_all_valve_models, count_valves_by_status, query_valves
+from app.models import db, Ledger, ApprovalLog, Setting, ValveAttachment
+from app.devices.valve_helper import VALVE_TYPES, get_valve_model, get_valve_by_id, get_valve_ledger_type, has_duplicate_tag, get_all_valve_models, count_valves_by_status, query_valves
 from app.devices import DeviceTypeRegistry
 from app.routes.valves.permissions import (
     can_edit_ledger,
@@ -403,11 +403,21 @@ def delete(id):
         flash("类型配置错误")
         return redirect(get_back_url(from_param))
     model = config.model_class
+    device_type = config.code
 
     pending_count = model.query.filter_by(ledger_id=id, status="pending").count()
     if pending_count > 0:
         flash(f"当前有 {pending_count} 条待审批记录，无法删除")
         return redirect(get_back_url(from_param))
+
+    valve_ids = [
+        v[0] for v in model.query.with_entities(model.id).filter_by(ledger_id=id).all()
+    ]
+    if valve_ids:
+        ValveAttachment.query.filter(
+            ValveAttachment.device_type == device_type,
+            ValveAttachment.device_id.in_(valve_ids),
+        ).delete(synchronize_session=False)
 
     model.query.filter_by(ledger_id=id).delete()
     db.session.delete(ledger)
@@ -709,10 +719,18 @@ def edit_valve(ledger_id, id):
 @ledgers.route("/ledger/<int:ledger_id>/valve/<int:id>")
 @login_required
 def valve_detail(ledger_id, id):
-    valve = get_valve_by_id(id)
+    from_param = request.args.get("from", "all")
+    ledger = Ledger.query.get_or_404(ledger_id)
+
+    if ledger.类型 not in VALVE_TYPES:
+        return redirect(url_for("devices.detail", type_code=ledger.类型, id=id, **{"from": from_param}))
+
+    model = get_valve_model(ledger)
+    if not model:
+        abort(404)
+    valve = model.query.get(id)
     if not valve:
         abort(404)
-    from_param = request.args.get("from", "all")
     return render_template(
         "valves/detail.html", valve=valve, ledger_id=ledger_id, from_param=from_param
     )
@@ -735,6 +753,10 @@ def delete_valve(ledger_id, id):
         flash("当前状态无法删除")
         return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
+    device_type = get_valve_ledger_type(valve)
+    ValveAttachment.query.filter_by(
+        device_type=device_type, device_id=valve.id
+    ).delete()
     db.session.delete(valve)
 
     config = DeviceTypeRegistry.get(ledger.类型)
@@ -864,11 +886,18 @@ def batch_delete_valve(id):
         flash(f"有 {pending_count} 项待审批记录无法删除")
 
     if valves_to_delete:
+        config = DeviceTypeRegistry.get(ledger.类型)
+        device_type = config.code if config else None
+        if device_type:
+            ValveAttachment.query.filter(
+                ValveAttachment.device_type == device_type,
+                ValveAttachment.device_id.in_(valves_to_delete),
+            ).delete(synchronize_session=False)
+
         deleted_count = model.query.filter(
             model.id.in_(valves_to_delete),
         ).delete(synchronize_session=False)
 
-        config = DeviceTypeRegistry.get(ledger.类型)
         if config and config.model_class:
             ledger.valve_count = config.model_class.query.filter_by(ledger_id=id).count()
         db.session.commit()
@@ -912,6 +941,16 @@ def batch_delete_ledgers():
         if pending_count > 0:
             failed_ledgers.append(f"{ledger.名称}(有待审批记录)")
             continue
+
+        device_type = config.code
+        valve_ids = [
+            v[0] for v in model.query.with_entities(model.id).filter_by(ledger_id=ledger.id).all()
+        ]
+        if valve_ids:
+            ValveAttachment.query.filter(
+                ValveAttachment.device_type == device_type,
+                ValveAttachment.device_id.in_(valve_ids),
+            ).delete(synchronize_session=False)
 
         model.query.filter_by(ledger_id=ledger.id).delete()
         db.session.delete(ledger)

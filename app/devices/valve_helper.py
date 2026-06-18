@@ -1,6 +1,6 @@
 from app.devices import DeviceTypeRegistry
 
-VALVE_TYPES = {"control_valve", "onoff_valve"}
+VALVE_TYPES = ["control_valve", "onoff_valve"]
 
 
 def get_valve_model(ledger_or_type):
@@ -59,8 +59,10 @@ def count_valves_by_status(ledger_id):
     return counts
 
 
-def get_valve_by_id(valve_id):
-    """跨两个表查找阀门"""
+def get_valve_by_id(valve_id, model_class=None):
+    """跨两个表查找阀门，可指定模型类精确查找"""
+    if model_class:
+        return model_class.query.get(valve_id)
     for model in get_all_valve_models():
         valve = model.query.get(valve_id)
         if valve:

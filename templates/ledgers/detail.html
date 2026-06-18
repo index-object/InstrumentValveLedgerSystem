@@ -62,7 +62,7 @@
             {# 新增/提交按钮：仅在"我的台账"界面显示 #}
             {% if from_param == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
                 {% if ledger.display_status != 'pending' %}
-                <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=from_param) }}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
+                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.new', type_code=ledger.类型, ledger_id=ledger.id, from=from_param) }}{% else %}{{ url_for('ledgers.new_valve', id=ledger.id, from=from_param) }}{% endif %}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
                     <i class="bi bi-plus-lg"></i> 新增台账
                 </a>
                 {% endif %}
@@ -103,7 +103,7 @@
             {# 新增按钮：仅在"我的台账"界面显示 #}
             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
             {% if ledger.display_status != 'pending' %}
-            <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=request.args.get('from', 'all')) }}" class="btn btn-accent">
+            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.new', type_code=ledger.类型, ledger_id=ledger.id, from=request.args.get('from', 'all')) }}{% else %}{{ url_for('ledgers.new_valve', id=ledger.id, from=request.args.get('from', 'all')) }}{% endif %}" class="btn btn-accent">
                 <i class="bi bi-plus-lg"></i> 新增台账
             </a>
             {% endif %}
@@ -156,7 +156,7 @@
                             <input type="checkbox" name="valve_ids" value="{{ valve.id }}" class="form-check-input item-checkbox">
                         </td>
                         <td>{{ loop.index }}</td>
-                        <td><a href="{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ request.args.get('from', 'all') }}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
+                        <td><a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.detail', type_code=ledger.类型, id=valve.id, from=request.args.get('from', 'all')) }}{% else %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ request.args.get('from', 'all') }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
                         <td>{{ valve.名称 or '-' }}</td>
                         <td>{{ valve.装置名称 or '-' }}</td>
                         <td>{{ valve.设备等级 or '-' }}</td>
@@ -199,12 +199,12 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ request.args.get('from', 'all') }}" class="btn-action" style="background: #e2e8f0; color: #475569;">
+                            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.detail', type_code=ledger.类型, id=valve.id, from=request.args.get('from', 'all')) }}{% else %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ request.args.get('from', 'all') }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;">
                                 <i class="bi bi-eye"></i>
                             </a>
                             {# 编辑按钮：仅在"我的台账"界面显示 #}
                             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id and valve.status in ['draft', 'rejected', 'approved'] %}
-                            <a href="{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
+                            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.edit', type_code=ledger.类型, id=valve.id, from=request.args.get('from', 'all')) }}{% else %}{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
                                 <i class="bi bi-pencil"></i>
                             </a>
                             {% endif %}
@@ -218,7 +218,7 @@
                                 <p>暂无台账内容</p>
                                 {# 添加按钮：仅在"我的台账"界面显示 #}
                                 {% if from_param|default(request.args.get('from', 'all')) == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
-                                <a href="{{ url_for('ledgers.new_valve', id=ledger.id, from=request.args.get('from', 'all')) }}" class="btn btn-accent">添加第一个台账</a>
+                                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.new', type_code=ledger.类型, ledger_id=ledger.id, from=request.args.get('from', 'all')) }}{% else %}{{ url_for('ledgers.new_valve', id=ledger.id, from=request.args.get('from', 'all')) }}{% endif %}" class="btn btn-accent">添加第一个台账</a>
                                 {% endif %}
                             </div>
                         </td>
