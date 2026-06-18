@@ -1,6 +1,7 @@
 from flask import Flask, send_from_directory
 from config import Config
-from app.models import db, User, Valve
+from app.models import db, User
+from app.devices.valve_helper import get_all_valve_models
 from app.devices import DeviceTypeRegistry
 from flask_login import LoginManager, current_user
 import os
@@ -36,9 +37,12 @@ def create_app(config_class=Config):
                 "leader",
                 "admin",
             ]:
-                pending_count = Valve.query.filter_by(status="pending").count()
-                for config in DeviceTypeRegistry.exclude_valve():
-                    if config.model_class:
+                pending_count = 0
+                for model in get_all_valve_models():
+                    pending_count += model.query.filter_by(status="pending").count()
+                valve_model_set = set(get_all_valve_models())
+                for config in DeviceTypeRegistry.all():
+                    if config.model_class and config.model_class not in valve_model_set:
                         pending_count += config.model_class.query.filter_by(status="pending").count()
             else:
                 pending_count = 0

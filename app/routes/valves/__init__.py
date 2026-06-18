@@ -1,4 +1,5 @@
 from flask import (
+    abort,
     Blueprint,
     render_template,
     redirect,
@@ -8,7 +9,15 @@ from flask import (
     jsonify,
 )
 from flask_login import login_required, current_user
-from app.models import db, Valve, ApprovalLog, Ledger, ValveAttachment
+from app.models import db, Ledger, ApprovalLog, ValveAttachment
+from app.devices.valve_helper import (
+    get_valve_model,
+    get_valve_by_id,
+    has_duplicate_tag,
+    get_valve_ledger_type,
+    get_all_valve_models,
+    count_valves_by_status,
+)
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 import json
@@ -40,10 +49,12 @@ valves = Blueprint("valves", __name__)
 
 
 def update_ledger_status(ledger):
-    total = Valve.query.filter_by(ledger_id=ledger.id).count()
+    from app.devices.valve_helper import count_valves_by_status
+    counts = count_valves_by_status(ledger.id)
+    total = counts["total"]
     if total == 0:
         return
-    approved = Valve.query.filter_by(ledger_id=ledger.id, status="approved").count()
+    approved = counts["approved"]
     if approved == total:
         ledger.status = "approved"
         ledger.approved_at = datetime.utcnow()
@@ -55,13 +66,8 @@ def check_tag():
     tag = request.args.get("位号")
     if not tag:
         return jsonify({"valid": True})
-
     exclude_id = request.args.get("exclude_id", type=int)
-    query = Valve.query.filter(Valve.位号 == tag, Valve.status != "draft")
-    if exclude_id:
-        query = query.filter(Valve.id != exclude_id)
-
-    exists = query.first() is not None
+    exists = has_duplicate_tag(tag, exclude_id)
     return jsonify({"valid": not exists, "message": "位号已存在" if exists else None})
 
 
@@ -75,7 +81,9 @@ def list():
 @login_required
 def detail(id):
     from_param = get_from_param()
-    valve = Valve.query.get_or_404(id)
+    valve = get_valve_by_id(id)
+    if not valve:
+        abort(404)
     if not can_view_valve(valve):
         flash("无权访问")
         return redirect_to_list(from_param)
@@ -89,7 +97,7 @@ def new():
         valve_id = request.form.get("valve_id")
 
         if valve_id:
-            valve = Valve.query.get(valve_id)
+            valve = get_valve_by_id(valve_id)
             if valve and can_edit_valve(valve):
                 populate_valve_from_form(valve, request.form)
                 db.session.commit()
@@ -99,14 +107,22 @@ def new():
         else:
             位号 = request.form.get("位号")
             if 位号:
-                existing = Valve.query.filter(
-                    Valve.位号 == 位号, Valve.status != "draft"
-                ).first()
-                if existing:
+                if has_duplicate_tag(位号):
                     flash("位号已存在，请使用其他位号")
                     return redirect(url_for("valves.new"))
 
-            valve = Valve()
+            ledger_id = request.form.get("ledger_id")
+            if ledger_id:
+                ledger_obj = Ledger.query.get(int(ledger_id))
+                model = get_valve_model(ledger_obj)
+            else:
+                model = None
+
+            if model is None:
+                flash("无法确定阀门类型")
+                return redirect(url_for("valves.new"))
+
+            valve = model()
             populate_valve_from_form(valve, request.form)
             valve.created_by = current_user.id
             valve.status = "draft"
@@ -116,10 +132,10 @@ def new():
                 db.session.commit()
             except IntegrityError:
                 db.session.rollback()
-                draft = Valve.query.filter(
-                    Valve.位号 == 位号,
-                    Valve.status == "draft",
-                    Valve.created_by == current_user.id,
+                draft = model.query.filter(
+                    model.位号 == 位号,
+                    model.status == "draft",
+                    model.created_by == current_user.id,
                 ).first()
                 if draft:
                     db.session.delete(draft)
@@ -135,7 +151,12 @@ def new():
                     flash("位号已存在，请使用其他位号")
                     return redirect(url_for("valves.new"))
 
-        log = ApprovalLog(valve_id=valve.id, action="submit", user_id=current_user.id)
+        log = ApprovalLog(
+            device_type=get_valve_ledger_type(valve),
+            device_id=valve.id,
+            action="submit",
+            user_id=current_user.id,
+        )
         db.session.add(log)
 
         action = set_valve_status_after_submit(valve, current_user.id)
@@ -165,29 +186,31 @@ def save_draft():
     ledger_id = data.get("ledger_id")
 
     if valve_id:
-        valve = Valve.query.get(valve_id)
+        valve = get_valve_by_id(valve_id)
         if not valve:
             return jsonify({"success": False, "message": "台账不存在"})
         if not can_edit_valve(valve):
             return jsonify({"success": False, "message": "无权编辑"})
+        device_type = get_valve_ledger_type(valve)
     else:
         if ledger_id:
-            valve = Valve.query.filter_by(
+            ledger_obj = Ledger.query.get(ledger_id)
+            model = get_valve_model(ledger_obj)
+            if model is None:
+                return jsonify({"success": False, "message": "无效的台账类型"})
+            valve = model.query.filter_by(
                 ledger_id=ledger_id, status="draft", created_by=current_user.id
             ).first()
             if not valve:
-                valve = Valve()
+                valve = model()
                 valve.created_by = current_user.id
                 valve.status = "draft"
                 valve.ledger_id = ledger_id
                 db.session.add(valve)
                 db.session.flush()
+            device_type = get_valve_ledger_type(valve)
         else:
-            valve = Valve()
-            valve.created_by = current_user.id
-            valve.status = "draft"
-            db.session.add(valve)
-            db.session.flush()
+            return jsonify({"success": False, "message": "无法确定阀门类型"})
 
     for key, value in data.get("formData", {}).items():
         if key == "ledger_id":
@@ -211,7 +234,8 @@ def save_draft():
                 if att_id:
                     attachment = ValveAttachment.query.filter(
                         ValveAttachment.id == att_id,
-                        ValveAttachment.valve_id == valve.id,
+                        ValveAttachment.device_type == device_type,
+                        ValveAttachment.device_id == valve.id,
                     ).first()
                     if attachment:
                         attachment.type = att_type
@@ -236,7 +260,8 @@ def save_draft():
                     )
                     if att_type:
                         attachment = ValveAttachment(
-                            valve_id=valve.id,
+                            device_type=device_type,
+                            device_id=valve.id,
                             type=att_type,
                             名称=att_name,
                             设备等级=att_grade,
@@ -247,7 +272,8 @@ def save_draft():
             for att_id in existing_ids - submitted_ids:
                 attachment = ValveAttachment.query.filter(
                     ValveAttachment.id == att_id,
-                    ValveAttachment.valve_id == valve.id,
+                    ValveAttachment.device_type == device_type,
+                    ValveAttachment.device_id == valve.id,
                 ).first()
                 if attachment:
                     db.session.delete(attachment)
@@ -262,12 +288,13 @@ def save_draft():
 @login_required
 def edit(id):
     from_param = get_from_param()
-    valve = Valve.query.get_or_404(id)
+    valve = get_valve_by_id(id)
+    if not valve:
+        abort(404)
 
     error = require_edit_permission(valve)
     if error:
         flash(error)
-        # 如果有 ledger，返回到 ledger 的阀门详情页
         if valve.ledger_id:
             return redirect(url_for(
                 'ledgers.valve_detail',
@@ -280,10 +307,7 @@ def edit(id):
     if request.method == "POST":
         位号 = request.form.get("位号")
         if 位号:
-            existing = Valve.query.filter(
-                Valve.位号 == 位号, Valve.status != "draft", Valve.id != id
-            ).first()
-            if existing:
+            if has_duplicate_tag(位号, id):
                 flash("位号已存在，请使用其他位号")
                 return redirect(url_for("valves.edit", id=id, **{'from': from_param}))
 
@@ -293,7 +317,6 @@ def edit(id):
         db.session.commit()
 
         flash("保存成功")
-        # 如果有 ledger，返回到 ledger 的阀门详情页
         if valve.ledger_id:
             return redirect(url_for(
                 'ledgers.valve_detail',
@@ -303,7 +326,6 @@ def edit(id):
             ))
         return redirect(url_for("valves.detail", id=id, **{'from': from_param}))
 
-    # 对于有 ledger 的阀门，获取 ledger 信息传递给模板
     ledger = None
     if valve.ledger_id:
         ledger = Ledger.query.get(valve.ledger_id)
@@ -314,7 +336,9 @@ def edit(id):
 @login_required
 def delete(id):
     from_param = get_from_param()
-    valve = Valve.query.get_or_404(id)
+    valve = get_valve_by_id(id)
+    if not valve:
+        abort(404)
 
     error = require_delete_permission(valve)
     if error:
@@ -333,7 +357,6 @@ def delete(id):
     db.session.commit()
     flash("删除成功")
 
-    # 如果有 ledger，返回到 ledger 详情页
     if ledger_id:
         return redirect(url_for('ledgers.detail', id=ledger_id, **{'from': from_param}))
     return redirect_to_list(from_param)
@@ -350,9 +373,12 @@ def batch_delete():
 
     count = 0
     for id in ids:
-        valve = Valve.query.get(int(id))
+        valve = get_valve_by_id(int(id))
         if valve and can_delete_valve(valve):
-            ApprovalLog.query.filter_by(valve_id=valve.id).delete()
+            device_type = get_valve_ledger_type(valve)
+            ApprovalLog.query.filter_by(
+                device_type=device_type, device_id=valve.id
+            ).delete()
             db.session.delete(valve)
             count += 1
 
@@ -364,11 +390,14 @@ def batch_delete():
 @valves.route("/my-applications")
 @login_required
 def my_applications():
-    my_valves = (
-        Valve.query.filter_by(created_by=current_user.id)
-        .order_by(Valve.created_at.desc())
-        .all()
-    )
+    my_valves = []
+    for model in get_all_valve_models():
+        my_valves.extend(
+            model.query.filter_by(created_by=current_user.id)
+            .order_by(model.created_at.desc())
+            .all()
+        )
+    my_valves.sort(key=lambda v: v.created_at or datetime.min, reverse=True)
     return render_template("valves/my_applications.html", valves=my_valves)
 
 

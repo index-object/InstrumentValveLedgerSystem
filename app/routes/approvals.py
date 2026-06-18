@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
-from app.models import db, Ledger, Valve, ApprovalLog
+from app.models import db, Ledger, ApprovalLog
+from app.devices.valve_helper import get_valve_model, get_all_valve_models, count_valves_by_status, query_valves
 from app.devices import DeviceTypeRegistry
 from app.routes.valves.permissions import require_leader
 from datetime import datetime
@@ -13,34 +14,27 @@ approvals = Blueprint("approvals", __name__)
 @require_leader
 def index():
     tab = request.args.get("tab", "pending")
-    pending_count = Valve.query.filter_by(status="pending").count()
-    for config in DeviceTypeRegistry.exclude_valve():
-        if config.model_class:
-            pending_count += config.model_class.query.filter_by(status="pending").count()
+    pending_count = sum(
+        config.model_class.query.filter_by(status="pending").count()
+        for config in DeviceTypeRegistry.all()
+        if config.model_class
+    )
 
     all_ledgers = Ledger.query.order_by(Ledger.created_at.desc()).all()
 
     # 为每个合集统计各种设备类型的审批数量
     for ledger in all_ledgers:
-        if ledger.类型 == "valve":
-            total_q = Valve.query.filter_by(ledger_id=ledger.id)
+        config = DeviceTypeRegistry.get(ledger.类型)
+        if config and config.model_class:
+            model = config.model_class
+            total_q = model.query.filter_by(ledger_id=ledger.id)
             ledger.total_count = total_q.count()
             ledger.pending_count = total_q.filter_by(status="pending").count()
             ledger.approved_count = total_q.filter_by(status="approved").count()
             ledger.rejected_count = total_q.filter_by(status="rejected").count()
             ledger.draft_count = total_q.filter_by(status="draft").count()
         else:
-            config = DeviceTypeRegistry.get(ledger.类型)
-            if config and config.model_class:
-                model = config.model_class
-                total_q = model.query.filter_by(ledger_id=ledger.id)
-                ledger.total_count = total_q.count()
-                ledger.pending_count = total_q.filter_by(status="pending").count()
-                ledger.approved_count = total_q.filter_by(status="approved").count()
-                ledger.rejected_count = total_q.filter_by(status="rejected").count()
-                ledger.draft_count = total_q.filter_by(status="draft").count()
-            else:
-                ledger.total_count = ledger.pending_count = ledger.approved_count = ledger.rejected_count = ledger.draft_count = 0
+            ledger.total_count = ledger.pending_count = ledger.approved_count = ledger.rejected_count = ledger.draft_count = 0
 
     if tab == "pending":
         ledgers = [l for l in all_ledgers if l.pending_count > 0]
@@ -60,34 +54,22 @@ def index():
 
 
 def _approve_ledger(ledger, user_id, comment=""):
-    """审批通过台账合集（支持阀门和非阀门类型）"""
+    """审批通过台账合集"""
     approved_count = 0
-    if ledger.类型 == "valve":
-        pending = Valve.query.filter_by(ledger_id=ledger.id, status="pending").all()
+    config = DeviceTypeRegistry.get(ledger.类型)
+    if config and config.model_class:
+        model = config.model_class
+        pending = model.query.filter_by(ledger_id=ledger.id, status="pending").all()
         for device in pending:
             device.status = "approved"
             device.approved_by = user_id
             device.approved_at = datetime.utcnow()
             log = ApprovalLog(
-                ledger_id=ledger.id, valve_id=device.id,
+                ledger_id=ledger.id, device_type=ledger.类型, device_id=device.id,
                 action="approve", user_id=user_id, comment=comment,
             )
             db.session.add(log)
             approved_count += 1
-    else:
-        config = DeviceTypeRegistry.get(ledger.类型)
-        if config and config.model_class:
-            pending = config.model_class.query.filter_by(ledger_id=ledger.id, status="pending").all()
-            for device in pending:
-                device.status = "approved"
-                device.approved_by = user_id
-                device.approved_at = datetime.utcnow()
-                log = ApprovalLog(
-                    ledger_id=ledger.id, device_type=ledger.类型, device_id=device.id,
-                    action="approve", user_id=user_id, comment=comment,
-                )
-                db.session.add(log)
-                approved_count += 1
     if approved_count > 0:
         total = _count_ledger_devices(ledger)
         approved = _count_ledger_devices(ledger, "approved")
@@ -101,44 +83,31 @@ def _approve_ledger(ledger, user_id, comment=""):
 
 
 def _reject_ledger(ledger, user_id, comment=""):
-    """驳回台账合集（支持阀门和非阀门类型）"""
+    """驳回台账合集"""
     rejected_count = 0
-    if ledger.类型 == "valve":
-        pending = Valve.query.filter_by(ledger_id=ledger.id, status="pending").all()
+    config = DeviceTypeRegistry.get(ledger.类型)
+    if config and config.model_class:
+        model = config.model_class
+        pending = model.query.filter_by(ledger_id=ledger.id, status="pending").all()
         for device in pending:
             device.status = "rejected"
             log = ApprovalLog(
-                ledger_id=ledger.id, valve_id=device.id,
+                ledger_id=ledger.id, device_type=ledger.类型, device_id=device.id,
                 action="reject", user_id=user_id, comment=comment,
             )
             db.session.add(log)
             rejected_count += 1
-    else:
-        config = DeviceTypeRegistry.get(ledger.类型)
-        if config and config.model_class:
-            pending = config.model_class.query.filter_by(ledger_id=ledger.id, status="pending").all()
-            for device in pending:
-                device.status = "rejected"
-                log = ApprovalLog(
-                    ledger_id=ledger.id, device_type=ledger.类型, device_id=device.id,
-                    action="reject", user_id=user_id, comment=comment,
-                )
-                db.session.add(log)
-                rejected_count += 1
     if rejected_count > 0:
         ledger.status = "rejected"
     return rejected_count
 
 
 def _count_ledger_devices(ledger, status=None):
-    """统计台账合集中的设备数量（支持阀门和非阀门类型）"""
-    if ledger.类型 == "valve":
-        q = Valve.query.filter_by(ledger_id=ledger.id)
-    else:
-        config = DeviceTypeRegistry.get(ledger.类型)
-        if not config or not config.model_class:
-            return 0
-        q = config.model_class.query.filter_by(ledger_id=ledger.id)
+    """统计台账合集中的设备数量"""
+    config = DeviceTypeRegistry.get(ledger.类型)
+    if not config or not config.model_class:
+        return 0
+    q = config.model_class.query.filter_by(ledger_id=ledger.id)
     if status:
         q = q.filter_by(status=status)
     return q.count()

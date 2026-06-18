@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, session, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from app.models import db, Ledger, Valve, ValveAttachment, SheetMapping
+from app.models import db, Ledger, ValveAttachment, SheetMapping
 from app.devices import DeviceTypeRegistry
 from app.import_engine import ImportEngine
 from datetime import datetime
@@ -348,8 +348,9 @@ def execute():
             created += 1
 
         # 阀门附件处理
+        from app.devices.valve_helper import VALVE_TYPES
         device_config = DeviceTypeRegistry.get(type_code)
-        is_valve_type = device_config and device_config.model_class and device_config.model_class.__name__ == "Valve"
+        is_valve_type = device_config and device_config.code in VALVE_TYPES
         if is_valve_type and sr.accessories:
             db.session.flush()
             acc_idx = 0
@@ -361,7 +362,8 @@ def execute():
                     acc_idx += 1
                     name = acc.get("名称", "")
                     attachment = ValveAttachment(
-                        valve_id=record.id,
+                        device_type=type_code,
+                        device_id=record.id,
                         名称=name,
                         type=_infer_attachment_type(name),
                         型号规格=acc.get("型号规格", ""),

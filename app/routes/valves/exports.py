@@ -1,6 +1,7 @@
 from flask import flash, redirect, url_for, request, render_template, make_response
 from flask_login import login_required, current_user
-from app.models import db, Valve
+from app.models import db
+from app.devices.valve_helper import get_valve_model, get_valve_by_id, get_all_valve_models, count_valves_by_status
 from app.routes.valves.forms import get_valve_export_data
 from datetime import datetime
 from io import BytesIO
@@ -8,11 +9,10 @@ from io import BytesIO
 
 
 def update_ledger_status(ledger):
-    total = Valve.query.filter_by(ledger_id=ledger.id).count()
-    if total == 0:
+    counts = count_valves_by_status(ledger.id)
+    if counts["total"] == 0:
         return
-    approved = Valve.query.filter_by(ledger_id=ledger.id, status="approved").count()
-    if approved == total:
+    if counts["approved"] == counts["total"]:
         ledger.status = "approved"
         ledger.approved_at = datetime.utcnow()
 
@@ -21,10 +21,13 @@ def update_ledger_status(ledger):
 def export_data():
     """导出数据"""
     ids = request.args.getlist("ids")
+    valves = []
     if ids:
-        valves = Valve.query.filter(Valve.id.in_(ids)).all()
+        for model in get_all_valve_models():
+            valves.extend(model.query.filter(model.id.in_(ids)).all())
     else:
-        valves = Valve.query.filter_by(status="approved").all()
+        for model in get_all_valve_models():
+            valves.extend(model.query.filter_by(status="approved").all())
 
     data = [get_valve_export_data(v) for v in valves]
     import pandas as pd
@@ -44,7 +47,10 @@ def export_data():
 
 def export_valve_pdf(id):
     """导出单个台账为PDF"""
-    valve = Valve.query.get_or_404(id)
+    valve = get_valve_by_id(id)
+    if not valve:
+        flash("未找到该阀门")
+        return redirect(url_for("valves.list"))
 
     html = f"""
     <!DOCTYPE html>

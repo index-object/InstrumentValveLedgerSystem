@@ -6,9 +6,16 @@ from flask import (
     flash,
     current_app,
     make_response,
+    abort,
 )
 from flask_login import login_required, current_user
-from app.models import db, Valve, ValveAttachment, ValvePhoto, MaintenanceRecord
+from app.models import db, ValveAttachment, ValvePhoto, MaintenanceRecord
+from app.devices.valve_helper import (
+    get_valve_by_id,
+    get_valve_ledger_type,
+    get_all_valve_models,
+    count_valves_by_status,
+)
 from app.routes.valves.permissions import (
     can_edit_valve,
     can_create_maintenance,
@@ -29,7 +36,9 @@ def allowed_file(filename):
 
 def photos(id):
     """照片管理"""
-    valve = Valve.query.get_or_404(id)
+    valve = get_valve_by_id(id)
+    if not valve:
+        abort(404)
 
     if request.method == "POST":
         if "photo" not in request.files:
@@ -44,7 +53,8 @@ def photos(id):
             file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], filename))
 
             photo = ValvePhoto(
-                valve_id=valve.id,
+                device_type=get_valve_ledger_type(valve),
+                device_id=valve.id,
                 filename=filename,
                 description=request.form.get("description", ""),
                 uploaded_by=current_user.id,
@@ -59,7 +69,9 @@ def photos(id):
 def maintenance(id):
     """维护记录"""
     from_param = get_from_param()
-    valve = Valve.query.get_or_404(id)
+    valve = get_valve_by_id(id)
+    if not valve:
+        abort(404)
 
     if request.method == "POST":
         # 权限检查：只有员工和管理员可以创建维护记录
@@ -83,7 +95,8 @@ def maintenance(id):
                     continue
 
         record = MaintenanceRecord(
-            valve_id=valve.id,
+            device_type=get_valve_ledger_type(valve),
+            device_id=valve.id,
             所属中心=request.form.get("所属中心"),
             设备位号=request.form.get("设备位号"),
             设备名称=request.form.get("设备名称"),
@@ -107,7 +120,7 @@ def maintenance(id):
         return redirect(url_for("valves.detail", id=id, **{'from': from_param}))
 
     records = (
-        MaintenanceRecord.query.filter_by(valve_id=id)
+        MaintenanceRecord.query.filter_by(device_type=get_valve_ledger_type(valve), device_id=valve.id)
         .order_by(MaintenanceRecord.检修时间.desc())
         .all()
     )
@@ -116,9 +129,12 @@ def maintenance(id):
 
 def maintenance_list():
     """维护记录列表"""
-    valid_valve_ids = [v.id for v in Valve.query.filter(Valve.status != "draft").all()]
-    
-    query = MaintenanceRecord.query.filter(MaintenanceRecord.valve_id.in_(valid_valve_ids)) if valid_valve_ids else MaintenanceRecord.query.filter(False)
+    valid_valve_ids = []
+    for model in get_all_valve_models():
+        ids = [v.id for v in model.query.filter(model.status != "draft").all()]
+        valid_valve_ids.extend(ids)
+
+    query = MaintenanceRecord.query.filter(MaintenanceRecord.device_id.in_(valid_valve_ids)) if valid_valve_ids else MaintenanceRecord.query.filter(False)
 
     search = request.args.get("search")
     if search:
@@ -126,7 +142,7 @@ def maintenance_list():
 
     valve_id = request.args.get("valve_id")
     if valve_id:
-        query = query.filter(MaintenanceRecord.valve_id == int(valve_id))
+        query = query.filter(MaintenanceRecord.device_id == int(valve_id))
 
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -135,8 +151,13 @@ def maintenance_list():
         page=page, per_page=per_page, error_out=False
     )
 
-    valves = Valve.query.filter(Valve.status != "draft").all()
-    valve_map = {v.id: v for v in valves}
+    # Build valve map
+    valves = []
+    valve_map = {}
+    for model in get_all_valve_models():
+        for v in model.query.filter(model.status != "draft").all():
+            valves.append(v)
+            valve_map[v.id] = v
 
     return render_template(
         "maintenance/list.html", records=pagination.items, pagination=pagination, valves=valves, valve_map=valve_map
@@ -150,11 +171,13 @@ def maintenance_create():
         flash("无权创建维护记录")
         return redirect(url_for("valves.maintenance_list"))
 
-    valves = Valve.query.filter(Valve.status != "draft").order_by(Valve.位号).all()
+    valves = []
+    for model in get_all_valve_models():
+        valves.extend(model.query.filter(model.status != "draft").order_by(model.位号).all())
 
     if request.method == "POST":
         valve_id = request.form.get("valve_id")
-        valve = Valve.query.get(valve_id)
+        valve = get_valve_by_id(int(valve_id)) if valve_id else None
         if not valve:
             flash("请选择设备位号")
             return redirect(url_for("valves.maintenance_create"))
@@ -170,7 +193,8 @@ def maintenance_create():
                     continue
 
         record = MaintenanceRecord(
-            valve_id=valve.id,
+            device_type=get_valve_ledger_type(valve),
+            device_id=valve.id,
             设备位号=valve.位号,
             设备名称=valve.名称,
             所属中心=request.form.get("所属中心"),
@@ -197,11 +221,13 @@ def maintenance_edit(id):
         flash("无权编辑此维护记录")
         return redirect(url_for("valves.maintenance_list"))
 
-    valves = Valve.query.filter(Valve.status != "draft").order_by(Valve.位号).all()
+    valves = []
+    for model in get_all_valve_models():
+        valves.extend(model.query.filter(model.status != "draft").order_by(model.位号).all())
 
     if request.method == "POST":
         valve_id = request.form.get("valve_id")
-        valve = Valve.query.get(valve_id)
+        valve = get_valve_by_id(int(valve_id)) if valve_id else None
         if not valve:
             flash("请选择设备位号")
             return redirect(url_for("valves.maintenance_edit", id=id))
@@ -216,7 +242,8 @@ def maintenance_edit(id):
                 except ValueError:
                     continue
 
-        record.valve_id = valve.id
+        record.device_type = get_valve_ledger_type(valve)
+        record.device_id = valve.id
         record.设备位号 = valve.位号
         record.设备名称 = valve.名称
         record.所属中心 = request.form.get("所属中心")
@@ -290,11 +317,14 @@ def maintenance_export():
 
 def attachments(id):
     """附件管理"""
-    valve = Valve.query.get_or_404(id)
+    valve = get_valve_by_id(id)
+    if not valve:
+        abort(404)
 
     if request.method == "POST":
         attachment = ValveAttachment(
-            valve_id=valve.id,
+            device_type=get_valve_ledger_type(valve),
+            device_id=valve.id,
             名称=request.form.get("名称"),
             设备等级=request.form.get("设备等级"),
             型号规格=request.form.get("型号规格"),
@@ -306,7 +336,7 @@ def attachments(id):
         flash("附件添加成功")
         return redirect(url_for("valves.attachments", id=id))
 
-    attachments_list = valve.attachments
+    attachments_list = ValveAttachment.query.filter_by(device_type=get_valve_ledger_type(valve), device_id=valve.id).all()
     return render_template(
         "valves/attachments.html", valve=valve, attachments=attachments_list
     )
@@ -316,23 +346,25 @@ def delete_attachment(valve_id, att_id):
     """删除附件"""
     from_param = get_from_param()
     attachment = ValveAttachment.query.get_or_404(att_id)
-    if attachment.valve_id != valve_id:
+    if attachment.device_id != valve_id:
         flash("附件不存在")
-        if attachment.valve and attachment.valve.ledger_id:
+        valve = get_valve_by_id(valve_id)
+        if valve and valve.ledger_id:
             return redirect(url_for(
                 'ledgers.valve_detail',
-                ledger_id=attachment.valve.ledger_id,
+                ledger_id=valve.ledger_id,
                 id=valve_id,
                 **{'from': from_param}
             ))
         return redirect(url_for("valves.detail", id=valve_id, **{'from': from_param}))
 
-    if not can_edit_valve(attachment.valve):
+    valve = get_valve_by_id(valve_id)
+    if not valve or not can_edit_valve(valve):
         flash("无权删除")
-        if attachment.valve.ledger_id:
+        if valve and valve.ledger_id:
             return redirect(url_for(
                 'ledgers.valve_detail',
-                ledger_id=attachment.valve.ledger_id,
+                ledger_id=valve.ledger_id,
                 id=valve_id,
                 **{'from': from_param}
             ))
@@ -341,10 +373,10 @@ def delete_attachment(valve_id, att_id):
     db.session.delete(attachment)
     db.session.commit()
     flash("附件删除成功")
-    if attachment.valve and attachment.valve.ledger_id:
+    if valve and valve.ledger_id:
         return redirect(url_for(
             'ledgers.valve_detail',
-            ledger_id=attachment.valve.ledger_id,
+            ledger_id=valve.ledger_id,
             id=valve_id,
             **{'from': from_param}
         ))
@@ -369,25 +401,17 @@ def my_ledgers():
     ledgers_list = query.order_by(Ledger.created_at.desc()).all()
 
     for ledger in ledgers_list:
-        if ledger.类型 == "valve":
-            total_q = Valve.query.filter_by(ledger_id=ledger.id)
+        config = DeviceTypeRegistry.get(ledger.类型)
+        if config and config.model_class:
+            model = config.model_class
+            total_q = model.query.filter_by(ledger_id=ledger.id)
             ledger.valve_count = total_q.count()
             ledger.pending_count = total_q.filter_by(status="pending").count()
             ledger.rejected_count = total_q.filter_by(status="rejected").count()
             ledger.approved_count = total_q.filter_by(status="approved").count()
             ledger.draft_count = total_q.filter_by(status="draft").count()
         else:
-            config = DeviceTypeRegistry.get(ledger.类型)
-            if config and config.model_class:
-                model = config.model_class
-                total_q = model.query.filter_by(ledger_id=ledger.id)
-                ledger.valve_count = total_q.count()
-                ledger.pending_count = total_q.filter_by(status="pending").count()
-                ledger.rejected_count = total_q.filter_by(status="rejected").count()
-                ledger.approved_count = total_q.filter_by(status="approved").count()
-                ledger.draft_count = total_q.filter_by(status="draft").count()
-            else:
-                ledger.valve_count = ledger.pending_count = ledger.rejected_count = ledger.approved_count = ledger.draft_count = 0
+            ledger.valve_count = ledger.pending_count = ledger.rejected_count = ledger.approved_count = ledger.draft_count = 0
 
         if ledger.pending_count > 0:
             ledger.display_status = "pending"
@@ -409,20 +433,17 @@ def my_ledger_applications():
     """我的审批申请 - 按合集显示"""
     from app.models import Ledger
 
-    ledgers = (
-        Ledger.query.join(Valve, Ledger.id == Valve.ledger_id)
-        .filter(Ledger.created_by == current_user.id, Valve.status == "pending")
-        .distinct()
-        .all()
-    )
+    ledgers = Ledger.query.filter_by(created_by=current_user.id).all()
 
+    result = []
     for ledger in ledgers:
-        ledger.pending_count = Valve.query.filter_by(
-            ledger_id=ledger.id, status="pending"
-        ).count()
-        ledger.total_count = Valve.query.filter_by(ledger_id=ledger.id).count()
+        counts = count_valves_by_status(ledger.id)
+        if counts["pending"] > 0:
+            ledger.pending_count = counts["pending"]
+            ledger.total_count = counts["total"]
+            result.append(ledger)
 
-    return render_template("valves/my_ledger_applications.html", ledgers=ledgers)
+    return render_template("valves/my_ledger_applications.html", ledgers=result)
 
 
 def register_attachment_routes(bp):

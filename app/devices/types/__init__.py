@@ -7,12 +7,73 @@ from app.devices.types.flow_meter import FlowMeter
 from app.devices.types.level_transmitter import LevelTransmitter
 from app.devices.types.local_level import LocalLevel
 from app.devices.types.shaft_instrument import ShaftInstrument
+from app.devices.types.control_valve import ControlValve
+from app.devices.types.onoff_valve import OnOffValve
+
+
+_field_groups_valve = [
+    {
+        "title": "基本信息",
+        "fields": ["装置名称", "位号", "名称", "设备等级",
+                   "型号规格", "生产厂家", "安装位置及用途"],
+        "cols": 2,
+    },
+    {
+        "title": "工艺条件",
+        "fields": ["工艺条件_介质名称", "工艺条件_设计温度",
+                   "工艺条件_阀前压力", "工艺条件_阀后压力"],
+        "cols": 2,
+    },
+    {
+        "title": "阀体",
+        "fields": ["阀体_公称通径", "阀体_连接方式及规格",
+                   "阀体_材质"],
+        "cols": 2,
+    },
+    {
+        "title": "阀内件",
+        "fields": ["阀内件_阀座直径", "阀内件_阀座序列号",
+                   "阀内件_阀芯材质", "阀内件_阀座材质",
+                   "阀内件_阀杆材质", "阀内件_流量特性",
+                   "阀内件_泄露等级", "阀内件_Cv值"],
+        "cols": 2,
+    },
+    {
+        "title": "执行机构",
+        "fields": ["执行机构_形式", "执行机构_型号规格",
+                   "执行机构_厂家", "执行机构_作用形式",
+                   "执行机构_行程", "执行机构_弹簧范围",
+                   "执行机构_气源压力", "执行机构_故障位置",
+                   "执行机构_关阀时间", "执行机构_开阀时间"],
+        "cols": 2,
+    },
+    {
+        "title": "其他",
+        "fields": ["手轮机构", "设备编号", "是否联锁", "备注"],
+        "cols": 1,
+    },
+]
+
+_filterable_fields_valve = [
+    ("装置名称", "装置名称"), ("位号", "位号"),
+    ("名称", "名称"), ("设备等级", "设备等级"),
+    ("型号规格", "型号规格"), ("生产厂家", "生产厂家"),
+    ("安装位置及用途", "安装位置及用途"), ("是否联锁", "是否联锁"),
+]
 
 
 def register_all():
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="valve", name="阀门", model_class=None, icon="fa-valve",
-        field_groups=[], filterable_fields=[],
+        code="control_valve", name="调节阀",
+        model_class=ControlValve, icon="fa-valve",
+        field_groups=_field_groups_valve,
+        filterable_fields=_filterable_fields_valve,
+    ))
+    DeviceTypeRegistry.register(DeviceTypeConfig(
+        code="onoff_valve", name="开关阀/切断阀",
+        model_class=OnOffValve, icon="fa-valve",
+        field_groups=_field_groups_valve,
+        filterable_fields=_filterable_fields_valve,
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
         code="pressure_transmitter", name="压力变送器",

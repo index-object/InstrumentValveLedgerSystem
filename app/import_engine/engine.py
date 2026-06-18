@@ -9,7 +9,8 @@ from app.import_engine.extractor import DataExtractor, SheetData
 from app.import_engine.mapper import ColumnMapper
 from app.import_engine.loader import DataLoader
 from app.import_engine.verifier import SummaryVerifier, VerificationResult
-from app.models import Valve
+from app.devices.types.control_valve import ControlValve
+from app.devices.types.onoff_valve import OnOffValve
 
 
 @dataclass
@@ -96,7 +97,8 @@ class ImportEngine:
                 "LevelTransmitter": LevelTransmitter,
                 "LocalLevel": LocalLevel,
                 "ShaftInstrument": ShaftInstrument,
-                "Valve": Valve,
+                "ControlValve": ControlValve,
+                "OnOffValve": OnOffValve,
             }
             cls = model_map.get(model_class_name)
             if cls:
@@ -174,7 +176,7 @@ class ImportEngine:
         column_mapping = type_cfg.get("column_mapping", {})
         mapped_rows = self._mapper.map_rows(sd.rows, column_mapping)
 
-        preserve = model_cls is Valve
+        preserve = model_cls in (ControlValve, OnOffValve)
         records = self._loader.create_records(model_cls, mapped_rows, preserve_order=preserve)
 
         sheet_result.type_key = type_key

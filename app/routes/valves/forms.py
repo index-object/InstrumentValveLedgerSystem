@@ -1,14 +1,14 @@
 import json
-from app.models import ValveAttachment, Setting, Valve, Ledger, db
+from app.models import ValveAttachment, Setting, Ledger, db
+from app.devices.valve_helper import get_valve_ledger_type, count_valves_by_status
 from datetime import datetime
 
 
 def update_ledger_status(ledger):
-    total = Valve.query.filter_by(ledger_id=ledger.id).count()
-    if total == 0:
+    counts = count_valves_by_status(ledger.id)
+    if counts["total"] == 0:
         return
-    approved = Valve.query.filter_by(ledger_id=ledger.id, status="approved").count()
-    if approved == total:
+    if counts["approved"] == counts["total"]:
         ledger.status = "approved"
         ledger.approved_at = datetime.utcnow()
 
@@ -148,12 +148,13 @@ def parse_attachments_data(attachments_json):
         return []
 
 
-def create_attachment_from_data(valve_id, att_data):
+def create_attachment_from_data(device_type, device_id, att_data):
     """从数据字典创建附件对象"""
     if not att_data.get("type") and not att_data.get("attachment_type"):
         return None
     return ValveAttachment(
-        valve_id=valve_id,
+        device_type=device_type,
+        device_id=device_id,
         type=att_data.get("type") or att_data.get("attachment_type"),
         名称=att_data.get("名称") or att_data.get("name", ""),
         设备等级=att_data.get("设备等级") or att_data.get("device_grade", ""),
@@ -162,16 +163,16 @@ def create_attachment_from_data(valve_id, att_data):
     )
 
 
-def process_attachments_create(db, valve_id, attachments_json):
+def process_attachments_create(db, device_type, valve_id, attachments_json):
     """处理创建台账时的附件"""
     attachments = parse_attachments_data(attachments_json)
     for att in attachments:
-        attachment = create_attachment_from_data(valve_id, att)
+        attachment = create_attachment_from_data(device_type, valve_id, att)
         if attachment:
             db.session.add(attachment)
 
 
-def process_attachments_update(db, valve, attachments_json):
+def process_attachments_update(db, device_type, valve, attachments_json):
     """处理更新台账时的附件"""
     attachments = parse_attachments_data(attachments_json)
     if not attachments:
@@ -188,7 +189,8 @@ def process_attachments_update(db, valve, attachments_json):
         if att_id:
             attachment = ValveAttachment.query.filter(
                 ValveAttachment.id == att_id,
-                ValveAttachment.valve_id == valve.id,
+                ValveAttachment.device_type == device_type,
+                ValveAttachment.device_id == valve.id,
             ).first()
             if attachment:
                 attachment.type = att_type
@@ -198,14 +200,15 @@ def process_attachments_update(db, valve, attachments_json):
                 attachment.生产厂家 = att.get("生产厂家") or att.get("manufacturer", "")
                 submitted_ids.add(att_id)
         else:
-            attachment = create_attachment_from_data(valve.id, att)
+            attachment = create_attachment_from_data(device_type, valve.id, att)
             if attachment:
                 db.session.add(attachment)
 
     for att_id in existing_ids - submitted_ids:
         attachment = ValveAttachment.query.filter(
             ValveAttachment.id == att_id,
-            ValveAttachment.valve_id == valve.id,
+            ValveAttachment.device_type == device_type,
+            ValveAttachment.device_id == valve.id,
         ).first()
         if attachment:
             db.session.delete(attachment)

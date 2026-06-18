@@ -50,12 +50,10 @@ def can_delete_ledger(ledger):
     if not can_edit_ledger(ledger):
         return False
     # 检查是否有pending状态的阀门
-    from app.models import Valve
+    from app.devices.valve_helper import count_valves_by_status
 
-    pending_count = Valve.query.filter_by(
-        ledger_id=ledger.id, status="pending"
-    ).count()
-    return pending_count == 0
+    counts = count_valves_by_status(ledger.id)
+    return counts["pending"] == 0
 
 
 def can_view_ledger(ledger):

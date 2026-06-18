@@ -173,9 +173,9 @@ types:
       出厂编号: 出厂编号
 
   control_valve:
-    code: valve
-    name: 阀门
-    model_class: Valve
+    code: control_valve
+    name: 调节阀
+    model_class: ControlValve
     sheet_keywords: ["调节阀"]
     column_signatures: ["Cv值", "执行机构", "定位器", "阀体材质", "弹簧范围", "气源压力"]
     column_mapping:
@@ -214,9 +214,9 @@ types:
       是否联锁: 是否联锁
 
   onoff_valve:
-    code: valve
-    name: 阀门
-    model_class: Valve
+    code: onoff_valve
+    name: 开关阀/切断阀
+    model_class: OnOffValve
     sheet_keywords: ["开关阀", "切断阀"]
     column_signatures: ["故障位置", "气缸", "程控阀"]
     column_mapping:
@@ -228,19 +228,38 @@ types:
       生产厂家: 生产厂家
       安装位置及用途: 安装位置及用途
       液体名称: 工艺条件_介质名称
+      设计温度: 工艺条件_设计温度
+      阀前压力: 工艺条件_阀前压力
+      阀后压力: 工艺条件_阀后压力
       阀体材质: 阀体_材质
       公称通径: 阀体_公称通径
       连接方式及规格: 阀体_连接方式及规格
+      阀座直径: 阀内件_阀座直径
+      阀座序列号: 阀内件_阀座序列号
+      阀芯材质: 阀内件_阀芯材质
+      阀座材质: 阀内件_阀座材质
+      阀杆材质: 阀内件_阀杆材质
+      流量特性: 阀内件_流量特性
+      泄露等级: 阀内件_泄露等级
+      Cv值: 阀内件_Cv值
+      执行机构形式: 执行机构_形式
+      执行机构型号规格: 执行机构_型号规格
+      执行机构厂家: 执行机构_厂家
+      作用形式: 执行机构_作用形式
+      行程: 执行机构_行程
+      弹簧范围: 执行机构_弹簧范围
+      气源压力: 执行机构_气源压力
       故障位置: 执行机构_故障位置
       关阀时间: 执行机构_关阀时间
       开阀时间: 执行机构_开阀时间
+      手轮机构: 手轮机构
       出厂编号: 设备编号
       是否联锁: 是否联锁
 
   switch_device:
-    code: valve
-    name: 阀门
-    model_class: Valve
+    code: onoff_valve
+    name: 开关
+    model_class: OnOffValve
     sheet_keywords: ["开关"]
     column_signatures: ["接点形式", "接点容量", "SPDT", "干接点"]
     column_mapping:
