@@ -76,8 +76,7 @@
             {% endif %}
         </div>
         <div class="d-flex align-items-center gap-2">
-            <form method="get" action="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="d-flex gap-2 align-items-center">
-                {% if ledger and from_param %}<input type="hidden" name="from" value="{{ from_param }}">{% endif %}
+            <form method="get" action="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, from=from_param) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="d-flex gap-2 align-items-center">
                 <div class="search-box" style="position: relative;">
                     <i class="bi bi-search"></i>
                     <input type="text" name="search" class="form-control form-control-modern" 
@@ -93,13 +92,13 @@
                 </select>
                 <button type="submit" class="btn btn-primary-custom" style="height: 32px; padding: 0 12px;"><i class="bi bi-search"></i></button>
                 {% if active_filters %}
-                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, from=from_param) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="btn btn-outline-secondary" style="height: 32px; padding: 0 10px;"><i class="bi bi-x-lg"></i></a>
+                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="btn btn-outline-secondary" style="height: 32px; padding: 0 10px;"><i class="bi bi-x-lg"></i></a>
                 {% endif %}
             </form>
             {% if active_filters %}
             <span class="text-muted" style="border-left: 1px solid #dee2e6; padding-left: 8px; margin-left: 4px; font-size: 12px;">
                 <i class="bi bi-funnel-fill text-info"></i> 筛选中
-                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, from=from_param) }}{% else %}{{ url_for('valves.list') }}{% endif %}" style="margin-left: 4px; color: var(--text-muted);"><i class="bi bi-x-lg"></i></a>
+                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" style="margin-left: 4px; color: var(--text-muted);"><i class="bi bi-x-lg"></i></a>
             </span>
             {% endif %}
         </div>
@@ -242,26 +241,21 @@
             </table>
         </div>
         
-        {% if pagination and pagination.pages > 1 %}
+        {% if pagination %}
         <div class="d-flex justify-content-between align-items-center p-2" style="border-top: 1px solid var(--border-color);">
             <small class="text-muted">共 {{ pagination.total }} 条记录，第 {{ pagination.page }}/{{ pagination.pages }} 页</small>
             <nav>
                 <ul class="pagination-custom pagination mb-0" style="gap: 4px;">
                     {% if pagination.has_prev %}
                     <li class="page-item">
-                        <a class="page-link" style="padding: 4px 10px;" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num, from=from_param, search=request.args.get('search', ''), status=request.args.get('status', '')) }}{% else %}{{ url_for('valves.list', page=pagination.prev_num, search=request.args.get('search', ''), status=request.args.get('status', '')) }}{% endif %}">
+                        <a class="page-link" style="padding: 4px 10px;" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}{% else %}{{ url_for('valves.list', page=pagination.prev_num) }}{% endif %}">
                             <i class="bi bi-chevron-left"></i> 上一页
                         </a>
                     </li>
                     {% endif %}
-                    {% for p in range(1, pagination.pages + 1) %}
-                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                        <a class="page-link" style="padding: 4px 10px;" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=p, from=from_param, search=request.args.get('search', ''), status=request.args.get('status', '')) }}{% else %}{{ url_for('valves.list', page=p, search=request.args.get('search', ''), status=request.args.get('status', '')) }}{% endif %}">{{ p }}</a>
-                    </li>
-                    {% endfor %}
                     {% if pagination.has_next %}
                     <li class="page-item">
-                        <a class="page-link" style="padding: 4px 10px;" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num, from=from_param, search=request.args.get('search', ''), status=request.args.get('status', '')) }}{% else %}{{ url_for('valves.list', page=pagination.next_num, search=request.args.get('search', ''), status=request.args.get('status', '')) }}{% endif %}">
+                        <a class="page-link" style="padding: 4px 10px;" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num) }}{% else %}{{ url_for('valves.list', page=pagination.next_num) }}{% endif %}">
                             下一页 <i class="bi bi-chevron-right"></i>
                         </a>
                     </li>
