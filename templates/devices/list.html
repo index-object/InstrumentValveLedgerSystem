@@ -90,10 +90,19 @@
           </th>
           {% endif %}
           {% for field in all_fields %}
-          <th style="min-width: 100px;">{{ field }}</th>
+          <th class="filter-header" data-field="{{ field }}" style="white-space: nowrap; cursor: pointer; min-width: 100px;" onclick="showFilterDropdown(event, '{{ field }}')">
+            <div class="d-flex align-items-center justify-content-between">
+              <span>{{ field }}</span>
+              {% if active_filters and field in active_filters %}
+              <i class="bi bi-funnel-fill text-primary ms-1" style="font-size: 10px;"></i>
+              {% else %}
+              <i class="bi bi-funnel ms-1" style="font-size: 10px; opacity: 0.5;"></i>
+              {% endif %}
+            </div>
+          </th>
           {% endfor %}
-          <th style="width: 100px;">状态</th>
-          <th style="width: 120px; position: sticky; right: 0; z-index: 3; background: #f8f9fa; border-left: 1px solid #dee2e6;">操作</th>
+          <th style="width: 100px; white-space: nowrap;">状态</th>
+          <th style="width: 120px; white-space: nowrap; position: sticky; right: 0; z-index: 3; background: #f8f9fa; border-left: 1px solid #dee2e6;">操作</th>
         </tr>
       </thead>
       <tbody>
@@ -188,6 +197,10 @@
 {% endblock %}
 {% block extra_js %}
 <script>
+window.filterOptions = {{ filter_options | tojson | safe }};
+window.activeFilters = {{ active_filters | tojson | safe }};
+</script>
+<script>
 document.addEventListener('DOMContentLoaded', function() {
   const selectAll = document.getElementById('selectAll') || document.getElementById('selectAllTop');
   const checkboxes = document.querySelectorAll('.item-checkbox');
@@ -207,4 +220,5 @@ document.addEventListener('DOMContentLoaded', function() {
   checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
 });
 </script>
+<script src="{{ url_for('static', filename='js/list.js') }}"></script>
 {% endblock %}

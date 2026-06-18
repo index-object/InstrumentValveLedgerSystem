@@ -50,6 +50,29 @@ def list(type_code):
             from sqlalchemy import or_
             query = query.filter(or_(*filters))
 
+    filterable_fields = config.get_fields_flat()
+    filter_options = {}
+    for field in filterable_fields:
+        if hasattr(model, field):
+            values = (
+                db.session.query(getattr(model, field))
+                .distinct()
+                .filter(
+                    getattr(model, field).isnot(None),
+                    getattr(model, field) != "",
+                )
+                .all()
+            )
+            filter_options[field] = sorted([v[0] for v in values if v[0]], key=str)
+
+    active_filters = {}
+    for field in filterable_fields:
+        values = request.args.getlist(field)
+        if values and hasattr(model, field):
+            field_filter = getattr(model, field).in_(values)
+            query = query.filter(field_filter)
+            active_filters[field] = values
+
     query = query.order_by(model.created_at.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     devices = pagination.items
@@ -61,6 +84,8 @@ def list(type_code):
         pagination=pagination,
         search=search,
         status_filter=status_filter,
+        filter_options=filter_options,
+        active_filters=active_filters,
     )
 
 

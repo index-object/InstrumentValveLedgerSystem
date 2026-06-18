@@ -393,6 +393,30 @@ def detail(id):
             from_param=from_param,
         )
 
+    filterable_fields = config.get_fields_flat()
+    filter_options = {}
+    for field in filterable_fields:
+        if hasattr(model, field):
+            values = (
+                db.session.query(getattr(model, field))
+                .distinct()
+                .filter(
+                    getattr(model, field).isnot(None),
+                    getattr(model, field) != "",
+                    model.ledger_id == id,
+                )
+                .all()
+            )
+            filter_options[field] = sorted([v[0] for v in values if v[0]], key=str)
+
+    active_filters = {}
+    for field in filterable_fields:
+        values = request.args.getlist(field)
+        if values and hasattr(model, field):
+            field_filter = getattr(model, field).in_(values)
+            query = query.filter(field_filter)
+            active_filters[field] = values
+
     return render_template(
         "ledgers/device_detail.html",
         config=config,
@@ -402,6 +426,8 @@ def detail(id):
         status_filter=status or "",
         ledger=ledger,
         from_param=from_param,
+        filter_options=filter_options,
+        active_filters=active_filters,
     )
 
 
