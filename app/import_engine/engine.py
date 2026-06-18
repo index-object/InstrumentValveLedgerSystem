@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 import yaml
 
-from app.import_engine.classifier import SheetClassifier, TypeConfig
+from app.import_engine.classifier import SheetClassifier, TypeConfig, ClassificationResult
 from app.import_engine.extractor import DataExtractor, SheetData
 from app.import_engine.mapper import ColumnMapper
 from app.import_engine.loader import DataLoader
@@ -107,7 +107,7 @@ class ImportEngine:
         except ImportError:
             return None
 
-    def import_file(self, filepath: str) -> ImportResult:
+    def import_file(self, filepath: str, type_overrides: dict[str, str] = None) -> ImportResult:
         result = ImportResult()
 
         try:
@@ -119,7 +119,8 @@ class ImportEngine:
         all_records = []
 
         for sd in sheets_data:
-            sheet_result = self._process_sheet(sd)
+            override = (type_overrides or {}).get(sd.sheet_name)
+            sheet_result = self._process_sheet(sd, type_override_code=override)
             result.sheets.append(sheet_result)
             if sheet_result.type_code == "summary":
                 result.summary_data = sd
@@ -138,7 +139,7 @@ class ImportEngine:
 
         return result
 
-    def _process_sheet(self, sd: SheetData) -> SheetImportResult:
+    def _process_sheet(self, sd: SheetData, type_override_code: str = None) -> SheetImportResult:
         sheet_result = SheetImportResult(
             sheet_name=sd.sheet_name,
             headers=sd.headers,
@@ -148,9 +149,27 @@ class ImportEngine:
         if not sd.headers:
             return sheet_result
 
-        classification = self._classifier.classify(
-            sd.sheet_name, headers=sd.headers
-        )
+        if type_override_code:
+            type_key = None
+            for tk, cfg in self._types_config.items():
+                if cfg.get("code") == type_override_code or tk == type_override_code:
+                    type_key = tk
+                    break
+            if type_key:
+                type_cfg = self._types_config.get(type_key, {})
+                classification = ClassificationResult(
+                    type_key=type_key,
+                    type_code=type_cfg.get("code", type_key),
+                    type_name=type_cfg.get("name", ""),
+                    score=10,
+                    matched_by="manual",
+                )
+            else:
+                classification = None
+        else:
+            classification = self._classifier.classify(
+                sd.sheet_name, headers=sd.headers
+            )
 
         if classification is None:
             return sheet_result

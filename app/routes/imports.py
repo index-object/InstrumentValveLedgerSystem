@@ -261,13 +261,12 @@ def execute():
         return redirect(url_for("imports.index"))
 
     engine = get_engine()
+    mappings = session.get("import_mappings") or {}
     try:
-        result = engine.import_file(saved_path)
+        result = engine.import_file(saved_path, type_overrides=mappings)
     except Exception as e:
         flash(f"文件读取失败: {e}")
         return redirect(url_for("imports.index"))
-
-    mappings = session.get("import_mappings") or {}
 
     merge_config = {}
     ledger_name_overrides = {}
