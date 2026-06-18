@@ -358,7 +358,7 @@ def detail(id):
         装置列表 = [r[0] for r in 装置列表 if r[0]]
 
         return render_template(
-            "ledgers/detail.html",
+            "valves/list.html",
             ledger=ledger,
             valves=valves_list,
             pagination=pagination,
