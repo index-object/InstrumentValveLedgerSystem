@@ -102,6 +102,22 @@ class ColumnMapper:
 
             if found_value:
                 result[model_attr] = found_value
+                continue
+
+            for raw_col, val in cleaned_row.items():
+                if not val.strip():
+                    continue
+                for candidate in resolved_synonyms:
+                    if not candidate:
+                        continue
+                    if len(raw_col) < len(candidate) and candidate.endswith(raw_col):
+                        found_value = val.strip()
+                        break
+                if found_value:
+                    break
+
+            if found_value:
+                result[model_attr] = found_value
 
         return result
 
