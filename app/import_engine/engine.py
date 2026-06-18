@@ -22,7 +22,7 @@ class SheetImportResult:
     row_count: int = 0
     accessory_count: int = 0
     records: list = field(default_factory=list)
-    accessories: list[dict] = field(default_factory=list)
+    accessories: list[list[dict]] = field(default_factory=list)
     headers: list[str] = field(default_factory=list)
     sample_rows: list[dict] = field(default_factory=list)
     error: Optional[str] = None
@@ -179,13 +179,21 @@ class ImportEngine:
         preserve = model_cls in (ControlValve, OnOffValve)
         records = self._loader.create_records(model_cls, mapped_rows, preserve_order=preserve)
 
+        # 标准化附件字段名（Excel原始列名 → 模型属性名）
+        mapped_accessories = []
+        total_accessory_count = 0
+        for acc_group in sd.accessories:
+            mapped_group = self._mapper.map_rows(acc_group, column_mapping)
+            mapped_accessories.append(mapped_group)
+            total_accessory_count += len(mapped_group)
+
         sheet_result.type_key = type_key
         sheet_result.type_code = classification.type_code
         sheet_result.type_name = type_cfg.get("name", "")
         sheet_result.row_count = len(records)
-        sheet_result.accessory_count = len(sd.accessories)
+        sheet_result.accessory_count = total_accessory_count
         sheet_result.records = records
-        sheet_result.accessories = sd.accessories
+        sheet_result.accessories = mapped_accessories
         sheet_result.headers = sd.headers
         sheet_result.sample_rows = sd.rows[:5] if sd.rows else []
 

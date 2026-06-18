@@ -46,6 +46,30 @@ class ColumnMapper:
                     if std == resolved or std == excel_col:
                         found_value = val.strip()
                         break
+                    if "." in raw_col:
+                        candidates = []
+                        sub = raw_col.rsplit(".", 1)[-1]
+                        if sub != raw_col:
+                            candidates.extend([
+                                sub,
+                                sub.replace(".", ""),
+                                sub.replace(".", "_"),
+                            ])
+                        candidates.extend([
+                            raw_col.replace(".", ""),
+                            raw_col.replace(".", "_"),
+                        ])
+                        for c in candidates:
+                            c_std = self.resolve(c)
+                            if c_std == resolved or c_std == excel_col:
+                                found_value = val.strip()
+                                break
+                            if c in resolved_synonyms:
+                                found_value = val.strip()
+                                break
+                        else:
+                            continue
+                        break
 
             if found_value:
                 result[model_attr] = found_value

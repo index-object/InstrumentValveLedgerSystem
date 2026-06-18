@@ -353,13 +353,10 @@ def execute():
         is_valve_type = device_config and device_config.code in VALVE_TYPES
         if is_valve_type and sr.accessories:
             db.session.flush()
-            acc_idx = 0
-            for record in sr.records:
+            for record, acc_group in zip(sr.records, sr.accessories):
                 if not record.id:
                     continue
-                while acc_idx < len(sr.accessories):
-                    acc = sr.accessories[acc_idx]
-                    acc_idx += 1
+                for acc in acc_group:
                     name = acc.get("名称", "")
                     attachment = ValveAttachment(
                         device_type=type_code,

@@ -55,7 +55,7 @@ class SheetData:
     sheet_name: str
     headers: list[str]
     rows: list[dict[str, str]]
-    accessories: list[dict[str, str]] = field(default_factory=list)
+    accessories: list[list[dict[str, str]]] = field(default_factory=list)
     header_info: Optional[HeaderInfo] = None
 
 
@@ -189,9 +189,13 @@ class DataExtractor:
         max_col: int,
         headers: list[str],
         is_summary: bool,
-    ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    ) -> tuple[list[dict[str, str]], list[list[dict[str, str]]]]:
+        if is_summary:
+            return self._extract_summary_rows(ws, header_info, max_row, max_col, headers)
+
         rows = []
-        accessories = []
+        accessories: list[list[dict[str, str]]] = []
+        current_acc: list[dict[str, str]] = []
 
         for row_values in ws.iter_rows(
             min_row=header_info.data_start_row,
@@ -217,9 +221,10 @@ class DataExtractor:
 
             seq_val = row_data[0] if row_data else ""
 
-            if is_summary:
-                rows.append(row_dict)
-            elif seq_val:
+            if seq_val:
+                if current_acc:
+                    accessories.append(current_acc)
+                    current_acc = []
                 cleaned = self._clean_row(row_dict)
                 rows.append(cleaned)
             else:
@@ -227,9 +232,50 @@ class DataExtractor:
                     v.strip() for k, v in row_dict.items() if k and v
                 )
                 if has_content:
-                    accessories.append(row_dict)
+                    current_acc.append(row_dict)
+
+        if current_acc:
+            accessories.append(current_acc)
+
+        while len(accessories) < len(rows):
+            accessories.append([])
 
         return rows, accessories
+
+    def _extract_summary_rows(
+        self,
+        ws: Worksheet,
+        header_info: HeaderInfo,
+        max_row: int,
+        max_col: int,
+        headers: list[str],
+    ) -> tuple[list[dict[str, str]], list[list[dict[str, str]]]]:
+        rows = []
+        for row_values in ws.iter_rows(
+            min_row=header_info.data_start_row,
+            max_row=max_row,
+            values_only=True,
+        ):
+            vals = list(row_values)
+            if len(vals) < max_col:
+                vals.extend([""] * (max_col - len(vals)))
+            row_data = [self._clean_cell_value(v) for v in vals[:max_col]]
+
+            if all(v == "" for v in row_data):
+                continue
+
+            row_dict = {}
+            for col_idx, val in enumerate(row_data):
+                col_name = (
+                    headers[col_idx]
+                    if col_idx < len(headers)
+                    else f"col{col_idx}"
+                )
+                row_dict[col_name] = val
+
+            rows.append(row_dict)
+
+        return rows, []
 
     def _clean_cell_value(self, value: Any) -> str:
         if value is None:

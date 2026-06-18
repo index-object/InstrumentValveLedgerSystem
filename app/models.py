@@ -85,6 +85,18 @@ class DevicePhotoMixin:
     """为阀门模型混入附件相关快捷属性"""
 
     @property
+    def attachments(self):
+        from app.models import ValveAttachment
+        from app.devices.valve_helper import get_valve_ledger_type
+        device_type = get_valve_ledger_type(self)
+        if not device_type:
+            return []
+        return ValveAttachment.query.filter_by(
+            device_type=device_type,
+            device_id=self.id,
+        ).all()
+
+    @property
     def attachments_json(self):
         return [
             {

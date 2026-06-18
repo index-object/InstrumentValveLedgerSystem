@@ -79,6 +79,10 @@ class TestDataExtractor:
 
         assert len(result.rows) == 2
         assert len(result.accessories) == 2
+        assert len(result.accessories[0]) == 2
+        assert len(result.accessories[1]) == 0
+        assert result.accessories[0][0]["设备名称"] == "执行机构"
+        assert result.accessories[0][1]["设备名称"] == "定位器"
         assert result.rows[0]["设备名称"] == "调节阀"
         assert result.rows[1]["设备名称"] == "开关阀"
 
