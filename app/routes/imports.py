@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from app.models import db, Ledger, ValveAttachment, SheetMapping
 from app.devices import DeviceTypeRegistry
 from app.import_engine import ImportEngine
+from app.utils.duplicate_check import check_duplicate
 from datetime import datetime
 import os
 import uuid
@@ -55,7 +56,6 @@ def _build_preview(result):
             model_cls = config.model_class if config else None
             duplicates = []
             if model_cls and hasattr(model_cls, "装置名称") and hasattr(model_cls, "位号"):
-                from app.utils.duplicate_check import check_duplicate
                 for record in sr.records:
                     unit = getattr(record, "装置名称", None) or ""
                     tag = getattr(record, "位号", None) or ""
@@ -195,6 +195,14 @@ def preview():
             if cfg:
                 for sr in result.sheets:
                     if sr.sheet_name == sheet_name:
+                        model_cls = cfg.model_class if cfg else None
+                        duplicates = []
+                        if model_cls and hasattr(model_cls, "装置名称") and hasattr(model_cls, "位号"):
+                            for record in sr.records:
+                                unit = getattr(record, "装置名称", None) or ""
+                                tag = getattr(record, "位号", None) or ""
+                                if tag and check_duplicate(model_cls, unit, tag):
+                                    duplicates.append({"装置名称": unit, "位号": tag})
                         preview.append({
                             "sheet": sr.sheet_name,
                             "rows": sr.row_count,
@@ -204,6 +212,9 @@ def preview():
                             "detected_type": cfg.code,
                             "detected_name": cfg.name,
                             "accessory_count": sr.accessory_count,
+                            "duplicates": duplicates,
+                            "duplicate_count": len(duplicates),
+                            "new_count": sr.row_count - len(duplicates),
                         })
                         break
 
@@ -340,7 +351,6 @@ def execute():
         skipped = 0
         updated = 0
 
-        from app.utils.duplicate_check import check_duplicate
         config = DeviceTypeRegistry.get(type_code)
         model_cls = config.model_class if config else None
 
