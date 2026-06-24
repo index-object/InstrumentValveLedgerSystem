@@ -41,6 +41,47 @@
                 </div>
             </div>
             <div class="card-body">
+                {% if p.duplicate_count > 0 %}
+                <div class="alert alert-warning mb-2">
+                    <strong>发现 {{ p.duplicate_count }} 条重复记录</strong>
+                    （本批次 {{ p.rows }} 行中 {{ p.new_count }} 条为新增）
+                    <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#dup-{{ loop.index }}">
+                        查看详情
+                    </button>
+                    <div class="collapse mt-2" id="dup-{{ loop.index }}">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead><tr><th>装置名称</th><th>位号</th></tr></thead>
+                            <tbody>
+                                {% for d in p.duplicates %}
+                                <tr><td>{{ d.装置名称 }}</td><td>{{ d.位号 }}</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-2">
+                        <label class="fw-bold me-2">重复数据处理方式：</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio"
+                                   name="dedup_mode_{{ p.sheet }}" value="skip" checked
+                                   id="skip-{{ loop.index }}">
+                            <label class="form-check-label" for="skip-{{ loop.index }}">跳过重复</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio"
+                                   name="dedup_mode_{{ p.sheet }}" value="overwrite"
+                                   id="overwrite-{{ loop.index }}">
+                            <label class="form-check-label" for="overwrite-{{ loop.index }}">覆盖更新</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio"
+                                   name="dedup_mode_{{ p.sheet }}" value="abort"
+                                   id="abort-{{ loop.index }}">
+                            <label class="form-check-label" for="abort-{{ loop.index }}">中止导入</label>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 <div class="mb-2">
                     <label class="form-label">台账合集名称</label>
                     <input type="text" class="form-control form-control-sm ledger-name-input"

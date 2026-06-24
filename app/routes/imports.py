@@ -46,11 +46,21 @@ def index():
 
 
 def _build_preview(result):
-    """从 ImportResult 构建预览数据和未匹配列表"""
+    """从 ImportResult 构建预览数据和未匹配列表，增加重复检测"""
     preview = []
     unmatched = []
     for sr in result.sheets:
         if sr.type_code and sr.type_code not in ("summary", "cover"):
+            config = DeviceTypeRegistry.get(sr.type_code)
+            model_cls = config.model_class if config else None
+            duplicates = []
+            if model_cls and hasattr(model_cls, "装置名称") and hasattr(model_cls, "位号"):
+                from app.utils.duplicate_check import check_duplicate
+                for record in sr.records:
+                    unit = getattr(record, "装置名称", None) or ""
+                    tag = getattr(record, "位号", None) or ""
+                    if tag and check_duplicate(model_cls, unit, tag):
+                        duplicates.append({"装置名称": unit, "位号": tag})
             preview.append({
                 "sheet": sr.sheet_name,
                 "rows": sr.row_count,
@@ -60,6 +70,9 @@ def _build_preview(result):
                 "detected_type": sr.type_code,
                 "detected_name": sr.type_name,
                 "accessory_count": sr.accessory_count,
+                "duplicates": duplicates,
+                "duplicate_count": len(duplicates),
+                "new_count": sr.row_count - len(duplicates),
             })
         elif not sr.type_code:
             unmatched.append(sr.sheet_name)
