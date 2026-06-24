@@ -3,6 +3,25 @@
 {% block page_title %}导入管理{% endblock %}
 
 {% block content %}
+{% if skipped %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong><i class="bi bi-exclamation-triangle"></i> 导入完成，但有 {{ skipped|length }} 条数据被跳过</strong>
+    <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#skippedList">
+        查看跳过明细
+    </button>
+    <div class="collapse mt-2" id="skippedList">
+        <table class="table table-sm table-bordered mb-0">
+            <thead><tr><th>装置名称</th><th>位号</th><th>原因</th></tr></thead>
+            <tbody>
+                {% for d in skipped %}
+                <tr><td>{{ d.装置名称 }}</td><td>{{ d.位号 }}</td><td>{{ d.原因 }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
 <div class="modern-card mb-4">
     <div class="card-header-custom"><i class="bi bi-upload"></i> 批量导入仪表台账</div>
     <div class="card-body-custom">

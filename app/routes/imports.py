@@ -43,7 +43,8 @@ def _infer_attachment_type(name: str) -> str:
 @imports.route("/imports")
 @login_required
 def index():
-    return render_template("imports/import.html")
+    skipped = session.pop("import_skipped", None)
+    return render_template("imports/import.html", skipped=skipped)
 
 
 def _build_preview(result):
@@ -368,6 +369,7 @@ def execute():
 
         # 写入记录
         seen_tags = {}
+        skipped_details = []
         for record in sr.records:
             record.ledger_id = ledger.id
             record.created_by = current_user.id
@@ -385,12 +387,14 @@ def execute():
             batch_key = f"{unit}|{tag}"
             if batch_key in seen_tags:
                 skipped += 1
+                skipped_details.append({"位号": tag, "装置名称": unit, "原因": "同批次内重复"})
                 continue
             seen_tags[batch_key] = True
 
             if model_cls and check_duplicate(model_cls, unit, tag):
                 if dedup_mode == "skip":
                     skipped += 1
+                    skipped_details.append({"位号": tag, "装置名称": unit, "原因": "数据库中已存在"})
                     continue
                 elif dedup_mode == "overwrite":
                     existing = model_cls.query.filter(
@@ -432,7 +436,7 @@ def execute():
                     )
                     db.session.add(attachment)
 
-        per_sheet.append({"sheet": sheet_name, "created": created, "skipped": skipped, "updated": updated, "skipped_sheet": False})
+        per_sheet.append({"sheet": sheet_name, "created": created, "skipped": skipped, "updated": updated, "skipped_sheet": False, "skipped_details": skipped_details})
         total_created += created
         total_skipped += skipped
         total_updated += updated
@@ -449,10 +453,15 @@ def execute():
     ):
         session.pop(key, None)
 
+    all_skipped_details = []
+    for s in per_sheet:
+        all_skipped_details.extend(s.get("skipped_details", []))
     parts = [f"创建 {total_created} 条"]
     if total_skipped:
         parts.append(f"跳过 {total_skipped} 条")
     if total_updated:
         parts.append(f"更新 {total_updated} 条")
     flash(f"导入完成：{'，'.join(parts)}")
+    if all_skipped_details:
+        session["import_skipped"] = all_skipped_details
     return redirect(url_for("imports.index"))
