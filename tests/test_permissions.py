@@ -10,7 +10,7 @@
 import pytest
 from flask_login import login_user
 from app import db
-from app.models import User, Ledger, Valve, MaintenanceRecord
+from app.models import User, Ledger, MaintenanceRecord
 from app.routes.valves.permissions import (
     can_create_ledger,
     can_edit_ledger,
