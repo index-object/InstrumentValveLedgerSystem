@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from app import create_app, db
-from app.models import User, Valve, Ledger, MaintenanceRecord, Setting
+from app.models import User, Ledger, MaintenanceRecord, Setting
 
 
 @pytest.fixture
@@ -112,8 +112,10 @@ def test_ledger(app, employee_user):
 @pytest.fixture
 def test_valve(app, test_ledger, employee_user):
     """测试用阀门"""
+    from app.devices.types.control_valve import ControlValve
     with app.app_context():
-        valve = Valve(
+        test_ledger.类型 = "control_valve"
+        valve = ControlValve(
             ledger_id=test_ledger.id,
             位号="TEST-001",
             名称="测试阀门",
