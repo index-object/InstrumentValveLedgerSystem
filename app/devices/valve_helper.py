@@ -70,13 +70,11 @@ def get_valve_by_id(valve_id, model_class=None):
     return None
 
 
-def has_duplicate_tag(tag, exclude_id=None):
-    """检查位号是否重复"""
+def has_duplicate_tag(tag, exclude_id=None, unit_name=None):
+    """检查位号是否重复（兼容旧接口，内部调用 check_duplicate）"""
+    from app.utils.duplicate_check import check_duplicate
     for model in get_all_valve_models():
-        q = model.query.filter(model.位号 == tag, model.status != "draft")
-        if exclude_id:
-            q = q.filter(model.id != exclude_id)
-        if q.first():
+        if check_duplicate(model, unit_name, tag, exclude_id):
             return True
     return False
 

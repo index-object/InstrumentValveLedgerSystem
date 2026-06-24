@@ -66,9 +66,10 @@ def check_tag():
     tag = request.args.get("位号")
     if not tag:
         return jsonify({"valid": True})
+    装置名称 = request.args.get("装置名称")
     exclude_id = request.args.get("exclude_id", type=int)
-    exists = has_duplicate_tag(tag, exclude_id)
-    return jsonify({"valid": not exists, "message": "位号已存在" if exists else None})
+    exists = has_duplicate_tag(tag, exclude_id, 装置名称)
+    return jsonify({"valid": not exists, "message": "该装置下此位号已存在" if exists else None})
 
 
 @valves.route("/valves")
@@ -106,9 +107,10 @@ def new():
                 return redirect(url_for("valves.new"))
         else:
             位号 = request.form.get("位号")
+            装置名称 = request.form.get("装置名称")
             if 位号:
-                if has_duplicate_tag(位号):
-                    flash("位号已存在，请使用其他位号")
+                if has_duplicate_tag(位号, unit_name=装置名称):
+                    flash("该装置下此位号已存在，请使用其他位号")
                     return redirect(url_for("valves.new"))
 
             ledger_id = request.form.get("ledger_id")
@@ -307,9 +309,10 @@ def edit(id):
 
     if request.method == "POST":
         位号 = request.form.get("位号")
+        装置名称 = request.form.get("装置名称")
         if 位号:
-            if has_duplicate_tag(位号, id):
-                flash("位号已存在，请使用其他位号")
+            if has_duplicate_tag(位号, id, 装置名称):
+                flash("该装置下此位号已存在，请使用其他位号")
                 return redirect(url_for("valves.edit", id=id, **{'from': from_param}))
 
         populate_valve_from_form(valve, request.form)
