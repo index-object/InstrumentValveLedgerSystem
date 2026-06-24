@@ -283,6 +283,7 @@ def execute():
 
     merge_config = {}
     ledger_name_overrides = {}
+    dedup_modes = {}
     for key, value in request.form.items():
         if key.startswith("merge_"):
             sheet_name = key[len("merge_"):]
@@ -292,8 +293,13 @@ def execute():
             sheet_name = key[len("ledger_name_"):]
             if value:
                 ledger_name_overrides[sheet_name] = value.strip()
+        elif key.startswith("dedup_mode_"):
+            sheet_name = key[len("dedup_mode_"):]
+            dedup_modes[sheet_name] = value
 
     total_created = 0
+    total_skipped = 0
+    total_updated = 0
     per_sheet = []
     type_ledgers = {}
 
@@ -329,8 +335,28 @@ def execute():
             if merge_config.get(sheet_name):
                 type_ledgers[type_code] = ledger
 
-        # 写入记录
+        dedup_mode = dedup_modes.get(sheet_name, "skip")
         created = 0
+        skipped = 0
+        updated = 0
+
+        from app.utils.duplicate_check import check_duplicate
+        config = DeviceTypeRegistry.get(type_code)
+        model_cls = config.model_class if config else None
+
+        # 中止模式：预检所有记录
+        if dedup_mode == "abort" and model_cls:
+            abort_duplicates = []
+            for record in sr.records:
+                unit = getattr(record, "装置名称", None) or ""
+                tag = getattr(record, "位号", None) or ""
+                if tag and check_duplicate(model_cls, unit, tag):
+                    abort_duplicates.append(f"{unit}/{tag}")
+            if abort_duplicates:
+                flash(f"[{sheet_name}] 发现 {len(abort_duplicates)} 条重复记录，导入已中止")
+                continue
+
+        # 写入记录
         seen_tags = {}
         for record in sr.records:
             record.ledger_id = ledger.id
@@ -343,18 +369,33 @@ def execute():
             if not tag or tag in ('/', '-'):
                 continue
 
-            # 对有位号且数据库有 UNIQUE 约束的表，检查重复
-            tag_unique = False
-            table = getattr(record.__class__, '__table__', None)
-            if table is not None and '位号' in table.c:
-                tag_unique = table.c['位号'].unique
-            if tag_unique:
-                if tag in seen_tags:
+            unit = getattr(record, "装置名称", None) or ""
+
+            # 同批次内去重
+            batch_key = f"{unit}|{tag}"
+            if batch_key in seen_tags:
+                skipped += 1
+                continue
+            seen_tags[batch_key] = True
+
+            if model_cls and check_duplicate(model_cls, unit, tag):
+                if dedup_mode == "skip":
+                    skipped += 1
                     continue
-                seen_tags[tag] = True
-                existing = record.__class__.query.filter_by(位号=tag).first()
-                if existing:
-                    continue
+                elif dedup_mode == "overwrite":
+                    existing = model_cls.query.filter(
+                        model_cls.装置名称 == unit,
+                        model_cls.位号 == tag,
+                        model_cls.status != "draft",
+                    ).first()
+                    if existing:
+                        for col in model_cls.__table__.columns:
+                            col_name = col.name
+                            if col_name not in ("id", "ledger_id", "created_by", "created_at", "status", "updated_at", "approved_by", "approved_at"):
+                                setattr(existing, col_name, getattr(record, col_name, None))
+                        existing.updated_at = datetime.utcnow()
+                        updated += 1
+                        continue
 
             db.session.add(record)
             created += 1
@@ -381,8 +422,10 @@ def execute():
                     )
                     db.session.add(attachment)
 
-        per_sheet.append({"sheet": sheet_name, "created": created, "skipped": False})
+        per_sheet.append({"sheet": sheet_name, "created": created, "skipped": skipped, "updated": updated, "skipped_sheet": False})
         total_created += created
+        total_skipped += skipped
+        total_updated += updated
 
     db.session.commit()
 
@@ -396,5 +439,10 @@ def execute():
     ):
         session.pop(key, None)
 
-    flash(f"导入完成：共创建 {total_created} 条记录")
+    parts = [f"创建 {total_created} 条"]
+    if total_skipped:
+        parts.append(f"跳过 {total_skipped} 条")
+    if total_updated:
+        parts.append(f"更新 {total_updated} 条")
+    flash(f"导入完成：{'，'.join(parts)}")
     return redirect(url_for("imports.index"))
