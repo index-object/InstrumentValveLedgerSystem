@@ -21,7 +21,7 @@
 {% set section_colors = ['', 'section-header-cyan', 'section-header-orange', 'section-header-green', 'section-header-gray'] %}
 <div class="modern-card p-4" style="max-width: 900px; margin: 0 auto;">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
-  <form method="POST" id="device-form">
+  <form method="POST" id="device-form" data-device-id="{{ device.id if device else '' }}">
     {% for group in config.field_groups %}
     <div class="form-section">
       <div class="section-header {{ section_colors[loop.index0 % section_colors|length] }}" style="padding: 14px 20px;">
@@ -60,6 +60,7 @@
 {% endblock %}
 {% block extra_js %}
 <script>
+const deviceId = document.getElementById('device-form').dataset.deviceId;
 document.querySelectorAll('[data-check-tag]').forEach(input => {
   function checkDuplicate() {
     const tag = input.value.trim();
@@ -69,6 +70,7 @@ document.querySelectorAll('[data-check-tag]').forEach(input => {
     if (!tag) return;
     const params = new URLSearchParams({位号: tag});
     if (unitName) params.append('装置名称', unitName);
+    if (deviceId) params.append('exclude_id', deviceId);
     fetch(`/device/${type}/check-tag?${params.toString()}`)
       .then(r => r.json())
       .then(data => {
@@ -80,7 +82,8 @@ document.querySelectorAll('[data-check-tag]').forEach(input => {
           warn.textContent = data.message;
           input.parentElement.appendChild(warn);
         }
-      });
+      })
+      .catch(() => {});
   }
   input.addEventListener('blur', checkDuplicate);
   input.addEventListener('input', function() {
@@ -88,12 +91,13 @@ document.querySelectorAll('[data-check-tag]').forEach(input => {
     if (existing) existing.remove();
   });
 });
-// 装置名称变化时也触发位号的去重检查
+// 装置名称变化时触发所有位号的去重检查
 const unitInput = document.querySelector('input[name="装置名称"]');
 if (unitInput) {
   unitInput.addEventListener('blur', function() {
-    const tagInput = document.querySelector('[data-check-tag]');
-    if (tagInput) tagInput.dispatchEvent(new Event('blur'));
+    document.querySelectorAll('[data-check-tag]').forEach(function(tagInput) {
+      tagInput.dispatchEvent(new Event('blur'));
+    });
   });
 }
 </script>
