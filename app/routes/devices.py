@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from flask_login import login_required, current_user
 from app.models import db, Ledger, ApprovalLog
 from app.devices import DeviceTypeRegistry
+from app.utils.duplicate_check import check_duplicate
 from datetime import datetime
 from io import BytesIO
 # 延迟导入 pandas（避免在应用启动时立即加载可能含有本机指令的二进制扩展）
@@ -321,20 +322,14 @@ def check_tag(type_code):
     config = get_config_or_404(type_code)
     model = config.model_class
 
-    if not hasattr(model, "位号"):
-        return jsonify({"valid": True})
-
-    tag = request.args.get("位号")
-    if not tag:
+    位号 = request.args.get("位号")
+    装置名称 = request.args.get("装置名称")
+    if not 位号:
         return jsonify({"valid": True})
 
     exclude_id = request.args.get("exclude_id", type=int)
-    query = model.query.filter(model.位号 == tag, model.status != "draft")
-    if exclude_id:
-        query = query.filter(model.id != exclude_id)
-
-    exists = query.first() is not None
-    return jsonify({"valid": not exists, "message": "位号已存在" if exists else None})
+    exists = check_duplicate(model, 装置名称, 位号, exclude_id)
+    return jsonify({"valid": not exists, "message": "该装置下此位号已存在" if exists else None})
 
 
 @devices_bp.route("/<type_code>/batch-delete", methods=["POST"])

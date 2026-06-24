@@ -61,18 +61,40 @@
 {% block extra_js %}
 <script>
 document.querySelectorAll('[data-check-tag]').forEach(input => {
-  input.addEventListener('blur', function() {
-    const tag = this.value.trim();
-    const type = this.dataset.type;
+  function checkDuplicate() {
+    const tag = input.value.trim();
+    const type = input.dataset.type;
+    const unitInput = document.querySelector('input[name="装置名称"]');
+    const unitName = unitInput ? unitInput.value.trim() : '';
     if (!tag) return;
-    fetch(`/device/${type}/check-tag?%E4%BD%8D%E5%8F%B7=${encodeURIComponent(tag)}`)
+    const params = new URLSearchParams({位号: tag});
+    if (unitName) params.append('装置名称', unitName);
+    fetch(`/device/${type}/check-tag?${params.toString()}`)
       .then(r => r.json())
       .then(data => {
+        const existing = input.parentElement.querySelector('.duplicate-warning');
+        if (existing) existing.remove();
         if (!data.valid) {
-          alert(data.message || '位号已存在');
+          const warn = document.createElement('div');
+          warn.className = 'duplicate-warning text-danger small mt-1';
+          warn.textContent = data.message;
+          input.parentElement.appendChild(warn);
         }
       });
+  }
+  input.addEventListener('blur', checkDuplicate);
+  input.addEventListener('input', function() {
+    const existing = this.parentElement.querySelector('.duplicate-warning');
+    if (existing) existing.remove();
   });
 });
+// 装置名称变化时也触发位号的去重检查
+const unitInput = document.querySelector('input[name="装置名称"]');
+if (unitInput) {
+  unitInput.addEventListener('blur', function() {
+    const tagInput = document.querySelector('[data-check-tag]');
+    if (tagInput) tagInput.dispatchEvent(new Event('blur'));
+  });
+}
 </script>
 {% endblock %}
