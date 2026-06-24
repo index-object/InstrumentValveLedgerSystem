@@ -69,7 +69,7 @@ class TestCheckDuplicate:
             query = MockQuery([])
         assert check_duplicate(FakeModel, "装置A", "TAG-999") is False
 
-    def test_draft_excluded(self):
+    def test_draft_included(self):
         class FakeModel:
             装置名称 = _Column()
             位号 = _Column()
@@ -77,7 +77,7 @@ class TestCheckDuplicate:
             query = MockQuery([
                 MockDevice(装置名称="装置A", 位号="TAG-001", status="draft")
             ])
-        assert check_duplicate(FakeModel, "装置A", "TAG-001") is False
+        assert check_duplicate(FakeModel, "装置A", "TAG-001") is True
 
     def test_exclude_id(self):
         dev = MockDevice(id=1, 装置名称="装置A", 位号="TAG-001", status="approved")
