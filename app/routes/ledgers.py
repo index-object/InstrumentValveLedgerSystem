@@ -10,7 +10,8 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from app.models import db, Ledger, ApprovalLog, Setting, ValveAttachment
-from app.devices.valve_helper import VALVE_TYPES, get_valve_model, get_valve_by_id, get_valve_ledger_type, has_duplicate_tag, get_all_valve_models, count_valves_by_status, query_valves
+from app.devices.valve_helper import VALVE_TYPES, get_valve_model, get_valve_by_id, get_valve_ledger_type, get_all_valve_models, count_valves_by_status, query_valves
+from app.utils.duplicate_check import check_duplicate
 from app.devices import DeviceTypeRegistry
 from app.routes.valves.permissions import (
     can_edit_ledger,
@@ -624,8 +625,9 @@ def new_valve(id):
 
     if request.method == "POST":
         位号 = request.form.get("位号")
-        if 位号 and has_duplicate_tag(位号):
-            flash("位号已存在，请使用其他位号")
+        装置名称 = request.form.get("装置名称")
+        if 位号 and check_duplicate(model, 装置名称, 位号):
+            flash("该装置下此位号已存在，请使用其他位号")
             return redirect(
                 url_for("ledgers.new_valve", id=id, **{"from": from_param})
             )
@@ -701,6 +703,14 @@ def edit_valve(ledger_id, id):
         return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
 
     if request.method == "POST":
+        位号 = request.form.get("位号")
+        装置名称 = request.form.get("装置名称")
+        if 位号 and check_duplicate(model, 装置名称, 位号, exclude_id=valve.id):
+            flash("该装置下此位号已存在")
+            return redirect(
+                url_for("ledgers.edit_valve", ledger_id=ledger_id, id=id, **{"from": from_param})
+            )
+
         for key in request.form:
             if key == "attachments":
                 continue
