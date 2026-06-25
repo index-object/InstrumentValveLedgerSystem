@@ -519,13 +519,24 @@ def submit(id):
         flash("没有可提交的台账")
         return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
+    auto_approve = Setting.query.get("auto_approval")
+    is_auto = auto_approve and auto_approve.value == "true"
+
     for device in submit_devices:
-        device.status = "pending"
+        if is_auto:
+            device.status = "approved"
+            device.approved_by = current_user.id
+            device.approved_at = datetime.utcnow()
+            action = "approve"
+        else:
+            device.status = "pending"
+            action = "submit"
+
         log = ApprovalLog(
             ledger_id=ledger.id,
             device_type=ledger.类型,
             device_id=device.id,
-            action="submit",
+            action=action,
             user_id=current_user.id,
         )
         db.session.add(log)
@@ -534,7 +545,10 @@ def submit(id):
     update_ledger_status(ledger)
     db.session.commit()
 
-    flash(f"已提交 {len(submit_devices)} 项台账内容审批")
+    if is_auto:
+        flash(f"已提交并自动审批 {len(submit_devices)} 项台账内容")
+    else:
+        flash(f"已提交 {len(submit_devices)} 项台账内容审批")
     return redirect(get_back_url(from_param))
 
 
@@ -1050,6 +1064,8 @@ def batch_submit_ledgers():
 
     submitted_count = 0
     failed_ledgers = []
+    auto_approve = Setting.query.get("auto_approval")
+    is_auto = auto_approve and auto_approve.value == "true"
 
     for ledger_id in ledger_ids:
         ledger = Ledger.query.get(int(ledger_id))
@@ -1066,19 +1082,28 @@ def batch_submit_ledgers():
             continue
         model = config.model_class
         draft_devices = model.query.filter_by(ledger_id=ledger.id, status="draft").all()
+
+        if not draft_devices:
+            continue
+
         for device in draft_devices:
-            device.status = "pending"
+            if is_auto:
+                device.status = "approved"
+                device.approved_by = current_user.id
+                device.approved_at = datetime.utcnow()
+                action = "approve"
+            else:
+                device.status = "pending"
+                action = "submit"
+
             log = ApprovalLog(
                 ledger_id=ledger.id,
                 device_type=ledger.类型,
                 device_id=device.id,
-                action="submit",
+                action=action,
                 user_id=current_user.id,
             )
             db.session.add(log)
-
-        if not draft_devices:
-            continue
 
         update_ledger_status(ledger)
         submitted_count += 1
@@ -1088,6 +1113,6 @@ def batch_submit_ledgers():
     if failed_ledgers:
         flash(f"部分合集提交失败: {', '.join(failed_ledgers)}")
     if submitted_count > 0:
-        flash(f"成功提交 {submitted_count} 个合集的草稿内容审批")
+        flash(f"成功提交并自动审批 {submitted_count} 个合集的草稿内容" if is_auto else f"成功提交 {submitted_count} 个合集的草稿内容审批")
 
     return redirect(url_for("valves.my_ledgers"))

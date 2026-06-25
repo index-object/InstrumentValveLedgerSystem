@@ -10,7 +10,7 @@
 types:
   pressure_remote:
     code: pressure_transmitter
-    name: 压力变送器
+    name: 远传压力
     model_class: PressureTransmitter
     sheet_keywords: ["压力变送器", "远传压力", "压力"]
     column_signatures: ["测量范围Mpa", "压力变送器", "全不锈钢压力表", "MPa"]
@@ -53,7 +53,7 @@ types:
 
   temperature_remote:
     code: temperature
-    name: 温度仪表
+    name: 远传温度
     model_class: Temperature
     sheet_keywords: ["温度变送器", "远传温度", "温度"]
     column_signatures: ["分度号", "热电偶", "热电阻", "双金属温度计", "PT100"]
@@ -99,7 +99,7 @@ types:
 
   flow_meter:
     code: flow_meter
-    name: 流量计
+    name: 远传流量
     model_class: FlowMeter
     sheet_keywords: ["流量计", "远传流量", "就地流量", "流量"]
     column_signatures: ["量程KPa", "孔板流量计", "差压变送器", "转子流量计", "楔形流量计"]
@@ -127,7 +127,7 @@ types:
 
   level_remote:
     code: level_transmitter
-    name: 物位计
+    name: 远传液位
     model_class: LevelTransmitter
     sheet_keywords: ["液位计", "物位计", "远传液位", "物位"]
     column_signatures: ["磁翻板液位计", "浮筒", "玻璃板液位计"]

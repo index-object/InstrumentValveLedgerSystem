@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, make_response, abort
 from flask_login import login_required, current_user
-from app.models import db, Ledger, ApprovalLog
+from app.models import db, Ledger, ApprovalLog, Setting
 from app.devices import DeviceTypeRegistry
 from app.utils.duplicate_check import check_duplicate
 from datetime import datetime
@@ -208,17 +208,30 @@ def submit(type_code, id):
         flash("仅草稿状态可提交")
         return redirect(url_for("devices.detail", type_code=type_code, id=id))
 
-    device.status = "pending"
+    auto_approve = Setting.query.get("auto_approval")
+    if auto_approve and auto_approve.value == "true":
+        device.status = "approved"
+        device.approved_by = current_user.id
+        device.approved_at = datetime.utcnow()
+        action = "approve"
+    else:
+        device.status = "pending"
+        action = "submit"
+
     log = ApprovalLog(
         valve_id=None,
         device_type=type_code,
         device_id=device.id,
-        action="submit",
+        action=action,
         user_id=current_user.id,
     )
     db.session.add(log)
     db.session.commit()
-    flash("提交审批成功")
+
+    if action == "approve":
+        flash("提交并自动审批通过")
+    else:
+        flash("提交审批成功")
     return redirect(url_for("devices.detail", type_code=type_code, id=id))
 
 

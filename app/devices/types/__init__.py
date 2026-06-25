@@ -1,3 +1,7 @@
+import os
+
+import yaml
+
 from app.devices import DeviceTypeRegistry, DeviceTypeConfig
 from app.devices.types.pressure_transmitter import PressureTransmitter
 from app.devices.types.local_pressure_gauge import LocalPressureGauge
@@ -9,6 +13,26 @@ from app.devices.types.local_level import LocalLevel
 from app.devices.types.shaft_instrument import ShaftInstrument
 from app.devices.types.control_valve import ControlValve
 from app.devices.types.onoff_valve import OnOffValve
+
+
+def _load_type_config():
+    """从 types.yaml 加载类型名称，返回 {code: name} 映射"""
+    yaml_path = os.path.join(os.path.dirname(__file__), '..', '..', 'import_engine', 'config', 'types.yaml')
+    names = {}
+    try:
+        with open(yaml_path, encoding='utf-8') as f:
+            data = yaml.safe_load(f)
+        for entry in data.get('types', {}).values():
+            code = entry.get('code')
+            name = entry.get('name')
+            if code and name and code not in names:
+                names[code] = name
+    except Exception:
+        pass
+    return names
+
+
+_type_names = _load_type_config()
 
 
 _field_groups_valve = [
@@ -64,20 +88,23 @@ _filterable_fields_valve = [
 
 def register_all():
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="control_valve", name="调节阀",
+        code="control_valve", name=_type_names.get("control_valve", "调节阀"),
         model_class=ControlValve, icon="fa-valve",
         field_groups=_field_groups_valve,
         filterable_fields=_filterable_fields_valve,
+        color_scheme=['#d1fae5','#a7f3d0','#065f46','#6ee7b7'],
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="onoff_valve", name="开关阀/切断阀",
+        code="onoff_valve", name=_type_names.get("onoff_valve", "开关阀/切断阀"),
         model_class=OnOffValve, icon="fa-valve",
         field_groups=_field_groups_valve,
         filterable_fields=_filterable_fields_valve,
+        color_scheme=['#d1fae5','#a7f3d0','#065f46','#6ee7b7'],
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="pressure_transmitter", name="压力变送器",
+        code="pressure_transmitter", name=_type_names.get("pressure_transmitter", "远传压力"),
         model_class=PressureTransmitter, icon="fa-tachometer-alt",
+        color_scheme=['#dbeafe','#bfdbfe','#1e40af','#93c5fd'],
         field_groups=[
             {
                 "title": "基本信息",
@@ -101,8 +128,9 @@ def register_all():
         ],
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="local_pressure_gauge", name="就地压力表",
+        code="local_pressure_gauge", name=_type_names.get("local_pressure_gauge", "就地压力表"),
         model_class=LocalPressureGauge, icon="fa-gauge",
+        color_scheme=['#fef3c7','#fde68a','#92400e','#fcd34d'],
         field_groups=[
             {
                 "title": "基本信息",
@@ -125,8 +153,9 @@ def register_all():
         ],
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="temperature", name="温度仪表",
+        code="temperature", name=_type_names.get("temperature", "远传温度"),
         model_class=Temperature, icon="fa-temperature-high",
+        color_scheme=['#fee2e2','#fecaca','#991b1b','#fca5a5'],
         field_groups=[
             {
                 "title": "基本信息",
@@ -150,8 +179,9 @@ def register_all():
         ],
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="local_temperature", name="就地温度计",
+        code="local_temperature", name=_type_names.get("local_temperature", "就地温度计"),
         model_class=LocalTemperature, icon="fa-thermometer-half",
+        color_scheme=['#fce7f3','#fbcfe8','#9d174d','#f9a8d4'],
         field_groups=[
             {
                 "title": "基本信息",
@@ -173,8 +203,9 @@ def register_all():
         ],
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="flow_meter", name="流量计",
+        code="flow_meter", name=_type_names.get("flow_meter", "远传流量"),
         model_class=FlowMeter, icon="fa-water",
+        color_scheme=['#e0e7ff','#c7d2fe','#4338ca','#a5b4fc'],
         field_groups=[
             {
                 "title": "基本信息",
@@ -203,8 +234,9 @@ def register_all():
         ],
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="level_transmitter", name="物位计",
+        code="level_transmitter", name=_type_names.get("level_transmitter", "远传液位"),
         model_class=LevelTransmitter, icon="fa-chart-line",
+        color_scheme=['#ccfbf1','#99f6e4','#115e59','#5eead4'],
         field_groups=[
             {
                 "title": "基本信息",
@@ -228,8 +260,9 @@ def register_all():
         ],
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="local_level", name="就地液位计",
+        code="local_level", name=_type_names.get("local_level", "就地液位计"),
         model_class=LocalLevel, icon="fa-tint",
+        color_scheme=['#ffedd5','#fed7aa','#9a3412','#fdba74'],
         field_groups=[
             {
                 "title": "基本信息",
@@ -252,8 +285,9 @@ def register_all():
         ],
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="shaft_instrument", name="机组轴系仪表",
+        code="shaft_instrument", name=_type_names.get("shaft_instrument", "机组轴系仪表"),
         model_class=ShaftInstrument, icon="fa-cog",
+        color_scheme=['#f3e8ff','#e9d5ff','#6b21a8','#d8b4fe'],
         field_groups=[
             {
                 "title": "基本信息",

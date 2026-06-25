@@ -90,18 +90,7 @@
                     </td>
                     <td>
                         {% set dt_config = get_device_type_config(ledger.类型) %}
-                        {% set type_colors = {
-                            'valve': ['#d1fae5','#a7f3d0','#065f46','#6ee7b7'],
-                            'pressure_transmitter': ['#dbeafe','#bfdbfe','#1e40af','#93c5fd'],
-                            'local_pressure_gauge': ['#fef3c7','#fde68a','#92400e','#fcd34d'],
-                            'temperature': ['#fee2e2','#fecaca','#991b1b','#fca5a5'],
-                            'local_temperature': ['#fce7f3','#fbcfe8','#9d174d','#f9a8d4'],
-                            'flow_meter': ['#e0e7ff','#c7d2fe','#4338ca','#a5b4fc'],
-                            'level_transmitter': ['#ccfbf1','#99f6e4','#115e59','#5eead4'],
-                            'local_level': ['#ffedd5','#fed7aa','#9a3412','#fdba74'],
-                            'shaft_instrument': ['#f3e8ff','#e9d5ff','#6b21a8','#d8b4fe'],
-                        } %}
-                        {% set tc = type_colors.get(ledger.类型, ['#f1f5f9','#e2e8f0','#475569','#cbd5e1']) %}
+                        {% set tc = dt_config.color_scheme if dt_config else ['#f1f5f9','#e2e8f0','#475569','#cbd5e1'] %}
                         <span class="badge-status" style="background: linear-gradient(135deg, {{ tc[0] }} 0%, {{ tc[1] }} 100%); color: {{ tc[2] }}; border: 1px solid {{ tc[3] }};">{{ dt_config.name if dt_config else ledger.类型 }}</span>
                     </td>
                     <td><span class="count-cell">{{ ledger.valve_count }}</span></td>

@@ -2,7 +2,7 @@ class DeviceTypeConfig:
     """一种仪表类型的完整配置"""
     def __init__(self, code, name, model_class, icon="fa-cog",
                  field_groups=None, filterable_fields=None,
-                 import_column_map=None):
+                 import_column_map=None, color_scheme=None):
         self.code = code
         self.name = name
         self.model_class = model_class
@@ -10,6 +10,7 @@ class DeviceTypeConfig:
         self.field_groups = field_groups or []
         self.filterable_fields = filterable_fields or []
         self.import_column_map = import_column_map or {}
+        self.color_scheme = color_scheme or ['#f1f5f9','#e2e8f0','#475569','#cbd5e1']
 
     def get_fields_flat(self):
         """获取所有字段列表（拍平分组）"""

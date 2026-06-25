@@ -165,7 +165,8 @@
                             <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="cursor: pointer;">
                             {% endif %}
                         </th>
-                        <th style="width: 25%;">合集名称</th>
+                        <th style="width: 20%;">合集名称</th>
+                        <th style="width: 10%;">类型</th>
                         <th style="width: 10%;">台账总数</th>
                         <th style="width: 10%;">待审批</th>
                         <th style="width: 10%;">已审批</th>
@@ -186,6 +187,11 @@
                             <a href="{{ url_for('ledgers.detail', id=ledger.id, from='approvals') }}" class="ledger-name-link">
                                 <i class="bi bi-folder2 folder-icon" style="color: #3b82f6;"></i>{{ ledger.名称 }}
                             </a>
+                        </td>
+                        <td>
+                            {% set dt_config = get_device_type_config(ledger.类型) %}
+                            {% set tc = dt_config.color_scheme if dt_config else ['#f1f5f9','#e2e8f0','#475569','#cbd5e1'] %}
+                            <span class="badge-status" style="background: linear-gradient(135deg, {{ tc[0] }} 0%, {{ tc[1] }} 100%); color: {{ tc[2] }}; border: 1px solid {{ tc[3] }};">{{ dt_config.name if dt_config else ledger.类型 }}</span>
                         </td>
                         <td><span style="font-weight: 600; color: var(--text-dark);">{{ ledger.valve_count }}</span> 条</td>
                         <td>
