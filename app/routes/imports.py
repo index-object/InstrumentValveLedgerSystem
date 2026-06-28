@@ -21,6 +21,11 @@ def get_engine():
     return _engine
 
 
+def _skip_duplicate_for_tag(tag):
+    """位号为 / 或 \\ 时不参与重复验证"""
+    return not tag or tag.strip() in ("/", "-", "\\")
+
+
 def _infer_attachment_type(name: str) -> str:
     keywords = {
         "定位器": ["定位器"],
@@ -56,12 +61,65 @@ def _build_preview(result):
             config = DeviceTypeRegistry.get(sr.type_code)
             model_cls = config.model_class if config else None
             duplicates = []
+            display_fields = config.get_fields_flat() if config else []
             if model_cls and hasattr(model_cls, "装置名称") and hasattr(model_cls, "位号"):
                 for record in sr.records:
                     unit = getattr(record, "装置名称", None) or ""
                     tag = getattr(record, "位号", None) or ""
-                    if tag and check_duplicate(model_cls, unit, tag):
-                        duplicates.append({"装置名称": unit, "位号": tag})
+                    if tag and not _skip_duplicate_for_tag(tag):
+                        existing = model_cls.query.filter(
+                            model_cls.装置名称 == unit,
+                            model_cls.位号 == tag,
+                        ).first()
+                        if existing:
+                            existing_data = {}
+                            for col_name in display_fields:
+                                val = getattr(existing, col_name, None)
+                                if val is not None and val != "":
+                                    existing_data[col_name] = str(val)
+                            new_data = {}
+                            for col_name in display_fields:
+                                val = getattr(record, col_name, None)
+                                if val is not None and val != "":
+                                    new_data[col_name] = str(val)
+                            all_keys = list(dict.fromkeys(list(new_data.keys()) + list(existing_data.keys())))
+                            duplicates.append({
+                                "装置名称": unit,
+                                "位号": tag,
+                                "existing_data": existing_data,
+                                "new_data": new_data,
+                                "all_keys": [k for k in all_keys if k not in ("装置名称", "位号")],
+                            })
+            # 检测同批次内重复（相同学装置+位号的多行数据）
+            tag_groups = {}
+            for idx, record in enumerate(sr.records):
+                tag = getattr(record, "位号", None) or ""
+                if _skip_duplicate_for_tag(tag):
+                    continue
+                unit = getattr(record, "装置名称", None) or ""
+                batch_key = f"{unit}|{tag}"
+                if batch_key not in tag_groups:
+                    tag_groups[batch_key] = []
+                tag_groups[batch_key].append(idx)
+            batch_conflicts = []
+            for batch_key, indices in tag_groups.items():
+                if len(indices) > 1:
+                    rows = []
+                    for idx in indices:
+                        record = sr.records[idx]
+                        row_data = {}
+                        for col_name in display_fields:
+                            val = getattr(record, col_name, None)
+                            if val is not None and val != "":
+                                row_data[col_name] = str(val)
+                        rows.append({"row_index": idx, "data": row_data})
+                    parts = batch_key.split("|", 1)
+                    batch_conflicts.append({
+                        "key": batch_key,
+                        "装置名称": parts[0],
+                        "位号": parts[1] if len(parts) > 1 else "",
+                        "rows": rows,
+                    })
             preview.append({
                 "sheet": sr.sheet_name,
                 "rows": sr.row_count,
@@ -74,6 +132,8 @@ def _build_preview(result):
                 "duplicates": duplicates,
                 "duplicate_count": len(duplicates),
                 "new_count": sr.row_count - len(duplicates),
+                "batch_conflicts": batch_conflicts,
+                "batch_conflict_count": len(batch_conflicts),
             })
         elif not sr.type_code:
             unmatched.append(sr.sheet_name)
@@ -167,6 +227,11 @@ def upload():
             errors=result.errors,
         )
 
+    has_conflicts = any(p.get("batch_conflict_count", 0) > 0 for p in preview)
+    session.pop("import_conflict_choices", None)
+    if has_conflicts:
+        return redirect(url_for("imports.conflicts"))
+
     return redirect(url_for("imports.preview"))
 
 
@@ -179,14 +244,35 @@ def preview():
         return redirect(url_for("imports.index"))
 
     engine = get_engine()
+    mappings = session.get("import_mappings") or {}
     try:
-        result = engine.import_file(saved_path)
+        result = engine.import_file(saved_path, type_overrides=mappings)
     except Exception as e:
         flash(f"文件读取失败: {e}")
         return redirect(url_for("imports.index"))
 
+    # 应用同批次重复的用户选择
+    conflict_choices = session.get("import_conflict_choices", {})
+    for sr in result.sheets:
+        sheet_choices = conflict_choices.get(sr.sheet_name, {})
+        if sheet_choices:
+            keep_indices = set()
+            for idx, record in enumerate(sr.records):
+                tag = getattr(record, "位号", None) or ""
+                if _skip_duplicate_for_tag(tag):
+                    keep_indices.add(idx)
+                    continue
+                unit = getattr(record, "装置名称", None) or ""
+                batch_key = f"{unit}|{tag}"
+                if batch_key in sheet_choices:
+                    if idx == sheet_choices[batch_key]:
+                        keep_indices.add(idx)
+                else:
+                    keep_indices.add(idx)
+            sr.records = [r for i, r in enumerate(sr.records) if i in keep_indices]
+            sr.row_count = len(sr.records)
+
     preview, unmatched = _build_preview(result)
-    mappings = session.get("import_mappings") or {}
 
     # 为已手动映射但未自动匹配的 sheet 创建预览条目
     for sheet_name in unmatched:
@@ -198,12 +284,35 @@ def preview():
                     if sr.sheet_name == sheet_name:
                         model_cls = cfg.model_class if cfg else None
                         duplicates = []
+                        display_fields = cfg.get_fields_flat() if cfg else []
                         if model_cls and hasattr(model_cls, "装置名称") and hasattr(model_cls, "位号"):
                             for record in sr.records:
                                 unit = getattr(record, "装置名称", None) or ""
                                 tag = getattr(record, "位号", None) or ""
-                                if tag and check_duplicate(model_cls, unit, tag):
-                                    duplicates.append({"装置名称": unit, "位号": tag})
+                                if tag and not _skip_duplicate_for_tag(tag):
+                                    existing = model_cls.query.filter(
+                                        model_cls.装置名称 == unit,
+                                        model_cls.位号 == tag,
+                                    ).first()
+                                    if existing:
+                                        existing_data = {}
+                                        for col_name in display_fields:
+                                            val = getattr(existing, col_name, None)
+                                            if val is not None and val != "":
+                                                existing_data[col_name] = str(val)
+                                        new_data = {}
+                                        for col_name in display_fields:
+                                            val = getattr(record, col_name, None)
+                                            if val is not None and val != "":
+                                                new_data[col_name] = str(val)
+                                        all_keys = list(dict.fromkeys(list(new_data.keys()) + list(existing_data.keys())))
+                                        duplicates.append({
+                                            "装置名称": unit,
+                                            "位号": tag,
+                                            "existing_data": existing_data,
+                                            "new_data": new_data,
+                                            "all_keys": [k for k in all_keys if k not in ("装置名称", "位号")],
+                                        })
                         preview.append({
                             "sheet": sr.sheet_name,
                             "rows": sr.row_count,
@@ -268,6 +377,70 @@ def save_mapping():
             db.session.add(mapping)
     db.session.commit()
 
+    engine = get_engine()
+    try:
+        result = engine.import_file(saved_path, type_overrides=mappings)
+    except Exception:
+        return redirect(url_for("imports.preview"))
+    preview, _ = _build_preview(result)
+    has_conflicts = any(p.get("batch_conflict_count", 0) > 0 for p in preview)
+    session.pop("import_conflict_choices", None)
+    if has_conflicts:
+        return redirect(url_for("imports.conflicts"))
+    return redirect(url_for("imports.preview"))
+
+
+@imports.route("/imports/conflicts")
+@login_required
+def conflicts():
+    saved_path = _get_saved_path()
+    if not saved_path:
+        flash("没有待处理的文件，请重新上传")
+        return redirect(url_for("imports.index"))
+
+    engine = get_engine()
+    mappings = session.get("import_mappings") or {}
+    try:
+        result = engine.import_file(saved_path, type_overrides=mappings)
+    except Exception as e:
+        flash(f"文件读取失败: {e}")
+        return redirect(url_for("imports.index"))
+
+    preview, _ = _build_preview(result)
+    conflicts_data = []
+    for p in preview:
+        if p["batch_conflict_count"] > 0:
+            conflicts_data.append({
+                "sheet": p["sheet"],
+                "detected_name": p["detected_name"],
+                "conflicts": p["batch_conflicts"],
+            })
+    if not conflicts_data:
+        return redirect(url_for("imports.preview"))
+    return render_template("imports/resolve_conflicts.html",
+                           conflicts_data=conflicts_data,
+                           filename=session.get("import_filename", "导入文件"),
+                           errors=session.get("import_errors", []))
+
+
+@imports.route("/imports/resolve-conflicts", methods=["POST"])
+@login_required
+def resolve_conflicts():
+    saved_path = _get_saved_path()
+    if not saved_path:
+        flash("会话过期，请重新上传")
+        return redirect(url_for("imports.index"))
+
+    choices = {}
+    for key, value in request.form.items():
+        if key.startswith("choice_"):
+            remainder = key[len("choice_"):]
+            if "__" in remainder:
+                sheet_name, batch_key = remainder.split("__", 1)
+                if sheet_name not in choices:
+                    choices[sheet_name] = {}
+                choices[sheet_name][batch_key] = int(value)
+    session["import_conflict_choices"] = choices
     return redirect(url_for("imports.preview"))
 
 
@@ -367,10 +540,13 @@ def execute():
                 flash(f"[{sheet_name}] 发现 {len(abort_duplicates)} 条重复记录，导入已中止")
                 continue
 
+        # 从 session 读取同批次重复的用户选择
+        batch_choices = session.get("import_conflict_choices", {}).get(sheet_name, {})
+
         # 写入记录
         seen_tags = {}
         skipped_details = []
-        for record in sr.records:
+        for idx, record in enumerate(sr.records):
             record.ledger_id = ledger.id
             record.created_by = current_user.id
             record.status = "draft"
@@ -378,14 +554,19 @@ def execute():
             tag = getattr(record, '位号', None)
             if tag:
                 tag = tag.strip()
-            if not tag or tag in ('/', '-'):
+            if _skip_duplicate_for_tag(tag):
                 continue
 
             unit = getattr(record, "装置名称", None) or ""
-
-            # 同批次内去重
             batch_key = f"{unit}|{tag}"
-            if batch_key in seen_tags:
+
+            # 同批次重复：只保留用户选择的那一行
+            if batch_key in batch_choices:
+                if idx != batch_choices[batch_key]:
+                    skipped += 1
+                    skipped_details.append({"位号": tag, "装置名称": unit, "原因": "用户选择了其他重复行"})
+                    continue
+            elif batch_key in seen_tags:
                 skipped += 1
                 skipped_details.append({"位号": tag, "装置名称": unit, "原因": "同批次内重复"})
                 continue

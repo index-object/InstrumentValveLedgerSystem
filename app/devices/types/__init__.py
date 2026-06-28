@@ -10,7 +10,6 @@ from app.devices.types.local_temperature import LocalTemperature
 from app.devices.types.flow_meter import FlowMeter
 from app.devices.types.level_transmitter import LevelTransmitter
 from app.devices.types.local_level import LocalLevel
-from app.devices.types.shaft_instrument import ShaftInstrument
 from app.devices.types.control_valve import ControlValve
 from app.devices.types.onoff_valve import OnOffValve
 
@@ -203,7 +202,7 @@ def register_all():
         ],
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="flow_meter", name=_type_names.get("flow_meter", "远传流量"),
+        code="flow_meter", name=_type_names.get("flow_meter", "流量计"),
         model_class=FlowMeter, icon="fa-water",
         color_scheme=['#e0e7ff','#c7d2fe','#4338ca','#a5b4fc'],
         field_groups=[
@@ -284,28 +283,4 @@ def register_all():
             ("设备名称", "设备名称"), ("设备等级", "设备等级"),
         ],
     ))
-    DeviceTypeRegistry.register(DeviceTypeConfig(
-        code="shaft_instrument", name=_type_names.get("shaft_instrument", "机组轴系仪表"),
-        model_class=ShaftInstrument, icon="fa-cog",
-        color_scheme=['#f3e8ff','#e9d5ff','#6b21a8','#d8b4fe'],
-        field_groups=[
-            {
-                "title": "基本信息",
-                "fields": ["装置名称", "位号", "安装位置及用途",
-                          "设备名称", "设备等级", "规格型号",
-                          "生产厂家", "测量范围", "精度"],
-                "cols": 2,
-            },
-            {
-                "title": "联锁信息",
-                "fields": ["是否联锁", "联锁设定值"],
-                "cols": 2,
-            },
-            {"title": "备注", "fields": ["备注"], "cols": 1},
-        ],
-        filterable_fields=[
-            ("装置名称", "装置名称"), ("位号", "位号"),
-            ("设备名称", "设备名称"), ("设备等级", "设备等级"),
-            ("生产厂家", "生产厂家"),
-        ],
-    ))
+

@@ -13,7 +13,7 @@ types:
     name: 远传压力
     model_class: PressureTransmitter
     sheet_keywords: ["压力变送器", "远传压力", "压力"]
-    column_signatures: ["测量范围Mpa", "压力变送器", "全不锈钢压力表", "MPa"]
+    column_signatures: ["测量范围Mpa", "压力变送器", "全不锈钢压力表"]
     column_mapping:
       装置名称: 装置名称
       位号: 位号
@@ -99,7 +99,7 @@ types:
 
   flow_meter:
     code: flow_meter
-    name: 远传流量
+    name: 流量计
     model_class: FlowMeter
     sheet_keywords: ["流量计", "远传流量", "就地流量", "流量"]
     column_signatures: ["量程KPa", "孔板流量计", "差压变送器", "转子流量计", "楔形流量计"]
@@ -256,46 +256,6 @@ types:
       手轮机构: 手轮机构
       出厂编号: 设备编号
       是否联锁: 是否联锁
-
-  switch_device:
-    code: onoff_valve
-    name: 开关
-    model_class: OnOffValve
-    sheet_keywords: ["开关"]
-    column_signatures: ["接点形式", "接点容量", "SPDT", "干接点"]
-    column_mapping:
-      装置名称: 装置名称
-      位号: 位号
-      安装位置及用途: 安装位置及用途
-      设备名称: 名称
-      设备等级: 设备等级
-      型号规格: 型号规格
-      生产厂家: 生产厂家
-      介质: 工艺条件_介质名称
-      测量范围: 工艺条件_阀前压力
-      接点形式: 备注
-      接点容量: 备注
-      出厂编号: 设备编号
-      是否联锁: 是否联锁
-
-  special_instrument:
-    code: shaft_instrument
-    name: 机组轴系仪表
-    model_class: ShaftInstrument
-    sheet_keywords: ["特殊仪表", "机组仪表", "电磁阀"]
-    column_signatures: ["振动变送器", "转速", "电涡流"]
-    column_mapping:
-      装置名称: 装置名称
-      位号: 位号
-      安装位置及用途: 安装位置及用途
-      设备名称: 设备名称
-      设备等级: 设备等级
-      型号规格: 规格型号
-      生产厂家: 生产厂家
-      测量范围: 测量范围
-      精度: 精度
-      是否联锁: 是否联锁
-      联锁设定值: 联锁设定值
 
   summary:
     code: summary

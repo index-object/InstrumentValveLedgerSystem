@@ -85,7 +85,6 @@ class ImportEngine:
                 FlowMeter,
                 LevelTransmitter,
                 LocalLevel,
-                ShaftInstrument,
             )
 
             model_map: dict[str, type] = {
@@ -96,7 +95,6 @@ class ImportEngine:
                 "FlowMeter": FlowMeter,
                 "LevelTransmitter": LevelTransmitter,
                 "LocalLevel": LocalLevel,
-                "ShaftInstrument": ShaftInstrument,
                 "ControlValve": ControlValve,
                 "OnOffValve": OnOffValve,
             }

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block page_title %}解决重复数据冲突{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2>解决重复数据冲突 - {{ filename }}</h2>
+
+    {% for err in errors %}
+    {% if err %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {{ err }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <div class="alert alert-danger mb-3">
+        <strong><i class="bi bi-exclamation-triangle"></i> 文件中存在重复数据</strong>
+        <span class="ms-2">以下数据表中发现多条相同"装置名称+位号"的记录，请为每组选择要导入哪一行，然后继续。</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('imports.resolve_conflicts') }}">
+        {% for cd in conflicts_data %}
+        <div class="card mb-3 border-danger">
+            <div class="card-header bg-danger text-white">
+                <strong>{{ cd.sheet }}</strong> — {{ cd.detected_name }}
+                <span class="badge bg-light text-dark ms-2">{{ cd.conflicts|length }} 组重复</span>
+            </div>
+            <div class="card-body">
+                {% for c in cd.conflicts %}
+                <div class="card mb-2 border-warning">
+                    <div class="card-body py-2 px-3">
+                        <div class="table-responsive">
+                            <table class="table table-sm preview-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width:120px;"><span class="conflict-label">导入第{% for r in c.rows %}{% if loop.first %}{{ loop.index }}{% endif %}{% endfor %}行</span></th>
+                                        <th>#</th>
+                                        <th>装置名称</th>
+                                        <th>位号</th>
+                                        {% if c.rows %}
+                                        {% for k in c.rows[0].data.keys() %}
+                                        {% if k not in ("装置名称", "位号") %}
+                                        <th>{{ k }}</th>
+                                        {% endif %}
+                                        {% endfor %}
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in c.rows %}
+                                    <tr>
+                                        <td class="text-center">
+                                            <input class="form-check-input conflict-radio" type="radio"
+                                                   name="choice_{{ cd.sheet }}__{{ c.key }}"
+                                                   value="{{ r.row_index }}"
+                                                   data-row="{{ loop.index }}"
+                                                   {% if loop.first %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-muted">{{ r.row_index + 1 }}</td>
+                                        <td>{{ c.装置名称 or '' }}</td>
+                                        <td>{{ c.位号 or '' }}</td>
+                                        {% for k, v in r.data.items() %}
+                                        {% if k not in ("装置名称", "位号") %}
+                                        <td>{{ v }}</td>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check-lg"></i> 保存选择，继续预览
+            </button>
+            <a href="{{ url_for('imports.index') }}" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.conflict-radio').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        var label = this.closest('table').querySelector('.conflict-label');
+        label.textContent = '导入第' + this.dataset.row + '行';
+    });
+});
+</script>
+{% endblock %}
