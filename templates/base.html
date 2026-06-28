@@ -44,7 +44,7 @@
             {% endif %}
             {% if current_user.role == 'employee' %}
             <a href="{{ url_for('imports.index') }}" class="sidebar-menu-item {% if request.endpoint and 'imports' in request.endpoint %}active{% endif %}">
-                <i class="bi bi-upload"></i><span>导入数据</span>
+                <i class="bi bi-file-earmark-plus"></i><span>导入数据</span>
             </a>
             {% endif %}
             <a href="{{ url_for('ledgers.list') }}" class="sidebar-menu-item {% if request.endpoint == 'ledgers.list' %}active{% endif %}">
