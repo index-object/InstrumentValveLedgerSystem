@@ -1,4 +1,4 @@
-def check_duplicate(model_class, unit_name, tag_no, exclude_id=None):
+def check_duplicate(model_class, unit_name, tag_no, exclude_id=None, created_by=None):
     """检查同类型表中是否存在相同的装置名称+位号组合（含草稿）"""
     if not unit_name or not tag_no:
         return False
@@ -8,4 +8,6 @@ def check_duplicate(model_class, unit_name, tag_no, exclude_id=None):
     )
     if exclude_id:
         q = q.filter(model_class.id != exclude_id)
+    if created_by is not None:
+        q = q.filter(model_class.created_by == created_by)
     return q.first() is not None

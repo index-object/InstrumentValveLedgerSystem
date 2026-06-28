@@ -70,6 +70,7 @@ def _build_preview(result):
                         existing = model_cls.query.filter(
                             model_cls.装置名称 == unit,
                             model_cls.位号 == tag,
+                            model_cls.created_by == current_user.id,
                         ).first()
                         if existing:
                             existing_data = {}
@@ -90,7 +91,7 @@ def _build_preview(result):
                                 "new_data": new_data,
                                 "all_keys": [k for k in all_keys if k not in ("装置名称", "位号")],
                             })
-            # 检测同批次内重复（相同学装置+位号的多行数据）
+            # 检测同批次内重复（相同装置名称+位号的多行数据）
             tag_groups = {}
             for idx, record in enumerate(sr.records):
                 tag = getattr(record, "位号", None) or ""
@@ -293,6 +294,7 @@ def preview():
                                     existing = model_cls.query.filter(
                                         model_cls.装置名称 == unit,
                                         model_cls.位号 == tag,
+                                        model_cls.created_by == current_user.id,
                                     ).first()
                                     if existing:
                                         existing_data = {}
@@ -534,7 +536,7 @@ def execute():
             for record in sr.records:
                 unit = getattr(record, "装置名称", None) or ""
                 tag = getattr(record, "位号", None) or ""
-                if tag and check_duplicate(model_cls, unit, tag):
+                if tag and check_duplicate(model_cls, unit, tag, created_by=current_user.id):
                     abort_duplicates.append(f"{unit}/{tag}")
             if abort_duplicates:
                 flash(f"[{sheet_name}] 发现 {len(abort_duplicates)} 条重复记录，导入已中止")
@@ -572,7 +574,7 @@ def execute():
                 continue
             seen_tags[batch_key] = True
 
-            if model_cls and check_duplicate(model_cls, unit, tag):
+            if model_cls and check_duplicate(model_cls, unit, tag, created_by=current_user.id):
                 if dedup_mode == "skip":
                     skipped += 1
                     skipped_details.append({"位号": tag, "装置名称": unit, "原因": "数据库中已存在"})
@@ -581,6 +583,7 @@ def execute():
                     existing = model_cls.query.filter(
                         model_cls.装置名称 == unit,
                         model_cls.位号 == tag,
+                        model_cls.created_by == current_user.id,
                         model_cls.status != "draft",
                     ).first()
                     if existing:
