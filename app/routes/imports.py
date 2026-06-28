@@ -503,8 +503,25 @@ def execute():
             per_sheet.append({"sheet": sheet_name, "created": 0, "skipped": True})
             continue
 
-        if merge_config.get(sheet_name) and type_code in type_ledgers:
-            ledger = type_ledgers[type_code]
+        if merge_config.get(sheet_name):
+            if type_code in type_ledgers:
+                ledger = type_ledgers[type_code]
+            else:
+                ledger = Ledger.query.filter_by(
+                    类型=type_code, created_by=current_user.id
+                ).first()
+                ledger_was_created = False
+                if not ledger:
+                    ledger = Ledger()
+                    ledger.名称 = ledger_name_overrides.get(sheet_name, sheet_name)
+                    ledger.描述 = f"由用户 {current_user.username} 导入于 {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                    ledger.类型 = type_code
+                    ledger.created_by = current_user.id
+                    ledger.status = "draft"
+                    db.session.add(ledger)
+                    db.session.flush()
+                    ledger_was_created = True
+                type_ledgers[type_code] = ledger
         else:
             ledger_name = ledger_name_overrides.get(sheet_name, sheet_name)
             ledger = Ledger.query.filter_by(
@@ -512,6 +529,7 @@ def execute():
             ).first()
             ledger_was_created = False
             if not ledger:
+                ledger_was_created = True
                 ledger = Ledger()
                 ledger.名称 = ledger_name
                 ledger.描述 = f"由用户 {current_user.username} 导入于 {datetime.now().strftime('%Y-%m-%d %H:%M')}"
@@ -520,9 +538,6 @@ def execute():
                 ledger.status = "draft"
                 db.session.add(ledger)
                 db.session.flush()
-                ledger_was_created = True
-            if merge_config.get(sheet_name):
-                type_ledgers[type_code] = ledger
 
         dedup_mode = dedup_modes.get(sheet_name, "skip")
         created = 0
