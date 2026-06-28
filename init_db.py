@@ -6,5 +6,6 @@ with app.app_context():
     init_seed_data()
     print("初始化完成!")
     print("管理员: admin / admin123")
-    print("领导: leader / leader123")
-    print("员工: user1 / user123")
+    print("领导: ld001 / ld001")
+    print("普通用户: 化工班 / 111")
+    print("普通用户: 动力班 / 222")

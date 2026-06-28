@@ -9,6 +9,7 @@ import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
+login_manager.login_message = None
 
 
 def create_app(config_class=Config):
@@ -88,19 +89,26 @@ def init_seed_data():
         admin.set_password("admin123")
         db.session.add(admin)
 
-    if not User.query.filter_by(username="leader").first():
+    if not User.query.filter_by(username="ld001").first():
         leader = User(
-            username="leader", role="leader", real_name="李领导", dept="维修部"
+            username="ld001", role="leader", real_name="审批领导", dept="管理部"
         )
-        leader.set_password("leader123")
+        leader.set_password("ld001")
         db.session.add(leader)
 
-    if not User.query.filter_by(username="user1").first():
-        employee = User(
-            username="user1", role="employee", real_name="张三", dept="维修部"
+    if not User.query.filter_by(username="化工班").first():
+        employee1 = User(
+            username="化工班", role="employee", real_name="化工班", dept="化工班"
         )
-        employee.set_password("user123")
-        db.session.add(employee)
+        employee1.set_password("111")
+        db.session.add(employee1)
+
+    if not User.query.filter_by(username="动力班").first():
+        employee2 = User(
+            username="动力班", role="employee", real_name="动力班", dept="动力班"
+        )
+        employee2.set_password("222")
+        db.session.add(employee2)
 
     if not Setting.query.get("auto_approval"):
         setting = Setting(key="auto_approval", value="true")
