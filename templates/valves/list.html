@@ -247,27 +247,28 @@
             </table>
         </div>
         
-        {% if pagination %}
-        <div class="d-flex justify-content-between align-items-center p-2" style="border-top: 1px solid var(--border-color);">
-            <small class="text-muted">共 {{ pagination.total }} 条记录，第 {{ pagination.page }}/{{ pagination.pages }} 页</small>
+        {% if pagination and pagination.pages > 1 %}
+        <div class="p-3 border-top">
             <nav>
-                <ul class="pagination-custom pagination mb-0" style="gap: 4px;">
+                <ul class="pagination-custom pagination mb-2">
                     {% if pagination.has_prev %}
                     <li class="page-item">
-                        <a class="page-link" style="padding: 4px 10px;" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}{% else %}{{ url_for('valves.list', page=pagination.prev_num) }}{% endif %}">
-                            <i class="bi bi-chevron-left"></i> 上一页
-                        </a>
+                        <a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}?search={{ request.args.get('search', '') }}&status={{ request.args.get('status', '') }}&from={{ from_param|default(request.args.get('from', 'all')) }}{% else %}{{ url_for('valves.list', page=pagination.prev_num) }}?search={{ request.args.get('search', '') }}&status={{ request.args.get('status', '') }}{% endif %}">上一页</a>
                     </li>
                     {% endif %}
+                    {% for p in range(1, pagination.pages + 1) %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=p) }}?search={{ request.args.get('search', '') }}&status={{ request.args.get('status', '') }}&from={{ from_param|default(request.args.get('from', 'all')) }}{% else %}{{ url_for('valves.list', page=p) }}?search={{ request.args.get('search', '') }}&status={{ request.args.get('status', '') }}{% endif %}">{{ p }}</a>
+                    </li>
+                    {% endfor %}
                     {% if pagination.has_next %}
                     <li class="page-item">
-                        <a class="page-link" style="padding: 4px 10px;" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num) }}{% else %}{{ url_for('valves.list', page=pagination.next_num) }}{% endif %}">
-                            下一页 <i class="bi bi-chevron-right"></i>
-                        </a>
+                        <a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num) }}?search={{ request.args.get('search', '') }}&status={{ request.args.get('status', '') }}&from={{ from_param|default(request.args.get('from', 'all')) }}{% else %}{{ url_for('valves.list', page=pagination.next_num) }}?search={{ request.args.get('search', '') }}&status={{ request.args.get('status', '') }}{% endif %}">下一页</a>
                     </li>
                     {% endif %}
                 </ul>
             </nav>
+            <small class="text-muted">共 {{ pagination.total }} 条记录</small>
         </div>
         {% endif %}
     </div>
