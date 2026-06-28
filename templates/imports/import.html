@@ -51,7 +51,7 @@
 {% set need_count = unmatched_preview|length %}
 <div class="modal fade show" id="typeModal" tabindex="-1" style="display:block;background:rgba(0,0,0,0.5);" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <form method="POST" action="{{ url_for('imports.save_mapping') }}" style="height:100%;display:flex;flex-direction:column;">
+        <form id="typeModalForm" method="POST" action="{{ url_for('imports.save_mapping') }}" style="height:100%;display:flex;flex-direction:column;">
         <div class="modal-content">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title"><i class="bi bi-question-circle text-warning me-2"></i>需要您确认设备类型</h5>

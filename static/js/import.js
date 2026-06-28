@@ -138,6 +138,28 @@
             });
         }
 
+        var typeModalForm = document.getElementById('typeModalForm');
+        if (typeModalForm) {
+            typeModalForm.addEventListener('submit', function(e) {
+                var btn = typeModalForm.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>处理中...';
+                }
+            });
+        }
+
+        var resolveForm = document.getElementById('resolveConflictForm');
+        if (resolveForm) {
+            resolveForm.addEventListener('submit', function(e) {
+                var btn = resolveForm.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>处理中...';
+                }
+            });
+        }
+
         var executeForm = document.getElementById('executeForm');
         if (executeForm) {
             executeForm.addEventListener('submit', function(e) {

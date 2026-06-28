@@ -136,6 +136,14 @@ function clearFilter(field) {
     window.location.href = url.toString();
 }
 
+document.addEventListener('submit', function(e) {
+    var btn = e.target.querySelector('button[type="submit"]');
+    if (btn && !btn.disabled) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>处理中...';
+    }
+});
+
 function submitBatchAction(action) {
     const checked = document.querySelectorAll('.item-checkbox:checked');
     if (checked.length === 0) {

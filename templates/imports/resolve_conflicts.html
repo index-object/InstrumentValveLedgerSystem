@@ -20,7 +20,8 @@
         <span class="ms-2">以下数据表中发现多条相同"装置名称+位号"的记录，请为每组选择要导入哪一行，然后继续。</span>
     </div>
 
-    <form method="POST" action="{{ url_for('imports.resolve_conflicts') }}">
+    <form id="resolveConflictForm" method="POST" action="{{ url_for('imports.resolve_conflicts') }}"
+          onsubmit="var btn=this.querySelector('button[type=submit]');if(btn){btn.disabled=true;btn.innerHTML='<span class=spinner-border spinner-border-sm me-1 role=status aria-hidden=true></span>处理中...';}">
         {% for cd in conflicts_data %}
         <div class="card mb-3 border-danger">
             <div class="card-header bg-danger text-white">
@@ -89,6 +90,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/import.js') }}"></script>
 <script>
 document.querySelectorAll('.conflict-radio').forEach(function(radio) {
     radio.addEventListener('change', function() {

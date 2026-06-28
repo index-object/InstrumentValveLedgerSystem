@@ -510,6 +510,7 @@ def execute():
             ledger = Ledger.query.filter_by(
                 名称=ledger_name, 类型=type_code, created_by=current_user.id
             ).first()
+            ledger_was_created = False
             if not ledger:
                 ledger = Ledger()
                 ledger.名称 = ledger_name
@@ -519,6 +520,7 @@ def execute():
                 ledger.status = "draft"
                 db.session.add(ledger)
                 db.session.flush()
+                ledger_was_created = True
             if merge_config.get(sheet_name):
                 type_ledgers[type_code] = ledger
 
@@ -540,6 +542,8 @@ def execute():
                     abort_duplicates.append(f"{unit}/{tag}")
             if abort_duplicates:
                 flash(f"[{sheet_name}] 发现 {len(abort_duplicates)} 条重复记录，导入已中止")
+                if ledger_was_created:
+                    db.session.delete(ledger)
                 continue
 
         # 从 session 读取同批次重复的用户选择
@@ -619,6 +623,9 @@ def execute():
                         设备等级=acc.get("设备等级", ""),
                     )
                     db.session.add(attachment)
+
+        if created == 0 and ledger_was_created:
+            db.session.delete(ledger)
 
         per_sheet.append({"sheet": sheet_name, "created": created, "skipped": skipped, "updated": updated, "skipped_sheet": False, "skipped_details": skipped_details})
         total_created += created
