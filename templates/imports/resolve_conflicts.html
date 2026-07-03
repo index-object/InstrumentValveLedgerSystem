@@ -32,11 +32,19 @@
                 {% for c in cd.conflicts %}
                 <div class="card mb-2 border-warning">
                     <div class="card-body py-2 px-3">
+                        <div class="mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input conflict-radio-skip" type="radio"
+                                       name="choice_{{ cd.sheet }}__{{ c.key }}"
+                                       value="-1" checked>
+                                <label class="form-check-label"><strong>全部不导入</strong>（跳过该组所有行）</label>
+                            </div>
+                        </div>
                         <div class="table-responsive">
-                            <table class="table table-sm preview-table mb-0">
+                            <table class="table table-sm preview-table mb-0 border-top">
                                 <thead>
                                     <tr>
-                                        <th style="width:120px;"><span class="conflict-label">导入第{% for r in c.rows %}{% if loop.first %}{{ loop.index }}{% endif %}{% endfor %}行</span></th>
+                                        <th style="width:120px;"></th>
                                         <th>#</th>
                                         <th>装置名称</th>
                                         <th>位号</th>
@@ -56,8 +64,7 @@
                                             <input class="form-check-input conflict-radio" type="radio"
                                                    name="choice_{{ cd.sheet }}__{{ c.key }}"
                                                    value="{{ r.row_index }}"
-                                                   data-row="{{ loop.index }}"
-                                                   {% if loop.first %}checked{% endif %}>
+                                                   data-row="{{ loop.index }}">
                                         </td>
                                         <td class="text-muted">{{ r.row_index + 1 }}</td>
                                         <td>{{ c.装置名称 or '' }}</td>

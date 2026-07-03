@@ -266,7 +266,10 @@ def preview():
                 unit = getattr(record, "装置名称", None) or ""
                 batch_key = f"{unit}|{tag}"
                 if batch_key in sheet_choices:
-                    if idx == sheet_choices[batch_key]:
+                    choice = sheet_choices[batch_key]
+                    if choice == -1:
+                        pass
+                    elif idx == choice:
                         keep_indices.add(idx)
                 else:
                     keep_indices.add(idx)
@@ -581,9 +584,14 @@ def execute():
             unit = getattr(record, "装置名称", None) or ""
             batch_key = f"{unit}|{tag}"
 
-            # 同批次重复：只保留用户选择的那一行
+            # 同批次重复：按用户选择保留（-1 = 全部不导入）
             if batch_key in batch_choices:
-                if idx != batch_choices[batch_key]:
+                choice = batch_choices[batch_key]
+                if choice == -1:
+                    skipped += 1
+                    skipped_details.append({"位号": tag, "装置名称": unit, "原因": "用户选择全部不导入"})
+                    continue
+                if idx != choice:
                     skipped += 1
                     skipped_details.append({"位号": tag, "装置名称": unit, "原因": "用户选择了其他重复行"})
                     continue

@@ -235,10 +235,15 @@
                     {% if pagination.has_prev %}
                     <li class="page-item"><a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num, from=request.args.get('from', 'all'), search=request.args.get('search', ''), status=request.args.get('status', '')) }}">上一页</a></li>
                     {% endif %}
-                    {% for p in range(1, pagination.pages + 1) %}
-                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                    {% set cur = pagination.page %}{% set total = pagination.pages %}
+                    {% for p in range(1, total + 1) %}
+                      {% if p == 1 or p == 2 or p == total - 1 or p == total or (p >= cur - 1 and p <= cur + 1) %}
+                      <li class="page-item {% if p == cur %}active{% endif %}">
                         <a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=p, from=request.args.get('from', 'all'), search=request.args.get('search', ''), status=request.args.get('status', '')) }}">{{ p }}</a>
-                    </li>
+                      </li>
+                      {% elif (p == 3 and cur > 4) or (p == total - 2 and cur < total - 3) %}
+                      <li class="page-item disabled"><span class="page-link">…</span></li>
+                      {% endif %}
                     {% endfor %}
                     {% if pagination.has_next %}
                     <li class="page-item"><a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num, from=request.args.get('from', 'all'), search=request.args.get('search', ''), status=request.args.get('status', '')) }}">下一页</a></li>

@@ -116,15 +116,18 @@
                 {% if pagination.has_prev %}
                 <li><a href="{{ url_for('valves.maintenance_list', page=pagination.prev_num, valve_id=request.args.get('valve_id', ''), search=request.args.get('search', '')) }}">&laquo; 上一页</a></li>
                 {% endif %}
-                
-                {% for p in range(1, pagination.pages + 1) %}
-                    {% if p == pagination.page %}
+                {% set cur = pagination.page %}{% set total = pagination.pages %}
+                {% for p in range(1, total + 1) %}
+                  {% if p == 1 or p == 2 or p == total - 1 or p == total or (p >= cur - 1 and p <= cur + 1) %}
+                    {% if p == cur %}
                     <li class="active"><span>{{ p }}</span></li>
                     {% else %}
                     <li><a href="{{ url_for('valves.maintenance_list', page=p, valve_id=request.args.get('valve_id', ''), search=request.args.get('search', '')) }}">{{ p }}</a></li>
                     {% endif %}
+                  {% elif (p == 3 and cur > 4) or (p == total - 2 and cur < total - 3) %}
+                  <li class="disabled"><span>…</span></li>
+                  {% endif %}
                 {% endfor %}
-                
                 {% if pagination.has_next %}
                 <li><a href="{{ url_for('valves.maintenance_list', page=pagination.next_num, valve_id=request.args.get('valve_id', ''), search=request.args.get('search', '')) }}">下一页 &raquo;</a></li>
                 {% endif %}
