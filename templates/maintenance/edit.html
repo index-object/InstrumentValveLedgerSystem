@@ -25,7 +25,7 @@
                     <select name="valve_id" class="form-control form-control-modern" required>
                         <option value="">请选择位号</option>
                         {% for v in valves %}
-                        <option value="{{ v.id }}" {% if record.valve_id == v.id %}selected{% endif %}>{{ v.位号 }} - {{ v.名称 or '' }}</option>
+                        <option value="{{ v.id }}" {% if record.device_id == v.id %}selected{% endif %}>{{ v.位号 }} - {{ v.名称 or '' }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -42,10 +42,6 @@
                 <div class="col-md-6 mb-3">
                     <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修时间</label>
                     <input type="datetime-local" name="检修时间" class="form-control form-control-modern" required value="{{ record.检修时间.strftime('%Y-%m-%dT%H:%M') if record.检修时间 else '' }}">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label" style="font-weight: 500;">所属中心</label>
-                    <input type="text" name="所属中心" class="form-control form-control-modern" value="{{ record.所属中心 or '' }}" placeholder="请输入所属中心">
                 </div>
             </div>
             <div class="row">

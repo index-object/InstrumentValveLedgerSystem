@@ -97,6 +97,34 @@ class DevicePhotoMixin:
         ).all()
 
     @property
+    def maintenance_records(self):
+        from app.models import MaintenanceRecord
+        from app.devices.valve_helper import get_valve_ledger_type
+        device_type = get_valve_ledger_type(self)
+        if not device_type:
+            return []
+        return (
+            MaintenanceRecord.query.filter_by(
+                device_type=device_type,
+                device_id=self.id,
+            )
+            .order_by(MaintenanceRecord.检修时间.desc())
+            .all()
+        )
+
+    @property
+    def photos(self):
+        from app.models import ValvePhoto
+        from app.devices.valve_helper import get_valve_ledger_type
+        device_type = get_valve_ledger_type(self)
+        if not device_type:
+            return []
+        return ValvePhoto.query.filter_by(
+            device_type=device_type,
+            device_id=self.id,
+        ).all()
+
+    @property
     def attachments_json(self):
         return [
             {
@@ -130,6 +158,7 @@ class MaintenanceRecord(db.Model):
     device_type = db.Column(db.String(20), nullable=False)
     device_id = db.Column(db.Integer, nullable=False)
     所属中心 = db.Column(db.String(100))
+    装置名称 = db.Column(db.String(100))
     设备位号 = db.Column(db.String(50))
     设备名称 = db.Column(db.String(100))
     检修时间 = db.Column(db.DateTime)
