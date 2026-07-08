@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app.models import db, Ledger, ApprovalLog, Setting
 from app.devices import DeviceTypeRegistry
 from app.utils.duplicate_check import check_duplicate
+from app.utils.params import expects_params
 from datetime import datetime
 from io import BytesIO
 # 延迟导入 pandas（避免在应用启动时立即加载可能含有本机指令的二进制扩展）
@@ -92,6 +93,7 @@ def list(type_code):
 
 @devices_bp.route("/<type_code>/<int:id>")
 @login_required
+@expects_params(optional=['from'])
 def detail(type_code, id):
     config = get_config_or_404(type_code)
     device = config.model_class.query.get_or_404(id)

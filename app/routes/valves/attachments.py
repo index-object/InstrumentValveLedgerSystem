@@ -74,6 +74,16 @@ def maintenance(id):
         abort(404)
 
     if request.method == "POST":
+        # 草稿状态阀门不可创建维护记录
+        if valve.status == "draft":
+            flash("当前阀门为草稿状态，请先提交审批后再添加维护记录")
+            return redirect(url_for(
+                'ledgers.valve_detail',
+                ledger_id=valve.ledger_id,
+                id=id,
+                **{'from': from_param}
+            ) if valve.ledger_id else url_for("valves.detail", id=id, **{'from': from_param}))
+
         # 权限检查：只有员工和管理员可以创建维护记录
         if not can_create_maintenance():
             flash("无权创建维护记录")

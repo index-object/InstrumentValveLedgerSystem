@@ -24,14 +24,14 @@
 <div class="d-flex gap-2">
     {# 编辑：员工所有者和管理员 #}
     {% if current_user.role == 'admin' or (current_user.role == 'employee' and ledger.created_by == current_user.id) %}
-    <a href="{{ url_for('ledgers.edit', id=ledger.id, from=from_param) }}" class="btn btn-outline-primary">
+    <a href="{{ url_with_params('ledgers.edit', id=ledger.id) }}" class="btn btn-outline-primary">
         <i class="bi bi-pencil"></i> 编辑
     </a>
     {% endif %}
 
     {# 提交审批：员工所有者且有草稿 #}
     {% if current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.draft_count > 0 %}
-    <form method="POST" action="{{ url_for('ledgers.submit', id=ledger.id, from=from_param) }}" style="display:inline;">
+    <form method="POST" action="{{ url_with_params('ledgers.submit', id=ledger.id) }}" style="display:inline;">
         <button type="submit" class="btn btn-primary-custom">
             <i class="bi bi-send"></i> 提交审批
         </button>
@@ -40,7 +40,7 @@
 
     {# 删除：员工所有者或管理员，且无待审批阀门 #}
     {% if (current_user.role == 'admin' or (current_user.role == 'employee' and ledger.created_by == current_user.id)) and ledger.pending_count == 0 %}
-    <form method="POST" action="{{ url_for('ledgers.delete', id=ledger.id, from=from_param) }}" style="display:inline;" onsubmit="return confirm('确定删除？');">
+    <form method="POST" action="{{ url_with_params('ledgers.delete', id=ledger.id) }}" style="display:inline;" onsubmit="return confirm('确定删除？');">
         <button type="submit" class="btn btn-outline-danger">
             <i class="bi bi-trash"></i> 删除
         </button>
@@ -62,12 +62,12 @@
             {# 新增/提交按钮：仅在"我的台账"界面显示 #}
             {% if from_param == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
                 {% if ledger.display_status != 'pending' %}
-                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.new', type_code=ledger.类型, ledger_id=ledger.id, from=from_param) }}{% else %}{{ url_for('ledgers.new_valve', id=ledger.id, from=from_param) }}{% endif %}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
+                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
                     <i class="bi bi-plus-lg"></i> 新增台账
                 </a>
                 {% endif %}
                 {% if ledger.display_status != 'approved' and ledger.draft_count > 0 and ledger.display_status != 'pending' %}
-                <form method="post" action="{{ url_for('ledgers.submit', id=ledger.id) }}" style="display:inline;" onsubmit="return handleFormSubmit(this)">
+                <form method="post" action="{{ url_with_params('ledgers.submit', id=ledger.id) }}" style="display:inline;" onsubmit="return handleFormSubmit(this)">
                     <button type="submit" class="toolbar-btn toolbar-btn-success toolbar-btn-compact">
                         <i class="bi bi-send"></i> 提交审批
                     </button>
@@ -103,7 +103,7 @@
             {# 新增按钮：仅在"我的台账"界面显示 #}
             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
             {% if ledger.display_status != 'pending' %}
-            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.new', type_code=ledger.类型, ledger_id=ledger.id, from=request.args.get('from', 'all')) }}{% else %}{{ url_for('ledgers.new_valve', id=ledger.id, from=request.args.get('from', 'all')) }}{% endif %}" class="btn btn-accent">
+            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="btn btn-accent">
                 <i class="bi bi-plus-lg"></i> 新增台账
             </a>
             {% endif %}
@@ -156,7 +156,7 @@
                             <input type="checkbox" name="valve_ids" value="{{ valve.id }}" class="form-check-input item-checkbox">
                         </td>
                         <td>{{ loop.index }}</td>
-                        <td><a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.detail', type_code=ledger.类型, id=valve.id, from=request.args.get('from', 'all')) }}{% else %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ request.args.get('from', 'all') }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
+                        <td><a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
                         <td>{{ valve.名称 or '-' }}</td>
                         <td>{{ valve.装置名称 or '-' }}</td>
                         <td>{{ valve.设备等级 or '-' }}</td>
@@ -199,12 +199,12 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.detail', type_code=ledger.类型, id=valve.id, from=request.args.get('from', 'all')) }}{% else %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ request.args.get('from', 'all') }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;">
+                            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;">
                                 <i class="bi bi-eye"></i>
                             </a>
                             {# 编辑按钮：仅在"我的台账"界面显示 #}
                             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id and valve.status in ['draft', 'rejected', 'approved'] %}
-                            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.edit', type_code=ledger.类型, id=valve.id, from=request.args.get('from', 'all')) }}{% else %}{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
+                            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.edit', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
                                 <i class="bi bi-pencil"></i>
                             </a>
                             {% endif %}
@@ -218,7 +218,7 @@
                                 <p>暂无台账内容</p>
                                 {# 添加按钮：仅在"我的台账"界面显示 #}
                                 {% if from_param|default(request.args.get('from', 'all')) == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
-                                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.new', type_code=ledger.类型, ledger_id=ledger.id, from=request.args.get('from', 'all')) }}{% else %}{{ url_for('ledgers.new_valve', id=ledger.id, from=request.args.get('from', 'all')) }}{% endif %}" class="btn btn-accent">添加第一个台账</a>
+                                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="btn btn-accent">添加第一个台账</a>
                                 {% endif %}
                             </div>
                         </td>
@@ -233,20 +233,20 @@
             <nav>
                 <ul class="pagination-custom pagination mb-2">
                     {% if pagination.has_prev %}
-                    <li class="page-item"><a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num, from=request.args.get('from', 'all'), search=request.args.get('search', ''), status=request.args.get('status', '')) }}">上一页</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ url_with_params('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}">上一页</a></li>
                     {% endif %}
                     {% set cur = pagination.page %}{% set total = pagination.pages %}
                     {% for p in range(1, total + 1) %}
                       {% if p == 1 or p == 2 or p == total - 1 or p == total or (p >= cur - 1 and p <= cur + 1) %}
                       <li class="page-item {% if p == cur %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=p, from=request.args.get('from', 'all'), search=request.args.get('search', ''), status=request.args.get('status', '')) }}">{{ p }}</a>
+                        <a class="page-link" href="{{ url_with_params('ledgers.detail', id=ledger.id, page=p) }}">{{ p }}</a>
                       </li>
                       {% elif (p == 3 and cur > 4) or (p == total - 2 and cur < total - 3) %}
                       <li class="page-item disabled"><span class="page-link">…</span></li>
                       {% endif %}
                     {% endfor %}
                     {% if pagination.has_next %}
-                    <li class="page-item"><a class="page-link" href="{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num, from=request.args.get('from', 'all'), search=request.args.get('search', ''), status=request.args.get('status', '')) }}">下一页</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ url_with_params('ledgers.detail', id=ledger.id, page=pagination.next_num) }}">下一页</a></li>
                     {% endif %}
                 </ul>
             </nav>

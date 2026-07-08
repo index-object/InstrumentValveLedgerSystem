@@ -12,6 +12,7 @@ from flask_login import login_required, current_user
 from app.models import db, Ledger, ApprovalLog, Setting, ValveAttachment
 from app.devices.valve_helper import VALVE_TYPES, get_valve_model, get_valve_by_id, get_valve_ledger_type, get_all_valve_models, count_valves_by_status, query_valves
 from app.utils.duplicate_check import check_duplicate
+from app.utils.params import expects_params
 from app.devices import DeviceTypeRegistry
 from app.routes.valves.permissions import (
     can_edit_ledger,
@@ -137,6 +138,7 @@ def new():
 
 @ledgers.route("/ledger/<int:id>", methods=["GET", "POST"])
 @login_required
+@expects_params(optional=['from'])
 def detail(id):
     from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(id)

@@ -10,6 +10,7 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from app.models import db, Ledger, ApprovalLog, ValveAttachment
+from app.utils.params import expects_params
 from app.devices.valve_helper import (
     get_valve_model,
     get_valve_by_id,
@@ -80,6 +81,7 @@ def list():
 
 @valves.route("/valve/<int:id>")
 @login_required
+@expects_params(optional=['from'])
 def detail(id):
     from_param = get_from_param()
     valve = get_valve_by_id(id)

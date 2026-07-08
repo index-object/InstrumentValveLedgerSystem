@@ -9,6 +9,10 @@ from functools import wraps
 from app.devices import DeviceTypeRegistry
 
 
+# 需要自动传播的查询参数白名单
+PROPAGATE_PARAMS = {'from', 'search', 'status', 'page', 'per_page', 'tab'}
+
+
 # 定义所有合法的入口点及其返回目标
 NAVIGATION_CONTEXTS = {
     'all': {
@@ -32,6 +36,27 @@ NAVIGATION_CONTEXTS = {
         'list_label': '维修记录',
     },
 }
+
+
+def url_with_params(endpoint, **kwargs):
+    """生成 URL 并自动携带当前请求中的传播参数
+
+    自动从当前请求中获取 PROPAGATE_PARAMS 白名单内的参数，
+    如果 kwargs 中未显式提供则自动补充。
+
+    Args:
+        endpoint: Flask 路由端点
+        **kwargs: 其他 URL 参数
+
+    Returns:
+        str: 带参数的 URL
+    """
+    for key in PROPAGATE_PARAMS:
+        if key not in kwargs:
+            val = request.args.get(key)
+            if val:
+                kwargs[key] = val
+    return url_for(endpoint, **kwargs)
 
 
 def get_from_param(request_obj=None):
@@ -189,10 +214,12 @@ def inject_navigation():
     """
     return {
         'NAVIGATION_CONTEXTS': NAVIGATION_CONTEXTS,
+        'PROPAGATE_PARAMS': PROPAGATE_PARAMS,
         'get_from_param': get_from_param,
         'get_context': get_context,
         'get_back_url': get_back_url,
         'url_with_from': url_with_from,
+        'url_with_params': url_with_params,
         'get_device_types': DeviceTypeRegistry.exclude_valve,
         'get_device_type_config': DeviceTypeRegistry.get,
     }

@@ -44,7 +44,7 @@
             <div class="d-flex align-items-center gap-1">
                 {# 新增/删除按钮：仅在"我的台账"界面，且员工且自己的台账且非待审批状态显示 #}
                 {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.display_status != 'pending' %}
-                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.new', type_code=ledger.类型, ledger_id=ledger.id, from=from_param) }}{% else %}{{ url_for('ledgers.new_valve', id=ledger.id, from=from_param) }}{% endif %}" class="btn btn-sm btn-primary" style="padding: 4px 12px; font-size: 12px;" title="新增台账">
+                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="btn btn-sm btn-primary" style="padding: 4px 12px; font-size: 12px;" title="新增台账">
                     <i class="bi bi-plus-lg"></i> 新增
                 </a>
                 <button type="button" class="btn btn-sm btn-outline-danger" style="padding: 4px 12px; font-size: 12px;" onclick="batchDelete()" title="批量删除">
@@ -82,7 +82,7 @@
             {% endif %}
         </div>
         <div class="d-flex align-items-center gap-2">
-            <form method="get" action="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, from=from_param) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="d-flex gap-2 align-items-center">
+            <form method="get" action="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="d-flex gap-2 align-items-center">
                 <div class="search-box" style="position: relative;">
                     <i class="bi bi-search"></i>
                     <input type="text" name="search" class="form-control form-control-modern" 
@@ -98,13 +98,13 @@
                 </select>
                 <button type="submit" class="btn btn-primary-custom" style="height: 32px; padding: 0 12px;"><i class="bi bi-search"></i></button>
                 {% if active_filters %}
-                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="btn btn-outline-secondary" style="height: 32px; padding: 0 10px;"><i class="bi bi-x-lg"></i></a>
+                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, from=get_from_param()) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="btn btn-outline-secondary" style="height: 32px; padding: 0 10px;"><i class="bi bi-x-lg"></i></a>
                 {% endif %}
             </form>
             {% if active_filters %}
             <span class="text-muted" style="border-left: 1px solid #dee2e6; padding-left: 8px; margin-left: 4px; font-size: 12px;">
                 <i class="bi bi-funnel-fill text-info"></i> 筛选中
-                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" style="margin-left: 4px; color: var(--text-muted);"><i class="bi bi-x-lg"></i></a>
+                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, from=get_from_param()) }}{% else %}{{ url_for('valves.list') }}{% endif %}" style="margin-left: 4px; color: var(--text-muted);"><i class="bi bi-x-lg"></i></a>
             </span>
             {% endif %}
         </div>
@@ -180,7 +180,7 @@
                     <tr>
                         <td style="position: sticky; left: 0; z-index: 2; background: #fff; border-right: 1px solid #dee2e6;"><input type="checkbox" name="ids" value="{{ valve.id }}" class="form-check-input item-checkbox"></td>
                         <td>{{ (pagination.page - 1) * pagination.per_page + loop.index }}</td>
-                        <td><a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.detail', type_code=ledger.类型, id=valve.id, from=from_param|default(request.args.get('from', 'all'))) }}{% else %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ from_param|default(request.args.get('from', 'all')) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
+                        <td><a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
                         <td>{{ valve.名称 or '-' }}</td>
                         <td>{{ valve.装置名称 or '-' }}</td>
                         <td>{{ valve.设备等级 or '-' }}</td>
@@ -226,10 +226,10 @@
                             {% endif %}
                         </td>
 <td style="position: sticky; right: 0; z-index: 2; background: #fff;">
-                            <a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.detail', type_code=ledger.类型, id=valve.id, from=from_param|default(request.args.get('from', 'all'))) }}{% else %}{{ url_for('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}?from={{ from_param|default(request.args.get('from', 'all')) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i></a>
+                            <a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i></a>
                             {# 编辑按钮：仅在"我的台账"界面显示，且是自己的阀门且可编辑状态 #}
                             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id and valve.status in ['draft', 'rejected', 'approved'] %}
-                            <a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_for('devices.edit', type_code=ledger.类型, id=valve.id, from=from_param|default(request.args.get('from', 'all'))) }}{% else %}{{ url_for('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id, from=from_param|default(request.args.get('from', 'all'))) }}{% endif %}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i></a>
+                            <a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.edit', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i></a>
                             {% endif %}
                         </td>
                     </tr>
@@ -257,14 +257,14 @@
                 <ul class="pagination-custom pagination mb-2">
                     {% if pagination.has_prev %}
                     <li class="page-item">
-                        <a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.prev_num, search=search_val, status=status_val, from=from_val) }}{% else %}{{ url_for('valves.list', page=pagination.prev_num, search=search_val, status=status_val) }}{% endif %}">上一页</a>
+                        <a class="page-link" href="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}{% else %}{{ url_for('valves.list', page=pagination.prev_num, search=search_val, status=status_val) }}{% endif %}">上一页</a>
                     </li>
                     {% endif %}
                     {% set cur = pagination.page %}{% set total = pagination.pages %}
                     {% for p in range(1, total + 1) %}
                       {% if p == 1 or p == 2 or p == total - 1 or p == total or (p >= cur - 1 and p <= cur + 1) %}
                       <li class="page-item {% if p == cur %}active{% endif %}">
-                        <a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=p, search=search_val, status=status_val, from=from_val) }}{% else %}{{ url_for('valves.list', page=p, search=search_val, status=status_val) }}{% endif %}">{{ p }}</a>
+                        <a class="page-link" href="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id, page=p) }}{% else %}{{ url_for('valves.list', page=p, search=search_val, status=status_val) }}{% endif %}">{{ p }}</a>
                       </li>
                       {% elif (p == 3 and cur > 4) or (p == total - 2 and cur < total - 3) %}
                       <li class="page-item disabled"><span class="page-link">…</span></li>
@@ -272,7 +272,7 @@
                     {% endfor %}
                     {% if pagination.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, page=pagination.next_num, search=search_val, status=status_val, from=from_val) }}{% else %}{{ url_for('valves.list', page=pagination.next_num, search=search_val, status=status_val) }}{% endif %}">下一页</a>
+                        <a class="page-link" href="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id, page=pagination.next_num) }}{% else %}{{ url_for('valves.list', page=pagination.next_num, search=search_val, status=status_val) }}{% endif %}">下一页</a>
                     </li>
                     {% endif %}
                 </ul>
@@ -287,7 +287,7 @@
 window.filterOptions = {{ filter_options | tojson | safe }};
 window.activeFilters = {{ active_filters | tojson | safe }};
 {% if ledger %}
-window.batchDeleteUrl = "{{ url_for('ledgers.batch_delete_valve', id=ledger.id, from=from_param|default(request.args.get('from', 'all'))) }}";
+window.batchDeleteUrl = "{{ url_with_params('ledgers.batch_delete_valve', id=ledger.id) }}";
 {% else %}
 window.batchDeleteUrl = "{{ url_for('valves.batch_delete') }}";
 {% endif %}

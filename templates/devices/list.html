@@ -40,7 +40,7 @@
         <input type="checkbox" class="form-check-input" id="selectAll">
       </div>
       <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
-      <a href="{{ url_for('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none, from=from_param) }}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
+      <a href="{{ url_with_params('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
         <i class="bi bi-plus-lg"></i> 新增
       </a>
       <a href="{{ url_for('devices.import_data', type_code=type_code) }}" class="toolbar-btn toolbar-btn-secondary toolbar-btn-compact">
@@ -119,7 +119,7 @@
           </td>
           {% endif %}
           {% for field in all_fields %}
-          <td>{% if field == '位号' %}<a href="{{ url_for('devices.detail', type_code=type_code, id=device.id, from=from_param) }}" style="color: var(--primary-color); font-weight: 500;">{{ device|attr(field) or '-' }}</a>{% else %}{{ device|attr(field) or '-' }}{% endif %}</td>
+          <td>{% if field == '位号' %}<a href="{{ url_with_params('devices.detail', type_code=type_code, id=device.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ device|attr(field) or '-' }}</a>{% else %}{{ device|attr(field) or '-' }}{% endif %}</td>
           {% endfor %}
           <td>
             {% if device.status == 'approved' %}
@@ -133,7 +133,7 @@
             {% endif %}
           </td>
           <td style="position: sticky; right: 0; z-index: 2; background: #fff; border-left: 1px solid #dee2e6; white-space: nowrap;">
-            <a href="{{ url_for('devices.detail', type_code=type_code, id=device.id, from=from_param) }}"
+            <a href="{{ url_with_params('devices.detail', type_code=type_code, id=device.id) }}"
                class="btn-action" style="background: #e2e8f0; color: #475569;" title="查看">
               <i class="bi bi-eye"></i>
             </a>
@@ -146,7 +146,7 @@
             </form>
             {% endif %}
             {% if device.status in ['draft', 'rejected'] and (current_user.role == 'admin' or device.created_by == current_user.id) %}
-            <a href="{{ url_for('devices.edit', type_code=type_code, id=device.id, from=from_param) }}"
+            <a href="{{ url_with_params('devices.edit', type_code=type_code, id=device.id) }}"
                class="btn-action" style="background: rgba(59,130,246,0.1); color: #3b82f6;" title="编辑">
               <i class="bi bi-pencil"></i>
             </a>
@@ -161,7 +161,7 @@
               <i class="bi bi-inbox"></i>
               <p>暂无{{ config.name }}数据</p>
               {% if is_mine %}
-              <a href="{{ url_for('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none, from=from_param) }}" class="btn btn-accent">添加第一个{{ config.name }}</a>
+              <a href="{{ url_with_params('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="btn btn-accent">添加第一个{{ config.name }}</a>
               {% endif %}
             </div>
           </td>
