@@ -363,21 +363,24 @@
                     </div>
                     <div class="maintenance-list">
                         {% if valve.maintenance_records %}
-                            {% for record in valve.maintenance_records[:5] %}
-                            <div class="maintenance-item">
-                                <div class="maintenance-date">
-                                    <span class="date-day">{{ record.检修时间.strftime('%d') if record.检修时间 else '--' }}</span>
-                                    <span class="date-month">{{ record.检修时间.strftime('%m月') if record.检修时间 else '--' }}</span>
-                                </div>
-                                <div class="maintenance-content">
-                                    <div class="maintenance-title">{{ record.检修内容[:50] if record.检修内容 else '无内容' }}{% if record.检修内容 and record.检修内容|length > 50 %}...{% endif %}</div>
-                                    <div class="maintenance-meta">
-                                        <span><i class="bi bi-person"></i> {{ record.检修人员 or '-' }}</span>
-                                        <span><i class="bi bi-building"></i> {{ record.所属中心 or '-' }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
+                        <table class="modern-table" style="margin: 0; border: none;">
+                            <thead>
+                                <tr>
+                                    <th>检修内容</th>
+                                    <th>检修人员</th>
+                                    <th>检修时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in valve.maintenance_records[:5] %}
+                                <tr>
+                                    <td>{{ record.检修内容[:10] if record.检修内容 else '-' }}{% if record.检修内容 and record.检修内容|length > 10 %}...{% endif %}</td>
+                                    <td>{{ record.检修人员 or '-' }}</td>
+                                    <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                             {% if valve.maintenance_records|length > 5 %}
                             <a href="{{ url_for('valves.maintenance_list') }}?valve_id={{ valve.id }}" class="view-all-link">
                                 查看全部 {{ valve.maintenance_records|length }} 条记录 <i class="bi bi-arrow-right"></i>

@@ -221,7 +221,11 @@ def maintenance_create():
         flash("添加成功")
         return redirect(url_for("valves.maintenance_list"))
 
-    return render_template("maintenance/create.html", valves=valves)
+    valves_data = [
+        {"id": v.id, "tag": v.位号, "name": v.名称 or "", "device_unit": v.装置名称 or ""}
+        for v in valves
+    ]
+    return render_template("maintenance/create.html", valves=valves, valves_data=valves_data)
 
 
 def maintenance_edit(id):
