@@ -104,10 +104,15 @@ def maintenance(id):
                 except ValueError:
                     continue
 
+        if not request.form.get("检修人员") or not request.form.get("检修内容"):
+            flash("检修人员和检修内容不能为空")
+            return redirect(url_for(
+                'valves.maintenance', id=id, **{'from': from_param}
+            ))
+
         record = MaintenanceRecord(
             device_type=get_valve_ledger_type(valve),
             device_id=valve.id,
-            所属中心=valve.装置名称,
             装置名称=valve.装置名称,
             设备位号=request.form.get("设备位号"),
             设备名称=request.form.get("设备名称"),
@@ -193,6 +198,10 @@ def maintenance_create():
             flash("请选择设备位号")
             return redirect(url_for("valves.maintenance_create"))
 
+        if not request.form.get("检修人员") or not request.form.get("检修内容"):
+            flash("检修人员和检修内容不能为空")
+            return redirect(url_for("valves.maintenance_create"))
+
         检修时间_str = request.form.get("检修时间")
         检修时间 = None
         if 检修时间_str:
@@ -209,7 +218,6 @@ def maintenance_create():
             设备位号=valve.位号,
             设备名称=valve.名称,
             装置名称=valve.装置名称,
-            所属中心=valve.装置名称,
             检修时间=检修时间,
             检修内容=request.form.get("检修内容"),
             检修人员=request.form.get("检修人员"),
@@ -248,6 +256,10 @@ def maintenance_edit(id):
             flash("请选择设备位号")
             return redirect(url_for("valves.maintenance_edit", id=id))
 
+        if not request.form.get("检修人员") or not request.form.get("检修内容"):
+            flash("检修人员和检修内容不能为空")
+            return redirect(url_for("valves.maintenance_edit", id=id))
+
         检修时间_str = request.form.get("检修时间")
         检修时间 = None
         if 检修时间_str:
@@ -263,7 +275,6 @@ def maintenance_edit(id):
         record.设备位号 = valve.位号
         record.设备名称 = valve.名称
         record.装置名称 = valve.装置名称
-        record.所属中心 = valve.装置名称
         record.检修时间 = 检修时间
         record.检修内容 = request.form.get("检修内容")
         record.检修人员 = request.form.get("检修人员")
@@ -311,7 +322,6 @@ def maintenance_export():
             "装置名称": r.装置名称,
             "设备位号": r.设备位号,
             "设备名称": r.设备名称,
-            "所属中心": r.所属中心,
             "检修时间": r.检修时间.strftime("%Y-%m-%d %H:%M") if r.检修时间 else "",
             "检修人员": r.检修人员,
             "检修内容": r.检修内容,

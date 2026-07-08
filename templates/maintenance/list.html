@@ -67,7 +67,6 @@
                     <th>装置名称</th>
                     <th>设备位号</th>
                     <th>设备名称</th>
-                    <th>所属中心</th>
                     <th>检修时间</th>
                     <th>检修人员</th>
                     <th>类型</th>
@@ -82,7 +81,6 @@
                     <td>{{ record.装置名称 or '-' }}</td>
                     <td><a href="{{ url_for('valves.detail', id=record.device_id, from='maintenance') }}" style="color: var(--primary-color); font-weight: 500;">{{ record.设备位号 or '-' }}</a></td>
                     <td>{{ record.设备名称 or '-' }}</td>
-                    <td>{{ record.所属中心 or '-' }}</td>
                     <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>
                     <td>{{ record.检修人员 or '-' }}</td>
                     <td>{{ record.类型 or '-' }}</td>
@@ -98,7 +96,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="10">
+                    <td colspan="9">
                         <div class="empty-state">
                             <i class="bi bi-wrench"></i>
                             <p>暂无维护记录</p>

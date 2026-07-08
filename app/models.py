@@ -157,7 +157,6 @@ class MaintenanceRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     device_type = db.Column(db.String(20), nullable=False)
     device_id = db.Column(db.Integer, nullable=False)
-    所属中心 = db.Column(db.String(100))
     装置名称 = db.Column(db.String(100))
     设备位号 = db.Column(db.String(50))
     设备名称 = db.Column(db.String(100))

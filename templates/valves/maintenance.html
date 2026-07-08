@@ -29,13 +29,13 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label" style="font-weight: 500;">检修人员</label>
-                    <input type="text" name="检修人员" class="form-control form-control-modern" placeholder="请输入检修人员">
+                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修人员</label>
+                    <input type="text" name="检修人员" class="form-control form-control-modern" required placeholder="请输入检修人员">
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label" style="font-weight: 500;">检修内容</label>
-                <textarea name="检修内容" class="form-control form-control-modern" rows="3" placeholder="请输入检修内容"></textarea>
+                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修内容</label>
+                    <textarea name="检修内容" class="form-control form-control-modern" rows="3" required placeholder="请输入检修内容"></textarea>
             </div>
             <button type="submit" class="btn btn-primary-custom"><i class="bi bi-plus-lg"></i> 添加</button>
         </form>
@@ -49,7 +49,6 @@
         <table class="modern-table">
             <thead>
                 <tr>
-                    <th>所属中心</th>
                     <th>检修时间</th>
                     <th>类型</th>
                     <th>检修人员</th>
@@ -59,7 +58,6 @@
             <tbody>
                 {% for record in records %}
                 <tr>
-                    <td>{{ record.所属中心 or '-' }}</td>
                     <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>
                     <td>{{ record.类型 or '-' }}</td>
                     <td>{{ record.检修人员 or '-' }}</td>
