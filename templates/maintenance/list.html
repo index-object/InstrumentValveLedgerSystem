@@ -33,6 +33,10 @@
             <a href="{{ url_for('valves.maintenance_export') }}" class="toolbar-btn toolbar-btn-secondary">
                 <i class="bi bi-download"></i> 导出全部
             </a>
+            {# 删除按钮 #}
+            <button type="button" class="toolbar-btn toolbar-btn-danger" onclick="batchDelete()">
+                <i class="bi bi-trash"></i> 删除选中
+            </button>
         </div>
         <div class="toolbar-right">
             <form method="get" class="d-flex gap-2 align-items-center">
@@ -58,7 +62,7 @@
 
 {% block content %}
 <div class="modern-card">
-    <form id="batchForm" method="POST">
+    <form id="batchForm" method="POST" action="{{ url_for('valves.maintenance_batch_delete') }}">
     <div class="table-responsive">
         <table class="modern-table">
             <thead>
@@ -149,5 +153,24 @@ function batchExport() {
     const ids = Array.from(checked).map(cb => cb.value);
     window.location.href = "{{ url_for('valves.maintenance_export') }}?" + ids.map(id => 'ids=' + id).join('&');
 }
+
+function batchDelete() {
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+    if (checked.length === 0) { alert('请先选择要删除的记录'); return; }
+    if (!confirm('确定要删除选中的 ' + checked.length + ' 条维护记录吗？')) return;
+    document.getElementById('batchForm').submit();
+}
 </script>
+<style>
+.toolbar-btn-danger {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+.toolbar-btn-danger:hover {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+</style>
 {% endblock %}

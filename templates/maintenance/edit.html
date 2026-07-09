@@ -22,12 +22,11 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 设备位号</label>
-                    <select name="valve_id" class="form-control form-control-modern" required>
-                        <option value="">请选择位号</option>
-                        {% for v in valves %}
-                        <option value="{{ v.id }}" {% if record.device_id == v.id %}selected{% endif %}>{{ v.位号 }} - {{ v.名称 or '' }}</option>
-                        {% endfor %}
-                    </select>
+                    <input type="hidden" name="valve_id" id="valve_id" required>
+                    <input type="hidden" name="valve_type" id="valve_type" value="">
+                    <button type="button" class="form-control form-control-modern text-start" id="valveSelectorBtn" data-bs-toggle="modal" data-bs-target="#valveSelectModal" style="cursor: pointer; text-align: left;">
+                        <i class="bi bi-search"></i> 点击选择位号
+                    </button>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label" style="font-weight: 500;">类型</label>
@@ -61,5 +60,152 @@
         </form>
     </div>
 </div>
+
+<div class="modal fade" id="valveSelectModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 20px 24px;">
+                <h5 class="modal-title" style="font-size: 18px; font-weight: 600; color: #1e293b; margin: 0;">
+                    <i class="bi bi-gear-wide-connected"></i> 选择设备位号
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="opacity: 0.5;"></button>
+            </div>
+            <div class="modal-body" style="padding: 20px 24px;">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: #f8fafc; border-right: none;"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="valveSearch" class="form-control" placeholder="搜索位号、名称..." style="border-left: none;">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="valveFilterUnit" class="form-select">
+                            <option value="">全部装置</option>
+                            {% for unit in valves_data|map(attribute='device_unit')|unique|sort %}
+                            {% if unit %}
+                            <option value="{{ unit }}">{{ unit }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="text-muted" style="line-height: 38px; font-size: 14px;" id="valveCount">{{ valves_data|length }} 条</span>
+                    </div>
+                </div>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="modern-table" style="margin: 0;">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">位号</th>
+                                <th style="width: 30%;">名称</th>
+                                <th style="width: 30%;">装置名称</th>
+                            </tr>
+                        </thead>
+                        <tbody id="valveTableBody">
+                            {% for v in valves_data %}
+                            <tr class="valve-row" data-id="{{ v.id }}" data-tag="{{ v.tag }}" data-name="{{ v.name }}" data-unit="{{ v.device_unit }}" data-type="{{ v.type }}" style="cursor: pointer;">
+                                <td style="font-weight: 500; color: var(--primary-color);">{{ v.tag }}</td>
+                                <td>{{ v.name }}</td>
+                                <td>{{ v.device_unit }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 24px;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="background: #f1f5f9; border: none; color: #475569; padding: 8px 20px; border-radius: 8px;">取消</button>
+                <button type="button" class="btn btn-primary-custom" id="valveSelectConfirm" disabled data-bs-dismiss="modal" style="padding: 8px 20px; border-radius: 8px;">确认选择</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const valvesData = {{ valves_data|tojson }};
+
+let selectedValveId = null;
+let selectedValveTag = null;
+let selectedValveName = '';
+let selectedValveUnit = '';
+let selectedValveType = '';
+
+{% for v in valves_data %}
+{% if record.device_id == v.id and record.device_type == v.type %}
+(function initSelected() {
+    selectedValveId = {{ v.id }};
+    selectedValveTag = '{{ v.tag }}';
+    selectedValveName = '{{ v.name }}';
+    selectedValveUnit = '{{ v.device_unit }}';
+    selectedValveType = '{{ v.type }}';
+    document.getElementById('valve_id').value = {{ v.id }};
+    document.getElementById('valve_type').value = '{{ v.type }}';
+    document.getElementById('valveSelectorBtn').innerHTML = '<i class="bi bi-check-circle text-success me-1"></i> ' + selectedValveTag + ' - ' + selectedValveName + ' <span class="text-muted">(' + selectedValveUnit + ')</span>';
+    document.getElementById('valveSelectorBtn').classList.remove('text-start');
+})();
+{% endif %}
+{% endfor %}
+
+function renderValves() {
+    const keyword = document.getElementById('valveSearch').value.toLowerCase().trim();
+    const unitFilter = document.getElementById('valveFilterUnit').value;
+    const tbody = document.getElementById('valveTableBody');
+    const filtered = valvesData.filter(v => {
+        if (unitFilter && v.device_unit !== unitFilter) return false;
+        if (keyword && !v.tag.toLowerCase().includes(keyword) && !v.name.toLowerCase().includes(keyword)) return false;
+        return true;
+    });
+    tbody.innerHTML = filtered.map(v => `
+        <tr class="valve-row${selectedValveId === v.id ? ' active' : ''}" data-id="${v.id}" data-tag="${v.tag}" data-name="${v.name}" data-unit="${v.device_unit}" data-type="${v.type}" style="cursor: pointer;">
+            <td style="font-weight: 500; color: var(--primary-color);">${v.tag}</td>
+            <td>${v.name}</td>
+            <td>${v.device_unit}</td>
+        </tr>
+    `).join('');
+    document.getElementById('valveCount').textContent = filtered.length + ' 条';
+
+    document.querySelectorAll('.valve-row').forEach(row => {
+        row.addEventListener('click', function() {
+            document.querySelectorAll('.valve-row').forEach(r => r.classList.remove('active'));
+            this.classList.add('active');
+            selectedValveId = parseInt(this.dataset.id);
+            selectedValveTag = this.dataset.tag;
+            selectedValveName = this.dataset.name;
+            selectedValveUnit = this.dataset.unit;
+            selectedValveType = this.dataset.type;
+            document.getElementById('valveSelectConfirm').disabled = false;
+        });
+    });
+}
+
+document.getElementById('valveSearch').addEventListener('input', renderValves);
+document.getElementById('valveFilterUnit').addEventListener('change', renderValves);
+
+document.getElementById('valveSelectConfirm').addEventListener('click', function() {
+    if (selectedValveId) {
+        document.getElementById('valve_id').value = selectedValveId;
+        document.getElementById('valve_type').value = selectedValveType;
+        document.getElementById('valveSelectorBtn').innerHTML = '<i class="bi bi-check-circle text-success me-1"></i> ' + selectedValveTag + ' - ' + selectedValveName + ' <span class="text-muted">(' + selectedValveUnit + ')</span>';
+        document.getElementById('valveSelectorBtn').classList.remove('text-start');
+    }
+});
+
+const modalEl = document.getElementById('valveSelectModal');
+modalEl.addEventListener('show.bs.modal', function() {
+    document.getElementById('valveSearch').value = selectedValveTag || '';
+    document.getElementById('valveFilterUnit').value = '';
+    renderValves();
+});
+modalEl.addEventListener('hidden.bs.modal', function() {
+    document.querySelectorAll('.valve-row').forEach(r => r.classList.remove('active'));
+});
+</script>
+<style>
+.valve-row.active td { background-color: #eef2ff !important; }
+.valve-row:hover td { background-color: #f8fafc; }
+.valve-row.active:hover td { background-color: #eef2ff !important; }
+</style>
 {% endblock %}

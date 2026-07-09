@@ -11,6 +11,7 @@ from flask import (
 from flask_login import login_required, current_user
 from app.models import db, ValveAttachment, ValvePhoto, MaintenanceRecord
 from app.devices.valve_helper import (
+    get_valve_model,
     get_valve_by_id,
     get_valve_ledger_type,
     get_all_valve_models,
@@ -114,8 +115,8 @@ def maintenance(id):
             device_type=get_valve_ledger_type(valve),
             device_id=valve.id,
             装置名称=valve.装置名称,
-            设备位号=request.form.get("设备位号"),
-            设备名称=request.form.get("设备名称"),
+            设备位号=valve.位号,
+            设备名称=valve.名称,
             检修时间=检修时间,
             检修内容=request.form.get("检修内容"),
             检修人员=request.form.get("检修人员"),
@@ -193,7 +194,12 @@ def maintenance_create():
 
     if request.method == "POST":
         valve_id = request.form.get("valve_id")
-        valve = get_valve_by_id(int(valve_id)) if valve_id else None
+        valve_type = request.form.get("valve_type")
+        valve = None
+        if valve_id and valve_type:
+            model = get_valve_model(valve_type)
+            if model:
+                valve = model.query.get(int(valve_id))
         if not valve:
             flash("请选择设备位号")
             return redirect(url_for("valves.maintenance_create"))
@@ -213,7 +219,7 @@ def maintenance_create():
                     continue
 
         record = MaintenanceRecord(
-            device_type=get_valve_ledger_type(valve),
+            device_type=valve_type,
             device_id=valve.id,
             设备位号=valve.位号,
             设备名称=valve.名称,
@@ -230,7 +236,7 @@ def maintenance_create():
         return redirect(url_for("valves.maintenance_list"))
 
     valves_data = [
-        {"id": v.id, "tag": v.位号, "name": v.名称 or "", "device_unit": v.装置名称 or ""}
+        {"id": v.id, "tag": v.位号, "name": v.名称 or "", "device_unit": v.装置名称 or "", "type": get_valve_ledger_type(v)}
         for v in valves
     ]
     return render_template("maintenance/create.html", valves=valves, valves_data=valves_data)
@@ -251,7 +257,12 @@ def maintenance_edit(id):
 
     if request.method == "POST":
         valve_id = request.form.get("valve_id")
-        valve = get_valve_by_id(int(valve_id)) if valve_id else None
+        valve_type = request.form.get("valve_type")
+        valve = None
+        if valve_id and valve_type:
+            model = get_valve_model(valve_type)
+            if model:
+                valve = model.query.get(int(valve_id))
         if not valve:
             flash("请选择设备位号")
             return redirect(url_for("valves.maintenance_edit", id=id))
@@ -270,7 +281,7 @@ def maintenance_edit(id):
                 except ValueError:
                     continue
 
-        record.device_type = get_valve_ledger_type(valve)
+        record.device_type = valve_type
         record.device_id = valve.id
         record.设备位号 = valve.位号
         record.设备名称 = valve.名称
@@ -283,7 +294,11 @@ def maintenance_edit(id):
         flash("保存成功")
         return redirect(url_for("valves.maintenance_list"))
 
-    return render_template("maintenance/edit.html", record=record, valves=valves)
+    valves_data = [
+        {"id": v.id, "tag": v.位号, "name": v.名称 or "", "device_unit": v.装置名称 or "", "type": get_valve_ledger_type(v)}
+        for v in valves
+    ]
+    return render_template("maintenance/edit.html", record=record, valves=valves, valves_data=valves_data)
 
 
 def maintenance_batch_delete():
