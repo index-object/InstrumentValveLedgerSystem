@@ -77,7 +77,29 @@ def create_app(config_class=Config):
     from app.routes.devices import devices_bp
     app.register_blueprint(devices_bp)
 
+    # 启动时自动补齐缺失的字段（增量迁移，不破坏已有数据）
+    with app.app_context():
+        _ensure_columns()
+
     return app
+
+
+def _ensure_columns():
+    """检查并添加模型表中缺失的字段（仅新增，不修改不删除）"""
+    from app.models import MaintenanceRecord
+    table = MaintenanceRecord.__tablename__
+    try:
+        inspector = db.inspect(db.engine)
+        existing = {c["name"] for c in inspector.get_columns(table)}
+        model_cols = {c.name for c in MaintenanceRecord.__table__.columns}
+        for col_name in model_cols - existing:
+            col = MaintenanceRecord.__table__.columns[col_name]
+            stmt = f"ALTER TABLE {table} ADD COLUMN {col_name} {col.type.compile(db.engine.dialect)}"
+            db.session.execute(db.text(stmt))
+        if model_cols - existing:
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 def init_seed_data():
