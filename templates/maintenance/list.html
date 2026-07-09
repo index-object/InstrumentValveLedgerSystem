@@ -83,7 +83,13 @@
                 <tr>
                     <td><input type="checkbox" name="ids" value="{{ record.id }}" class="form-check-input item-checkbox"></td>
                     <td>{{ record.装置名称 or '-' }}</td>
-                    <td><a href="{{ url_for('valves.detail', id=record.device_id, from='maintenance') }}" style="color: var(--primary-color); font-weight: 500;">{{ record.设备位号 or '-' }}</a></td>
+                    <td>
+                        {% if record.device_type in ('control_valve', 'onoff_valve') %}
+                        <a href="{{ url_for('valves.detail', id=record.device_id, device_type=record.device_type, from='maintenance') }}" style="color: var(--primary-color); font-weight: 500;">{{ record.设备位号 or '-' }}</a>
+                        {% else %}
+                        <a href="{{ url_for('devices.detail', type_code=record.device_type, id=record.device_id) }}" style="color: var(--primary-color); font-weight: 500;">{{ record.设备位号 or '-' }}</a>
+                        {% endif %}
+                    </td>
                     <td>{{ record.设备名称 or '-' }}</td>
                     <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>
                     <td>{{ record.检修人员 or '-' }}</td>

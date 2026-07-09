@@ -136,11 +136,10 @@ def maintenance(id):
             ))
         return redirect(url_for("valves.detail", id=id, **{'from': from_param}))
 
-    records = (
-        MaintenanceRecord.query.filter_by(device_type=get_valve_ledger_type(valve), device_id=valve.id)
-        .order_by(MaintenanceRecord.检修时间.desc())
-        .all()
-    )
+    records_query = MaintenanceRecord.query.filter_by(device_type=get_valve_ledger_type(valve), device_id=valve.id)
+    if current_user.role == "employee":
+        records_query = records_query.filter(MaintenanceRecord.created_by == current_user.id)
+    records = records_query.order_by(MaintenanceRecord.检修时间.desc()).all()
     return render_template("valves/maintenance.html", valve=valve, records=records, from_param=from_param)
 
 
@@ -152,6 +151,9 @@ def maintenance_list():
         valid_valve_ids.extend(ids)
 
     query = MaintenanceRecord.query.filter(MaintenanceRecord.device_id.in_(valid_valve_ids)) if valid_valve_ids else MaintenanceRecord.query.filter(False)
+
+    if current_user.role == "employee":
+        query = query.filter(MaintenanceRecord.created_by == current_user.id)
 
     search = request.args.get("search")
     if search:

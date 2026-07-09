@@ -11,7 +11,9 @@ from flask import (
 from flask_login import login_required, current_user
 from app.models import db, Ledger, ApprovalLog, ValveAttachment
 from app.utils.params import expects_params
+from app.devices import DeviceTypeRegistry
 from app.devices.valve_helper import (
+    VALVE_TYPES,
     get_valve_model,
     get_valve_by_id,
     has_duplicate_tag,
@@ -81,10 +83,15 @@ def list():
 
 @valves.route("/valve/<int:id>")
 @login_required
-@expects_params(optional=['from'])
+@expects_params(optional=['from', 'device_type'])
 def detail(id):
+    device_type = request.args.get("device_type")
     from_param = get_from_param()
-    valve = get_valve_by_id(id)
+    if device_type in VALVE_TYPES:
+        model = DeviceTypeRegistry.get(device_type).model_class
+        valve = model.query.get(id)
+    else:
+        valve = get_valve_by_id(id)
     if not valve:
         abort(404)
     if not can_view_valve(valve):

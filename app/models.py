@@ -100,17 +100,17 @@ class DevicePhotoMixin:
     def maintenance_records(self):
         from app.models import MaintenanceRecord
         from app.devices.valve_helper import get_valve_ledger_type
+        from flask_login import current_user
         device_type = get_valve_ledger_type(self)
         if not device_type:
             return []
-        return (
-            MaintenanceRecord.query.filter_by(
-                device_type=device_type,
-                device_id=self.id,
-            )
-            .order_by(MaintenanceRecord.检修时间.desc())
-            .all()
+        q = MaintenanceRecord.query.filter_by(
+            device_type=device_type,
+            device_id=self.id,
         )
+        if current_user.is_authenticated and current_user.role == "employee":
+            q = q.filter(MaintenanceRecord.created_by == current_user.id)
+        return q.order_by(MaintenanceRecord.检修时间.desc()).all()
 
     @property
     def photos(self):
