@@ -83,6 +83,8 @@
         </div>
         <div class="d-flex align-items-center gap-2">
             <form method="get" action="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="d-flex gap-2 align-items-center">
+                {% set from_param_val = from_param|default(request.args.get('from', 'all')) %}
+                {% if from_param_val and from_param_val != 'all' %}<input type="hidden" name="from" value="{{ from_param_val }}">{% endif %}
                 <div class="search-box" style="position: relative;">
                     <i class="bi bi-search"></i>
                     <input type="text" name="search" class="form-control form-control-modern" 

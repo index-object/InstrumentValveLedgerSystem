@@ -39,10 +39,10 @@ NAVIGATION_CONTEXTS = {
 
 
 def url_with_params(endpoint, **kwargs):
-    """生成 URL 并自动携带当前请求中的传播参数
+    """生成 URL 并自动携带当前请求中的参数
 
-    自动从当前请求中获取 PROPAGATE_PARAMS 白名单内的参数，
-    如果 kwargs 中未显式提供则自动补充。
+    自动从当前请求中获取所有查询参数（白名单 + 列筛选等），
+    如果 kwargs 中已显式提供则使用 kwargs 的值覆盖。
 
     Args:
         endpoint: Flask 路由端点
@@ -51,11 +51,13 @@ def url_with_params(endpoint, **kwargs):
     Returns:
         str: 带参数的 URL
     """
-    for key in PROPAGATE_PARAMS:
+    for key in request.args:
         if key not in kwargs:
-            val = request.args.get(key)
-            if val:
-                kwargs[key] = val
+            values = request.args.getlist(key)
+            if len(values) == 1:
+                kwargs[key] = values[0]
+            elif len(values) > 1:
+                kwargs[key] = values
     return url_for(endpoint, **kwargs)
 
 
