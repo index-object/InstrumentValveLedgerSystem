@@ -40,7 +40,11 @@
 
     {# 删除：员工所有者或管理员，且无待审批阀门 #}
     {% if (current_user.role == 'admin' or (current_user.role == 'employee' and ledger.created_by == current_user.id)) and ledger.pending_count == 0 %}
-    <form method="POST" action="{{ url_with_params('ledgers.delete', id=ledger.id) }}" style="display:inline;" onsubmit="return confirm('确定删除？');">
+    <form method="POST" action="{{ url_with_params('ledgers.delete', id=ledger.id) }}" style="display:inline-flex; align-items:center; gap:6px;" onsubmit="return confirm('确定删除？');">
+        <div class="form-check" style="margin:0;">
+            <input type="checkbox" name="delete_maintenance" value="1" id="deleteMaintenanceLedger" class="form-check-input" style="width:14px;height:14px;" checked>
+            <label for="deleteMaintenanceLedger" style="font-size:12px; cursor:pointer;">清理维护记录</label>
+        </div>
         <button type="submit" class="btn btn-outline-danger">
             <i class="bi bi-trash"></i> 删除
         </button>

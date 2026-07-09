@@ -145,12 +145,7 @@ def maintenance(id):
 
 def maintenance_list():
     """维护记录列表"""
-    valid_valve_ids = []
-    for model in get_all_valve_models():
-        ids = [v.id for v in model.query.filter(model.status != "draft").all()]
-        valid_valve_ids.extend(ids)
-
-    query = MaintenanceRecord.query.filter(MaintenanceRecord.device_id.in_(valid_valve_ids)) if valid_valve_ids else MaintenanceRecord.query.filter(False)
+    query = MaintenanceRecord.query
 
     if current_user.role == "employee":
         query = query.filter(MaintenanceRecord.created_by == current_user.id)
@@ -170,7 +165,7 @@ def maintenance_list():
         page=page, per_page=per_page, error_out=False
     )
 
-    # Build valve map
+    # Build valve map for dropdown filter
     valves = []
     valve_map = {}
     for model in get_all_valve_models():
@@ -260,6 +255,26 @@ def maintenance_edit(id):
     if request.method == "POST":
         valve_id = request.form.get("valve_id")
         valve_type = request.form.get("valve_type")
+
+        检修时间_str = request.form.get("检修时间")
+        检修时间 = None
+        if 检修时间_str:
+            for fmt in ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S"]:
+                try:
+                    检修时间 = datetime.strptime(检修时间_str, fmt)
+                    break
+                except ValueError:
+                    continue
+
+        if record.valve_deleted:
+            record.检修时间 = 检修时间
+            record.检修内容 = request.form.get("检修内容")
+            record.检修人员 = request.form.get("检修人员")
+            record.类型 = request.form.get("类型")
+            db.session.commit()
+            flash("保存成功")
+            return redirect(url_for("valves.maintenance_list"))
+
         valve = None
         if valve_id and valve_type:
             model = get_valve_model(valve_type)
@@ -272,16 +287,6 @@ def maintenance_edit(id):
         if not request.form.get("检修人员") or not request.form.get("检修内容"):
             flash("检修人员和检修内容不能为空")
             return redirect(url_for("valves.maintenance_edit", id=id))
-
-        检修时间_str = request.form.get("检修时间")
-        检修时间 = None
-        if 检修时间_str:
-            for fmt in ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S"]:
-                try:
-                    检修时间 = datetime.strptime(检修时间_str, fmt)
-                    break
-                except ValueError:
-                    continue
 
         record.device_type = valve_type
         record.device_id = valve.id

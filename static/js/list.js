@@ -22,11 +22,28 @@ function updateSelectedCount() {
 function batchDelete() {
     const checked = document.querySelectorAll('.item-checkbox:checked');
     if (checked.length === 0) { alert('请先选择要删除的记录'); return; }
-    if (confirm('确定要删除选中的 ' + checked.length + ' 条记录吗？')) {
-        document.getElementById('batchForm').action = window.batchDeleteUrl;
-        document.getElementById('batchForm').submit();
-    }
+    document.getElementById('deleteCount').textContent = checked.length;
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    modal.show();
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('deleteConfirmBtn')?.addEventListener('click', function() {
+        const deleteMaintenance = document.getElementById('deleteModalMaintenance').checked;
+        const form = document.getElementById('batchForm');
+        let input = form.querySelector('input[name="delete_maintenance"]');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'delete_maintenance';
+            form.appendChild(input);
+        }
+        input.value = deleteMaintenance ? '1' : '0';
+        form.action = window.batchDeleteUrl;
+        bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
+        form.submit();
+    });
+});
 
 function batchExport() {
     const checked = document.querySelectorAll('.item-checkbox:checked');

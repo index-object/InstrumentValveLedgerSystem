@@ -20,6 +20,7 @@ from app.devices.valve_helper import (
     get_valve_ledger_type,
     get_all_valve_models,
     count_valves_by_status,
+    handle_maintenance_on_valve_delete,
 )
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
@@ -371,6 +372,7 @@ def delete(id):
     ValveAttachment.query.filter_by(
         device_type=device_type, device_id=valve.id
     ).delete()
+    handle_maintenance_on_valve_delete(device_type, valve.id, request.form.get("delete_maintenance"))
     db.session.delete(valve)
     db.session.commit()
     flash("删除成功")
@@ -389,6 +391,7 @@ def batch_delete():
         flash("请选择要删除的记录")
         return redirect_to_list(from_param)
 
+    delete_maintenance = request.form.get("delete_maintenance")
     count = 0
     for id in ids:
         valve = get_valve_by_id(int(id))
@@ -400,6 +403,7 @@ def batch_delete():
             ValveAttachment.query.filter_by(
                 device_type=device_type, device_id=valve.id
             ).delete()
+            handle_maintenance_on_valve_delete(device_type, valve.id, delete_maintenance)
             db.session.delete(valve)
             count += 1
 

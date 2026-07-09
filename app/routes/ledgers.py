@@ -9,8 +9,8 @@ from flask import (
     abort,
 )
 from flask_login import login_required, current_user
-from app.models import db, Ledger, ApprovalLog, Setting, ValveAttachment
-from app.devices.valve_helper import VALVE_TYPES, get_valve_model, get_valve_by_id, get_valve_ledger_type, get_all_valve_models, count_valves_by_status, query_valves
+from app.models import db, Ledger, ApprovalLog, Setting, ValveAttachment, MaintenanceRecord
+from app.devices.valve_helper import VALVE_TYPES, get_valve_model, get_valve_by_id, get_valve_ledger_type, get_all_valve_models, count_valves_by_status, query_valves, handle_maintenance_on_valve_delete
 from app.utils.duplicate_check import check_duplicate
 from app.utils.params import expects_params
 from app.devices import DeviceTypeRegistry
@@ -485,6 +485,10 @@ def delete(id):
             ValveAttachment.device_id.in_(valve_ids),
         ).delete(synchronize_session=False)
 
+        delete_maintenance = request.form.get("delete_maintenance")
+        for vid in valve_ids:
+            handle_maintenance_on_valve_delete(device_type, vid, delete_maintenance)
+
     model.query.filter_by(ledger_id=id).delete()
     db.session.delete(ledger)
     db.session.commit()
@@ -846,6 +850,7 @@ def delete_valve(ledger_id, id):
     ValveAttachment.query.filter_by(
         device_type=device_type, device_id=valve.id
     ).delete()
+    handle_maintenance_on_valve_delete(device_type, valve.id, request.form.get("delete_maintenance"))
     db.session.delete(valve)
 
     config = DeviceTypeRegistry.get(ledger.类型)
@@ -982,6 +987,10 @@ def batch_delete_valve(id):
                 ValveAttachment.device_type == device_type,
                 ValveAttachment.device_id.in_(valves_to_delete),
             ).delete(synchronize_session=False)
+
+            delete_maintenance = request.form.get("delete_maintenance")
+            for vid in valves_to_delete:
+                handle_maintenance_on_valve_delete(device_type, vid, delete_maintenance)
 
         deleted_count = model.query.filter(
             model.id.in_(valves_to_delete),

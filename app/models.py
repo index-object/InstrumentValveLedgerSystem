@@ -166,6 +166,7 @@ class MaintenanceRecord(db.Model):
     类型 = db.Column(db.String(50))
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    valve_deleted = db.Column(db.Boolean, default=False)
 
     creator = db.relationship("User")
 

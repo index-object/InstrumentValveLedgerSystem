@@ -21,12 +21,22 @@
         <form method="POST">
             <div class="row">
                 <div class="col-md-6 mb-3">
+                    {% if record.valve_deleted %}
+                    <label class="form-label" style="font-weight: 500;">设备位号</label>
+                    <div class="form-control form-control-modern" style="background: #f1f5f9; cursor: default;">
+                        {{ record.设备位号 or '-' }}
+                        <span class="badge bg-secondary" style="font-size: 10px; margin-left: 4px;">阀门已删除</span>
+                    </div>
+                    <input type="hidden" name="valve_id" value="{{ record.device_id }}">
+                    <input type="hidden" name="valve_type" value="{{ record.device_type }}">
+                    {% else %}
                     <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 设备位号</label>
                     <input type="hidden" name="valve_id" id="valve_id" required>
                     <input type="hidden" name="valve_type" id="valve_type" value="">
                     <button type="button" class="form-control form-control-modern text-start" id="valveSelectorBtn" data-bs-toggle="modal" data-bs-target="#valveSelectModal" style="cursor: pointer; text-align: left;">
                         <i class="bi bi-search"></i> 点击选择位号
                     </button>
+                    {% endif %}
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label" style="font-weight: 500;">类型</label>
@@ -61,6 +71,7 @@
     </div>
 </div>
 
+{% if not record.valve_deleted %}
 <div class="modal fade" id="valveSelectModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
@@ -120,6 +131,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}
 
@@ -194,14 +206,16 @@ document.getElementById('valveSelectConfirm').addEventListener('click', function
 });
 
 const modalEl = document.getElementById('valveSelectModal');
-modalEl.addEventListener('show.bs.modal', function() {
-    document.getElementById('valveSearch').value = selectedValveTag || '';
-    document.getElementById('valveFilterUnit').value = '';
-    renderValves();
-});
-modalEl.addEventListener('hidden.bs.modal', function() {
-    document.querySelectorAll('.valve-row').forEach(r => r.classList.remove('active'));
-});
+if (modalEl) {
+    modalEl.addEventListener('show.bs.modal', function() {
+        document.getElementById('valveSearch').value = selectedValveTag || '';
+        document.getElementById('valveFilterUnit').value = '';
+        renderValves();
+    });
+    modalEl.addEventListener('hidden.bs.modal', function() {
+        document.querySelectorAll('.valve-row').forEach(r => r.classList.remove('active'));
+    });
+}
 </script>
 <style>
 .valve-row.active td { background-color: #eef2ff !important; }

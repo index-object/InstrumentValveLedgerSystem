@@ -86,3 +86,16 @@ def get_valve_ledger_type(valve):
         if config and config.model_class and isinstance(valve, config.model_class):
             return code
     return None
+
+
+def handle_maintenance_on_valve_delete(device_type, device_id, delete_maintenance):
+    """删除阀门时处理关联的维护记录"""
+    from app.models import MaintenanceRecord
+    if delete_maintenance and delete_maintenance != "0":
+        MaintenanceRecord.query.filter_by(
+            device_type=device_type, device_id=device_id
+        ).delete()
+    else:
+        MaintenanceRecord.query.filter_by(
+            device_type=device_type, device_id=device_id
+        ).update({"valve_deleted": True})
