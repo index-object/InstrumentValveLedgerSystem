@@ -28,10 +28,13 @@
             {% endif %}
             {# 导出按钮：所有用户可见 #}
             <button type="button" class="toolbar-btn toolbar-btn-secondary" onclick="batchExport()">
-                <i class="bi bi-download"></i> 导出选中
+                <i class="bi bi-upload"></i> 导出选中
             </button>
             <a href="{{ url_for('valves.maintenance_export') }}" class="toolbar-btn toolbar-btn-secondary">
-                <i class="bi bi-download"></i> 导出全部
+                <i class="bi bi-upload"></i> 导出全部
+            </a>
+            <a href="{{ url_for('maintenance_import.index') }}" class="toolbar-btn toolbar-btn-secondary">
+                <i class="bi bi-download"></i> 导入
             </a>
             {# 删除按钮 #}
             <button type="button" class="toolbar-btn toolbar-btn-danger" onclick="batchDelete()">
@@ -84,7 +87,10 @@
                     <td><input type="checkbox" name="ids" value="{{ record.id }}" class="form-check-input item-checkbox"></td>
                     <td>{{ record.装置名称 or '-' }}</td>
                     <td>
-                        {% if record.valve_deleted %}
+                        {% if not record.device_type %}
+                        <span style="color: var(--text-muted);">{{ record.设备位号 or '-' }}</span>
+                        <span class="badge bg-secondary" style="font-size: 10px; margin-left: 4px;">找不到设备</span>
+                        {% elif record.valve_deleted %}
                         <span style="color: var(--text-muted);">{{ record.设备位号 or '-' }}</span>
                         <span class="badge bg-secondary" style="font-size: 10px; margin-left: 4px;">已删除</span>
                         {% elif record.device_type in ('control_valve', 'onoff_valve') %}

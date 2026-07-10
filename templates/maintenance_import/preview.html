@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block page_title %}导入预览 - {{ filename }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 style="font-size:20px;margin-bottom:16px;">导入预览 - {{ filename }}（共 {{ total }} 条）</h2>
+
+    <form method="POST" action="{{ url_for('maintenance_import.execute') }}" id="executeForm">
+        <div class="d-flex gap-3 mb-3 flex-wrap">
+            <div class="alert alert-success mb-0 d-flex align-items-center gap-2 py-2 px-3" style="border-radius:8px;">
+                <i class="bi bi-check-circle-fill"></i>
+                <span><strong>{{ matched_count }}</strong> 条已匹配</span>
+            </div>
+            {% if unmatched_count > 0 %}
+            <div class="alert alert-warning mb-0 d-flex align-items-center gap-2 py-2 px-3" style="border-radius:8px;">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span><strong>{{ unmatched_count }}</strong> 条未找到设备</span>
+            </div>
+            {% endif %}
+            {% if duplicate_count > 0 %}
+            <div class="alert alert-secondary mb-0 d-flex align-items-center gap-2 py-2 px-3" style="border-radius:8px;">
+                <i class="bi bi-clock-history"></i>
+                <span><strong>{{ duplicate_count }}</strong> 条重复数据（不导入）</span>
+            </div>
+            {% endif %}
+            {% if ambiguous_count > 0 %}
+            <div class="alert alert-info mb-0 d-flex align-items-center gap-2 py-2 px-3" style="border-radius:8px;">
+                <i class="bi bi-question-circle-fill"></i>
+                <span><strong>{{ ambiguous_count }}</strong> 条存在歧义（多表匹配）</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if matched %}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#f0fdf4;">
+                <span><i class="bi bi-check-circle-fill text-success"></i> 已匹配（{{ matched|length }} 条）</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0 preview-table">
+                        <thead>
+                            <tr>
+                                <th>行</th><th>装置名称</th><th>设备位号</th><th>匹配设备类型</th>
+                                <th>检修时间</th><th>检修内容</th><th>检修人员</th><th>类型</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in matched %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ m.snapshot.装置名称 }}</td>
+                                <td>{{ m.snapshot.设备位号 }}</td>
+                                <td>
+                                    {% set cfg = get_device_type_config(m.device_type) %}
+                                    <span class="badge bg-success">{{ cfg.name if cfg else m.device_type }}</span>
+                                </td>
+                                <td>{{ m.data.get('检修时间', '') }}</td>
+                                <td>{{ m.data.get('检修内容', '')[:20] }}</td>
+                                <td>{{ m.data.get('检修人员', '') }}</td>
+                                <td>{{ m.data.get('类型', '') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if unmatched %}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fffdf0;">
+                <span><i class="bi bi-exclamation-triangle-fill text-warning"></i> 未匹配（{{ unmatched|length }} 条）</span>
+                <div>
+                    <label class="form-check form-check-inline mb-0">
+                        <input class="form-check-input" type="radio" name="unmatched_action" value="skip" checked>
+                        <span class="form-check-label">跳过</span>
+                    </label>
+                    <label class="form-check form-check-inline mb-0">
+                        <input class="form-check-input" type="radio" name="unmatched_action" value="import">
+                        <span class="form-check-label">仅存文本（不链接设备）</span>
+                    </label>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0 preview-table">
+                        <thead>
+                            <tr>
+                                <th>行</th><th>装置名称</th><th>设备位号</th><th>设备名称</th>
+                                <th>检修时间</th><th>检修内容</th><th>检修人员</th><th>类型</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for um in unmatched %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ um.data.get('装置名称', '') }}</td>
+                                <td>{{ um.data.get('设备位号', '') }}</td>
+                                <td>{{ um.data.get('设备名称', '') }}</td>
+                                <td>{{ um.data.get('检修时间', '') }}</td>
+                                <td>{{ um.data.get('检修内容', '')[:20] }}</td>
+                                <td>{{ um.data.get('检修人员', '') }}</td>
+                                <td>{{ um.data.get('类型', '') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if duplicates %}
+        <div class="card mb-3">
+            <div class="card-header" style="background:#f8f9fa;">
+                <span><i class="bi bi-clock-history text-secondary"></i> 重复数据 — 不导入（{{ duplicates|length }} 条）</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0 preview-table">
+                        <thead>
+                            <tr>
+                                <th>行</th><th>装置名称</th><th>设备位号</th>
+                                <th>检修时间</th><th>检修内容</th><th>检修人员</th><th>类型</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in duplicates %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ d.data.get('装置名称', '') }}</td>
+                                <td>{{ d.data.get('设备位号', '') }}</td>
+                                <td>{{ d.data.get('检修时间', '') }}</td>
+                                <td>{{ d.data.get('检修内容', '')[:20] }}</td>
+                                <td>{{ d.data.get('检修人员', '') }}</td>
+                                <td>{{ d.data.get('类型', '') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if ambiguous %}
+        <div class="card mb-3">
+            <div class="card-header" style="background:#f0f5ff;">
+                <span><i class="bi bi-question-circle-fill text-primary"></i> 歧义行（{{ ambiguous|length }} 条）— 同一位号匹配到多个设备类型</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0 preview-table">
+                        <thead>
+                            <tr>
+                                <th>行</th><th>装置名称</th><th>设备位号</th>
+                                <th>请选择设备类型</th>
+                                <th>检修时间</th><th>检修内容</th><th>检修人员</th><th>类型</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for amb in ambiguous %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ amb.data.get('装置名称', '') }}</td>
+                                <td>{{ amb.data.get('设备位号', '') }}</td>
+                                <td>
+                                    <select class="form-select form-select-sm" name="ambiguous_choice_{{ amb.index }}">
+                                        <option value="">— 跳过此行 —</option>
+                                        {% for c in amb.candidates %}
+                                        <option value="{{ c.code }}">{{ c.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>{{ amb.data.get('检修时间', '') }}</td>
+                                <td>{{ amb.data.get('检修内容', '')[:20] }}</td>
+                                <td>{{ amb.data.get('检修人员', '') }}</td>
+                                <td>{{ amb.data.get('类型', '') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="d-flex gap-2 mb-3">
+            <button type="submit" class="btn btn-success" id="executeBtn"
+                    onclick="var f=this.form;this.disabled=true;this.innerHTML='<span class=spinner-border spinner-border-sm me-1 role=status></span>导入中...';f.submit();">
+                <i class="bi bi-check-lg"></i> 确认导入
+            </button>
+            <a href="{{ url_for('maintenance_import.index') }}" class="btn btn-secondary">重新上传</a>
+            <a href="{{ url_for('valves.maintenance_list') }}" class="btn btn-outline-secondary">返回列表</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

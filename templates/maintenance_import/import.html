@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block page_title %}导入维护记录{% endblock %}
+
+{% block content %}
+{% if skipped %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong><i class="bi bi-exclamation-triangle"></i> 导入完成，但有 {{ skipped|length }} 条数据被跳过</strong>
+    <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#skippedList">
+        查看跳过明细
+    </button>
+    <div class="collapse mt-2" id="skippedList">
+        <table class="table table-sm table-bordered mb-0">
+            <thead><tr><th>装置名称</th><th>设备位号</th><th>原因</th></tr></thead>
+            <tbody>
+                {% for d in skipped %}
+                <tr><td>{{ d.装置名称 }}</td><td>{{ d.设备位号 }}</td><td>{{ d.原因 }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="modern-card mb-4">
+    <div class="card-header-custom"><i class="bi bi-file-earmark-plus"></i> 批量导入维护记录</div>
+    <div class="card-body-custom">
+        <div class="mb-3 p-3" style="background: #f0fdf4; border-radius: 8px; border-left: 3px solid #22c55e;">
+            <small class="text-muted">
+                <i class="bi bi-info-circle"></i>
+                导入固定格式的维护记录 Excel 文件。系统会自动按装置名称和设备位号匹配到对应的设备。
+                支持 .xlsx 和 .xls 格式。
+            </small>
+        </div>
+        <div class="mb-3 p-3" style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <h6 style="font-size:14px;font-weight:600;margin-bottom:8px;">导入格式说明：</h6>
+            <table class="table table-sm table-bordered mb-0" style="font-size:13px;">
+                <thead><tr><th>装置名称</th><th>设备位号</th><th>设备名称</th><th>检修时间</th><th>检修内容</th><th>检修人员</th><th>类型</th></tr></thead>
+                <tbody><tr><td>气化装置</td><td>PT-001</td><td>压力变送器</td><td>2025-03-15</td><td>更换膜片</td><td>张三</td><td>大修</td></tr></tbody>
+            </table>
+            <small class="text-muted mt-1 d-block">
+                <i class="bi bi-info-circle"></i> 设备名称/检修时间/检修内容/检修人员/类型为可选列，装置名称和设备位号为必填列。
+            </small>
+            <small class="text-muted d-block">
+                <i class="bi bi-info-circle"></i> 第一行必须为表头，表头文字需与上表一致（顺序不限）。
+            </small>
+        </div>
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('maintenance_import.upload') }}">
+            <div class="mb-3">
+                <label class="form-label">选择维护记录 Excel 文件</label>
+                <input type="file" name="file" accept=".xlsx,.xls" class="form-control form-control-modern" required>
+            </div>
+            <button type="submit" class="btn btn-primary">上传并预览</button>
+            <a href="{{ url_for('valves.maintenance_list') }}" class="btn btn-secondary">返回列表</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
