@@ -128,31 +128,45 @@
     </div>
     </form>
     
-    {% if pagination and pagination.pages > 1 %}
+    {% if pagination %}
+    {% set search_val = request.args.get('search', '') %}
+    {% set valve_val = request.args.get('valve_id', '') %}
     <div class="p-3 border-top">
-        <nav>
-            <ul class="pagination-custom pagination mb-2">
-                {% if pagination.has_prev %}
-                <li><a href="{{ url_for('valves.maintenance_list', page=pagination.prev_num, valve_id=request.args.get('valve_id', ''), search=request.args.get('search', '')) }}">&laquo; 上一页</a></li>
-                {% endif %}
-                {% set cur = pagination.page %}{% set total = pagination.pages %}
-                {% for p in range(1, total + 1) %}
-                  {% if p == 1 or p == 2 or p == total - 1 or p == total or (p >= cur - 1 and p <= cur + 1) %}
-                    {% if p == cur %}
-                    <li class="active"><span>{{ p }}</span></li>
-                    {% else %}
-                    <li><a href="{{ url_for('valves.maintenance_list', page=p, valve_id=request.args.get('valve_id', ''), search=request.args.get('search', '')) }}">{{ p }}</a></li>
+        <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap">
+            <small class="text-muted">共 {{ pagination.total }} 条记录</small>
+            {% if pagination.pages > 1 %}
+            <nav style="display: inline-flex; align-items: center; gap: 8px;">
+                <ul class="pagination-custom pagination mb-0" style="margin-top: 0;">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('valves.maintenance_list', page=pagination.prev_num, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">上一页</a>
+                    </li>
                     {% endif %}
-                  {% elif (p == 3 and cur > 4) or (p == total - 2 and cur < total - 3) %}
-                  <li class="disabled"><span>…</span></li>
-                  {% endif %}
-                {% endfor %}
-                {% if pagination.has_next %}
-                <li><a href="{{ url_for('valves.maintenance_list', page=pagination.next_num, valve_id=request.args.get('valve_id', ''), search=request.args.get('search', '')) }}">下一页 &raquo;</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-        <div class="text-muted">共 {{ pagination.total }} 条记录，第 {{ pagination.page }}/{{ pagination.pages }} 页</div>
+                    {% set cur = pagination.page %}{% set total = pagination.pages %}
+                    {% for p in range(1, total + 1) %}
+                      {% if p == 1 or p == 2 or p == total - 1 or p == total or (p >= cur - 1 and p <= cur + 1) %}
+                      <li class="page-item {% if p == cur %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('valves.maintenance_list', page=p, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">{{ p }}</a>
+                      </li>
+                      {% elif (p == 3 and cur > 4) or (p == total - 2 and cur < total - 3) %}
+                      <li class="page-item disabled"><span class="page-link">…</span></li>
+                      {% endif %}
+                    {% endfor %}
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('valves.maintenance_list', page=pagination.next_num, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">下一页</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <select style="border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-dark);padding:8px 14px;font-size:14px;background:#fff;cursor:pointer;outline:none;width:auto;" onchange="location.href=this.dataset.baseUrl + '&per_page=' + this.value" data-base-url="{{ url_for('valves.maintenance_list', valve_id=valve_val, search=search_val) }}">
+                    <option value="10" {% if request.args.get('per_page', '20') == '10' %}selected{% endif %}>10 条/页</option>
+                    <option value="20" {% if request.args.get('per_page', '20') == '20' %}selected{% endif %}>20 条/页</option>
+                    <option value="50" {% if request.args.get('per_page', '20') == '50' %}selected{% endif %}>50 条/页</option>
+                    <option value="100" {% if request.args.get('per_page', '20') == '100' %}selected{% endif %}>100 条/页</option>
+                </select>
+            </nav>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 </div>
