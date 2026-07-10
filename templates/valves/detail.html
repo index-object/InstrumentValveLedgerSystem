@@ -4,20 +4,12 @@
 
 {% block back_btn %}
 {% set from_param = from_param|default(request.args.get('from', 'all')) %}
-{% if from_param == 'mine' %}
-<a href="{{ url_for('ledgers.detail', id=valve.ledger_id, from='mine') }}" class="btn-back-header">
-    <i class="bi bi-arrow-left"></i> 返回
-</a>
-{% elif from_param == 'approvals' %}
-<a href="{{ url_for('ledgers.detail', id=valve.ledger_id, from='approvals') }}" class="btn-back-header">
-    <i class="bi bi-arrow-left"></i> 返回
-</a>
-{% elif from_param == 'maintenance' %}
+{% if from_param == 'maintenance' %}
 <a href="{{ url_for('valves.maintenance_list') }}" class="btn-back-header">
     <i class="bi bi-arrow-left"></i> 返回
 </a>
 {% else %}
-<a href="{{ url_for('ledgers.detail', id=valve.ledger_id, from='all') }}" class="btn-back-header">
+<a href="{{ url_with_params('ledgers.detail', id=valve.ledger_id) }}" class="btn-back-header">
     <i class="bi bi-arrow-left"></i> 返回
 </a>
 {% endif %}
@@ -324,7 +316,7 @@
                             <i class="bi bi-exclamation-triangle"></i> 草稿状态，提交审批后方可管理
                         </span>
                         {% elif from_param == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id %}
-                        <a href="{{ url_for('valves.photos', id=valve.id) }}" class="btn btn-sm btn-outline-primary">
+                        <a href="{{ url_with_params('valves.photos', id=valve.id) }}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-pencil"></i> 管理
                         </a>
                         {% endif %}
@@ -356,7 +348,7 @@
                             <i class="bi bi-exclamation-triangle"></i> 草稿状态，提交审批后方可添加
                         </span>
                         {% elif from_param == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id %}
-                        <a href="{{ url_for('valves.maintenance', id=valve.id, from=from_param) }}" class="btn btn-sm btn-primary">
+                        <a href="{{ url_with_params('valves.maintenance', id=valve.id) }}" class="btn btn-sm btn-primary">
                             <i class="bi bi-plus"></i> 添加
                         </a>
                         {% endif %}
@@ -382,7 +374,7 @@
                             </tbody>
                         </table>
                             {% if valve.maintenance_records|length > 5 %}
-                            <a href="{{ url_for('valves.maintenance_list') }}?valve_id={{ valve.id }}" class="view-all-link">
+                            <a href="{{ url_with_params('valves.maintenance_list', valve_id=valve.id) }}" class="view-all-link">
                                 查看全部 {{ valve.maintenance_records|length }} 条记录 <i class="bi bi-arrow-right"></i>
                             </a>
                             {% endif %}

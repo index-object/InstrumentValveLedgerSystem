@@ -23,7 +23,7 @@ from app.routes.valves.permissions import (
     can_edit_maintenance,
     can_delete_maintenance,
 )
-from app.utils.navigation import get_from_param
+from app.utils.navigation import get_from_param, url_with_params
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
@@ -78,22 +78,20 @@ def maintenance(id):
         # 草稿状态阀门不可创建维护记录
         if valve.status == "draft":
             flash("当前阀门为草稿状态，请先提交审批后再添加维护记录")
-            return redirect(url_for(
+            return redirect(url_with_params(
                 'ledgers.valve_detail',
                 ledger_id=valve.ledger_id,
                 id=id,
-                **{'from': from_param}
-            ) if valve.ledger_id else url_for("valves.detail", id=id, **{'from': from_param}))
+            ) if valve.ledger_id else url_with_params("valves.detail", id=id))
 
         # 权限检查：只有员工和管理员可以创建维护记录
         if not can_create_maintenance():
             flash("无权创建维护记录")
-            return redirect(url_for(
+            return redirect(url_with_params(
                 'ledgers.valve_detail',
                 ledger_id=valve.ledger_id,
                 id=id,
-                **{'from': from_param}
-            ) if valve.ledger_id else url_for("valves.detail", id=id, **{'from': from_param}))
+            ) if valve.ledger_id else url_with_params("valves.detail", id=id))
 
         检修时间_str = request.form.get("检修时间")
         检修时间 = None
@@ -107,9 +105,7 @@ def maintenance(id):
 
         if not request.form.get("检修人员") or not request.form.get("检修内容"):
             flash("检修人员和检修内容不能为空")
-            return redirect(url_for(
-                'valves.maintenance', id=id, **{'from': from_param}
-            ))
+            return redirect(url_with_params('valves.maintenance', id=id))
 
         record = MaintenanceRecord(
             device_type=get_valve_ledger_type(valve),
@@ -128,13 +124,12 @@ def maintenance(id):
         flash("添加成功")
         # 返回到阀门详情页，保持上下文
         if valve.ledger_id:
-            return redirect(url_for(
+            return redirect(url_with_params(
                 'ledgers.valve_detail',
                 ledger_id=valve.ledger_id,
                 id=id,
-                **{'from': from_param}
             ))
-        return redirect(url_for("valves.detail", id=id, **{'from': from_param}))
+        return redirect(url_with_params("valves.detail", id=id))
 
     records_query = MaintenanceRecord.query.filter_by(device_type=get_valve_ledger_type(valve), device_id=valve.id)
     if current_user.role == "employee":
@@ -400,37 +395,34 @@ def delete_attachment(valve_id, att_id):
         flash("附件不存在")
         valve = get_valve_by_id(valve_id)
         if valve and valve.ledger_id:
-            return redirect(url_for(
+            return redirect(url_with_params(
                 'ledgers.valve_detail',
                 ledger_id=valve.ledger_id,
                 id=valve_id,
-                **{'from': from_param}
             ))
-        return redirect(url_for("valves.detail", id=valve_id, **{'from': from_param}))
+        return redirect(url_with_params("valves.detail", id=valve_id))
 
     valve = get_valve_by_id(valve_id)
     if not valve or not can_edit_valve(valve):
         flash("无权删除")
         if valve and valve.ledger_id:
-            return redirect(url_for(
+            return redirect(url_with_params(
                 'ledgers.valve_detail',
                 ledger_id=valve.ledger_id,
                 id=valve_id,
-                **{'from': from_param}
             ))
-        return redirect(url_for("valves.detail", id=valve_id, **{'from': from_param}))
+        return redirect(url_with_params("valves.detail", id=valve_id))
 
     db.session.delete(attachment)
     db.session.commit()
     flash("附件删除成功")
     if valve and valve.ledger_id:
-        return redirect(url_for(
+        return redirect(url_with_params(
             'ledgers.valve_detail',
             ledger_id=valve.ledger_id,
             id=valve_id,
-            **{'from': from_param}
         ))
-    return redirect(url_for("valves.detail", id=valve_id, **{'from': from_param}))
+    return redirect(url_with_params("valves.detail", id=valve_id))
 
 
 def my_ledgers():

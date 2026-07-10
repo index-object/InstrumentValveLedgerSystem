@@ -93,7 +93,7 @@ def get_context(from_param=None):
 
 def get_back_url(from_param=None):
     """
-    获取返回按钮的目标 URL（返回到来源列表页）
+    获取返回按钮的目标 URL（返回到来源列表页，带当前列表参数）
 
     Args:
         from_param: from 参数值
@@ -105,7 +105,18 @@ def get_back_url(from_param=None):
         from_param = get_from_param()
 
     ctx = get_context(from_param)
-    return url_for(ctx['list_endpoint'])
+
+    kwargs = {}
+    for key in request.args:
+        if key == 'from':
+            continue
+        values = request.args.getlist(key)
+        if len(values) == 1:
+            kwargs[key] = values[0]
+        elif len(values) > 1:
+            kwargs[key] = values
+
+    return url_for(ctx['list_endpoint'], **kwargs)
 
 
 def url_with_from(endpoint, from_param=None, **kwargs):

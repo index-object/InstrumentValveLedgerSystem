@@ -47,6 +47,7 @@ from app.utils.navigation import (
     get_context,
     redirect_to_list,
     url_with_from,
+    url_with_params,
 )
 
 valves = Blueprint("valves", __name__)
@@ -309,13 +310,8 @@ def edit(id):
     if error:
         flash(error)
         if valve.ledger_id:
-            return redirect(url_for(
-                'ledgers.valve_detail',
-                ledger_id=valve.ledger_id,
-                id=id,
-                **{'from': from_param}
-            ))
-        return redirect(url_for("valves.detail", id=id, **{'from': from_param}))
+            return redirect(url_with_params('ledgers.valve_detail', ledger_id=valve.ledger_id, id=id))
+        return redirect(url_with_params("valves.detail", id=id))
 
     if request.method == "POST":
         位号 = request.form.get("位号")
@@ -323,7 +319,7 @@ def edit(id):
         if 位号:
             if has_duplicate_tag(位号, id, 装置名称):
                 flash("该装置下此位号已存在，请使用其他位号")
-                return redirect(url_for("valves.edit", id=id, **{'from': from_param}))
+                return redirect(url_with_params("valves.edit", id=id))
 
         populate_valve_from_form(valve, request.form)
 
@@ -333,13 +329,8 @@ def edit(id):
 
         flash("保存成功")
         if valve.ledger_id:
-            return redirect(url_for(
-                'ledgers.valve_detail',
-                ledger_id=valve.ledger_id,
-                id=id,
-                **{'from': from_param}
-            ))
-        return redirect(url_for("valves.detail", id=id, **{'from': from_param}))
+            return redirect(url_with_params('ledgers.valve_detail', ledger_id=valve.ledger_id, id=id))
+        return redirect(url_with_params("valves.detail", id=id))
 
     ledger = None
     if valve.ledger_id:

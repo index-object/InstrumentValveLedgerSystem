@@ -28,6 +28,7 @@ from app.utils.navigation import (
     get_context,
     get_back_url,
     redirect_to_list,
+    url_with_params,
 )
 from sqlalchemy import or_
 from datetime import datetime
@@ -716,11 +717,11 @@ def edit_valve(ledger_id, id):
 
     if not can_edit_valve(valve):
         flash("无权编辑")
-        return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
+        return redirect(url_with_params("ledgers.detail", id=ledger_id))
 
     if valve.status not in ["draft", "rejected", "approved"]:
         flash("当前状态无法编辑")
-        return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
+        return redirect(url_with_params("ledgers.detail", id=ledger_id))
 
     if request.method == "POST":
         位号 = request.form.get("位号")
@@ -728,7 +729,7 @@ def edit_valve(ledger_id, id):
         if 位号 and check_duplicate(model, 装置名称, 位号, exclude_id=valve.id):
             flash("该装置下此位号已存在")
             return redirect(
-                url_for("ledgers.edit_valve", ledger_id=ledger_id, id=id, **{"from": from_param})
+                url_with_params("ledgers.edit_valve", ledger_id=ledger_id, id=id)
             )
 
         for key in request.form:
@@ -802,7 +803,7 @@ def edit_valve(ledger_id, id):
 
         db.session.commit()
         flash("更新成功")
-        return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
+        return redirect(url_with_params("ledgers.detail", id=ledger_id))
 
     return render_template(
         "valves/form.html", valve=valve, ledger=ledger, from_param=from_param

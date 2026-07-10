@@ -4,6 +4,7 @@ from app.models import db, Ledger, ApprovalLog, Setting
 from app.devices import DeviceTypeRegistry
 from app.utils.duplicate_check import check_duplicate
 from app.utils.params import expects_params
+from app.utils.navigation import url_with_params
 from datetime import datetime
 from io import BytesIO
 # 延迟导入 pandas（避免在应用启动时立即加载可能含有本机指令的二进制扩展）
@@ -155,11 +156,11 @@ def edit(type_code, id):
 
     if current_user.role == "employee" and device.created_by != current_user.id:
         flash("无权编辑")
-        return redirect(url_for("devices.detail", type_code=type_code, id=id, **{"from": from_param}))
+        return redirect(url_with_params("devices.detail", type_code=type_code, id=id))
 
     if device.status not in ["draft", "rejected"]:
         flash("当前状态无法编辑")
-        return redirect(url_for("devices.detail", type_code=type_code, id=id, **{"from": from_param}))
+        return redirect(url_with_params("devices.detail", type_code=type_code, id=id))
 
     if request.method == "POST":
         for key, value in request.form.items():
@@ -170,7 +171,7 @@ def edit(type_code, id):
         device.updated_at = datetime.utcnow()
         db.session.commit()
         flash("保存成功")
-        return redirect(url_for("devices.detail", type_code=type_code, id=id, **{"from": from_param}))
+        return redirect(url_with_params("devices.detail", type_code=type_code, id=id))
 
     return render_template(
         "devices/form.html",

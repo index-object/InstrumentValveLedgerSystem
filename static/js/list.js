@@ -96,6 +96,10 @@ function showFilterDropdown(event, field) {
             <input type="checkbox" class="form-check-input" id="selectAll_${field}" onchange="toggleAllFilter('${field}', this.checked)" style="width: 16px; height: 16px; margin-right: 8px;">
             <label class="form-check-label" for="selectAll_${field}" style="font-size: 13px; color: #475569;">全选</label>
         </div>
+        <div class="mb-2" style="position: relative;">
+            <input type="text" class="form-control form-control-sm filter-search" placeholder="搜索筛选项..." oninput="filterDropdownOptions(this, '${field}')" style="padding-left: 28px; font-size: 13px;">
+            <i class="bi bi-search" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #94a3b8;"></i>
+        </div>
         <div class="filter-options" style="max-height: 280px; overflow-y: auto; padding-right: 4px;">`;
     
     const selectedValues = activeFilters[field] || [];
@@ -130,6 +134,15 @@ function showFilterDropdown(event, field) {
 function toggleAllFilter(field, checked) {
     document.querySelectorAll(`.filter-option[name="${field}"]`).forEach(cb => {
         cb.checked = checked;
+    });
+}
+
+function filterDropdownOptions(input, field) {
+    const keyword = input.value.toLowerCase();
+    document.querySelectorAll(`#filterDropdown .filter-option[name="${field}"]`).forEach(cb => {
+        const row = cb.closest('.form-check');
+        const label = row.querySelector('.form-check-label');
+        row.classList.toggle('d-none', !label.textContent.toLowerCase().includes(keyword));
     });
 }
 
