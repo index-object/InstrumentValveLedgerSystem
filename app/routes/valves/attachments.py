@@ -98,7 +98,7 @@ def maintenance(id):
         检修时间_str = request.form.get("检修时间")
         检修时间 = None
         if 检修时间_str:
-            for fmt in ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S"]:
+            for fmt in ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"]:
                 try:
                     检修时间 = datetime.strptime(检修时间_str, fmt)
                     break
@@ -208,7 +208,7 @@ def maintenance_create():
         检修时间_str = request.form.get("检修时间")
         检修时间 = None
         if 检修时间_str:
-            for fmt in ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S"]:
+            for fmt in ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"]:
                 try:
                     检修时间 = datetime.strptime(检修时间_str, fmt)
                     break
@@ -259,7 +259,7 @@ def maintenance_edit(id):
         检修时间_str = request.form.get("检修时间")
         检修时间 = None
         if 检修时间_str:
-            for fmt in ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S"]:
+            for fmt in ["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"]:
                 try:
                     检修时间 = datetime.strptime(检修时间_str, fmt)
                     break
@@ -344,7 +344,7 @@ def maintenance_export():
             "装置名称": r.装置名称,
             "设备位号": r.设备位号,
             "设备名称": r.设备名称,
-            "检修时间": r.检修时间.strftime("%Y-%m-%d %H:%M") if r.检修时间 else "",
+            "检修时间": r.检修时间.strftime("%Y-%m-%d") if r.检修时间 else "",
             "检修人员": r.检修人员,
             "检修内容": r.检修内容,
             "类型": r.类型,

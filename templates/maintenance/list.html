@@ -94,7 +94,7 @@
                         {% endif %}
                     </td>
                     <td>{{ record.设备名称 or '-' }}</td>
-                    <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>
+                    <td>{{ record.检修时间.strftime('%Y-%m-%d') if record.检修时间 else '-' }}</td>
                     <td>{{ record.检修人员 or '-' }}</td>
                     <td>{{ record.类型 or '-' }}</td>
                     <td>{{ record.检修内容[:15] if record.检修内容 else '-' }}{% if record.检修内容 and record.检修内容|length > 15 %}...{% endif %}</td>

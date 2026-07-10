@@ -24,7 +24,7 @@
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修时间</label>
-                    <input type="datetime-local" name="检修时间" class="form-control form-control-modern" required>
+                    <input type="date" name="检修时间" class="form-control form-control-modern" required>
                 </div>
             </div>
             <div class="row">
@@ -58,7 +58,7 @@
             <tbody>
                 {% for record in records %}
                 <tr>
-                    <td>{{ record.检修时间.strftime('%Y-%m-%d %H:%M') if record.检修时间 else '-' }}</td>
+                    <td>{{ record.检修时间.strftime('%Y-%m-%d') if record.检修时间 else '-' }}</td>
                     <td>{{ record.类型 or '-' }}</td>
                     <td>{{ record.检修人员 or '-' }}</td>
                     <td>{{ record.检修内容 or '-' }}</td>
