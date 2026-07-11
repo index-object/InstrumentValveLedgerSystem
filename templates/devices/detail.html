@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% block page_title %}{{ config.name }}详情{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
-{% endblock %}
+{% block extra_css %}{% endblock %}
 {% block back_btn %}
 {% set from_param = from_param|default(request.args.get('from', '')) %}
 {% if device.ledger_id %}
@@ -19,30 +17,30 @@
 {% set from_param = from_param|default(request.args.get('from', '')) %}
 {% if device.status == 'draft' and (current_user.role == 'admin' or device.created_by == current_user.id) %}
 <form method="POST" action="{{ url_for('devices.submit', type_code=config.code, id=device.id) }}" style="display:inline;">
-  <button type="submit" class="toolbar-btn toolbar-btn-success">
+  <button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--success">
     <i class="bi bi-send"></i> 提交审批
   </button>
 </form>
 {% endif %}
 {% if device.status == 'pending' and current_user.role in ['leader', 'admin'] %}
 <form method="POST" action="{{ url_for('devices.approve', type_code=config.code, id=device.id) }}" style="display:inline;">
-  <button type="submit" class="toolbar-btn toolbar-btn-success">
+  <button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--success">
     <i class="bi bi-check-lg"></i> 审批通过
   </button>
 </form>
 <form method="POST" action="{{ url_for('devices.reject', type_code=config.code, id=device.id) }}" style="display:inline;" onsubmit="return confirm('确认驳回？')">
-  <button type="submit" class="toolbar-btn toolbar-btn-danger">
+  <button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--danger">
     <i class="bi bi-x-lg"></i> 驳回
   </button>
 </form>
 {% endif %}
-<a href="{{ url_with_params('devices.edit', type_code=config.code, id=device.id) }}" class="toolbar-btn toolbar-btn-primary">
+<a href="{{ url_with_params('devices.edit', type_code=config.code, id=device.id) }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary">
   <i class="bi bi-pencil"></i> 编辑
 </a>
 {% endblock %}
 {% block content %}
 {% set section_colors = ['', 'section-header-cyan', 'section-header-orange', 'section-header-green', 'section-header-gray'] %}
-<div class="modern-card mb-4">
+<div class="cmp-card mb-4">
   <div class="detail-header">
     <div class="detail-header-main">
       <div class="detail-icon">
@@ -64,19 +62,19 @@
     </div>
     <div class="detail-header-status">
       {% if device.status == 'approved' %}
-      <span class="badge-status badge-approved"><i class="bi bi-check-circle"></i> 已审批</span>
+      <span class="cmp-badge cmp-badge--approved"><i class="bi bi-check-circle"></i> 已审批</span>
       {% elif device.status == 'pending' %}
-      <span class="badge-status badge-pending"><i class="bi bi-clock"></i> 待审批</span>
+      <span class="cmp-badge cmp-badge--pending"><i class="bi bi-clock"></i> 待审批</span>
       {% elif device.status == 'rejected' %}
-      <span class="badge-status badge-rejected"><i class="bi bi-x-circle"></i> 已驳回</span>
+      <span class="cmp-badge cmp-badge--rejected"><i class="bi bi-x-circle"></i> 已驳回</span>
       {% else %}
-      <span class="badge-status badge-draft"><i class="bi bi-file-earmark"></i> 草稿</span>
+      <span class="cmp-badge cmp-badge--draft"><i class="bi bi-file-earmark"></i> 草稿</span>
       {% endif %}
     </div>
   </div>
 </div>
 
-<div class="modern-card">
+<div class="cmp-card">
   <ul class="nav nav-tabs detail-tabs" id="detailTab" role="tablist">
     <li class="nav-item" role="presentation">
       <button class="nav-link active" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-panel" type="button" role="tab">

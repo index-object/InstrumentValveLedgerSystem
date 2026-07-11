@@ -1,11 +1,5 @@
 {% extends "base.html" %}
 
-{% block extra_css %}
-<style>
-.main-body { padding: 0; }
-</style>
-{% endblock %}
-
 {% set page_title_val = ledger.名称 ~ ' - 台账列表' if ledger else '台账列表' %}
 
 {% block page_title %}{{ page_title_val }}{% endblock %}
@@ -33,83 +27,56 @@
 
 {% block toolbar %}
 {% set from_param = from_param|default(request.args.get('from', 'all')) %}
-<div class="table-toolbar-compact">
-    <div class="d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-2">
-            <div class="form-check">
-                <input type="checkbox" class="form-check-input" id="selectAll">
-            </div>
-            <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
-            {% if ledger %}
-            <div class="d-flex align-items-center gap-1">
-                {# 新增/删除按钮：仅在"我的台账"界面，且员工且自己的台账且非待审批状态显示 #}
-                {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.display_status != 'pending' %}
-                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="btn btn-sm btn-primary" style="padding: 4px 12px; font-size: 12px;" title="新增台账">
-                    <i class="bi bi-plus-lg"></i> 新增
-                </a>
-                <button type="button" class="btn btn-sm btn-outline-danger" style="padding: 4px 12px; font-size: 12px;" onclick="batchDelete()" title="批量删除">
-                    <i class="bi bi-trash"></i> 删除
-                </button>
-                {% endif %}
-                {# 导出按钮：所有用户可见 #}
-                <a href="{{ url_for('valves.export_data') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导出全部">
-                    <i class="bi bi-download"></i> 导出
-                </a>
-                {# 导入按钮：仅在"我的台账"界面，且员工且自己的台账显示 #}
-                {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and ledger.created_by == current_user.id %}
-                <a href="{{ url_for('imports.index') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
-                    <i class="bi bi-upload"></i> 导入
-                </a>
-                {% endif %}
-            </div>
-            {% else %}
-            <div class="d-flex align-items-center gap-1">
-                <a href="{{ url_for('valves.new') }}" class="btn btn-sm btn-primary" style="padding: 4px 12px; font-size: 12px;" title="新增台账">
-                    <i class="bi bi-plus-lg"></i> 新增
-                </a>
-                <button type="button" class="btn btn-sm btn-outline-danger" style="padding: 4px 12px; font-size: 12px;" onclick="batchDelete()" title="批量删除">
-                    <i class="bi bi-trash"></i> 删除
-                </button>
-                {% if current_user.role == 'employee' %}
-                <a href="{{ url_for('imports.index') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导入数据">
-                    <i class="bi bi-upload"></i> 导入
-                </a>
-                {% endif %}
-                <a href="{{ url_for('valves.export_data') }}" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; font-size: 12px;" title="导出全部">
-                    <i class="bi bi-download"></i> 导出
-                </a>
-            </div>
+<div class="cmp-toolbar cmp-toolbar--compact">
+    <div class="d-flex align-items-center gap-2 flex-wrap w-100">
+        <div class="form-check" style="margin-bottom:0">
+            <input type="checkbox" class="form-check-input" id="selectAll" style="margin:0;cursor:pointer">
+        </div>
+        <span style="font-size: 12px; color: var(--color-text-muted); white-space:nowrap;">已选 <span id="selectedCount">0</span> 项</span>
+        {% if ledger %}
+        <div class="d-flex align-items-center gap-1">
+            {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.display_status != 'pending' %}
+            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--sm"><i class="bi bi-plus-lg"></i> 新增</a>
+            <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--danger cmp-toolbar-btn--sm" onclick="batchDelete()"><i class="bi bi-trash"></i> 删除</button>
+            {% endif %}
+            <a href="{{ url_for('valves.export_data') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-download"></i> 导出</a>
+            {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and ledger.created_by == current_user.id %}
+            <a href="{{ url_for('imports.index') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-upload"></i> 导入</a>
             {% endif %}
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <form method="get" action="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="d-flex gap-2 align-items-center">
-                {% set from_param_val = from_param|default(request.args.get('from', 'all')) %}
-                {% if from_param_val and from_param_val != 'all' %}<input type="hidden" name="from" value="{{ from_param_val }}">{% endif %}
-                <div class="search-box" style="position: relative;">
-                    <i class="bi bi-search"></i>
-                    <input type="text" name="search" class="form-control form-control-modern" 
-                           placeholder="搜索所有字段..." value="{{ request.args.get('search', '') }}"
-                           style="height: 32px; padding-left: 32px; width: 180px;">
-                </div>
-                <select name="status" class="form-control form-control-modern" style="width: 110px; height: 32px; font-size: 13px;">
-                    <option value="">全部状态</option>
-                    <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
-                    <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
-                    <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
-                    <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
-                </select>
-                <button type="submit" class="btn btn-primary-custom" style="height: 32px; padding: 0 12px;"><i class="bi bi-search"></i></button>
-                {% if active_filters %}
-                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, from=get_from_param()) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="btn btn-outline-secondary" style="height: 32px; padding: 0 10px;"><i class="bi bi-x-lg"></i></a>
-                {% endif %}
-            </form>
+        {% else %}
+        <div class="d-flex align-items-center gap-1">
+            <a href="{{ url_for('valves.new') }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--sm"><i class="bi bi-plus-lg"></i> 新增</a>
+            <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--danger cmp-toolbar-btn--sm" onclick="batchDelete()"><i class="bi bi-trash"></i> 删除</button>
+            {% if current_user.role == 'employee' %}
+            <a href="{{ url_for('imports.index') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-upload"></i> 导入</a>
+            {% endif %}
+            <a href="{{ url_for('valves.export_data') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-download"></i> 导出</a>
+        </div>
+        {% endif %}
+        <form method="get" action="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="d-flex gap-2 align-items-center" style="margin:0">
+            {% set from_param_val = from_param|default(request.args.get('from', 'all')) %}
+            {% if from_param_val and from_param_val != 'all' %}<input type="hidden" name="from" value="{{ from_param_val }}">{% endif %}
+            <div class="cmp-toolbar-search">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" class="cmp-input" 
+                       placeholder="搜索所有字段..." value="{{ request.args.get('search', '') }}" style="height:30px;padding-left:28px;width:150px;font-size:12px">
+            </div>
+            <select name="status" class="cmp-select" style="height:30px;font-size:12px;min-width:90px;padding:0 28px 0 10px">
+                <option value="">全部状态</option>
+                <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
+                <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
+                <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
+                <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
+            </select>
+            <button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--sm"><i class="bi bi-search"></i></button>
             {% if active_filters %}
-            <span class="text-muted" style="border-left: 1px solid #dee2e6; padding-left: 8px; margin-left: 4px; font-size: 12px;">
-                <i class="bi bi-funnel-fill text-info"></i> 筛选中
-                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, from=get_from_param()) }}{% else %}{{ url_for('valves.list') }}{% endif %}" style="margin-left: 4px; color: var(--text-muted);"><i class="bi bi-x-lg"></i></a>
+            <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, from=get_from_param()) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-x-lg"></i></a>
+            <span class="text-muted" style="border-left:1px solid var(--color-border);padding-left:8px;font-size:12px">
+                <i class="bi bi-funnel-fill" style="color:var(--mode-color)"></i> 筛选中
             </span>
             {% endif %}
-        </div>
+        </form>
     </div>
 </div>
 {% endblock %}
@@ -117,7 +84,7 @@
 {% block content %}
 <form method="post" action="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.batch_delete') }}{% endif %}" id="batchForm">
     <input type="hidden" name="action" id="batchAction" value="">
-    <div class="modern-card" style="display: none;">
+    <div class="cmp-card" style="display: none;">
         <div class="d-flex align-items-center p-2" style="border-bottom: 1px solid var(--border-color);">
             <div class="form-check">
                 <input type="checkbox" class="form-check-input" id="selectAllTable">
@@ -126,23 +93,23 @@
         </div>
 </div>
 
-    <div class="modern-card">
+    <div class="cmp-card">
         <div class="table-responsive" style="height: calc(100vh - 180px); overflow-y: auto; overflow-x: auto; position: relative;">
-            <table class="modern-table table-sm table-bordered" style="border-spacing: 0;">
+            <table class="cmp-table" style="border-spacing: 0;">
 <thead class="table-light" style="position: sticky; top: 0; z-index: 20;">
                     <tr>
-                        <th style="width: 50px; vertical-align: middle; position: sticky; left: 0; z-index: 23; background: #f8f9fa; border-right: 1px solid #dee2e6;">
+                        <th class="cmp-table__th" style="width: 50px; vertical-align: middle; position: sticky; left: 0; z-index: 23; background: #f8f9fa; border-right: 1px solid #dee2e6;">
                             <input type="checkbox" class="form-check-input" id="selectAllTop">
                         </th>
-                        <th colspan="11" class="text-center table-secondary" style="position: sticky; left: 50px; z-index: 21;">基础信息</th>
-                        <th colspan="4" class="text-center table-info" style="position: sticky; z-index: 21;">工艺条件</th>
-                        <th colspan="3" class="text-center table-warning" style="position: sticky; z-index: 21;">阀体信息</th>
-                        <th colspan="7" class="text-center table-danger" style="position: sticky; z-index: 21;">阀内件信息</th>
-                        <th colspan="10" class="text-center table-success" style="position: sticky; z-index: 21;">执行机构信息</th>
-                        <th colspan="2" class="text-center" style="position: sticky; right: 0; z-index: 23; background: #f8f9fa;">操作列</th>
+                        <th colspan="11" class="cmp-table__th text-center table-secondary" style="position: sticky; left: 50px; z-index: 21;">基础信息</th>
+                        <th colspan="4" class="cmp-table__th text-center table-info" style="position: sticky; z-index: 21;">工艺条件</th>
+                        <th colspan="3" class="cmp-table__th text-center table-warning" style="position: sticky; z-index: 21;">阀体信息</th>
+                        <th colspan="7" class="cmp-table__th text-center table-danger" style="position: sticky; z-index: 21;">阀内件信息</th>
+                        <th colspan="10" class="cmp-table__th text-center table-success" style="position: sticky; z-index: 21;">执行机构信息</th>
+                        <th colspan="2" class="cmp-table__th text-center" style="position: sticky; right: 0; z-index: 23; background: #f8f9fa;">操作列</th>
                     </tr>
 <tr>
-                        <th style="width: 50px; position: sticky; left: 0; z-index: 22; background: #f8f9fa; border-right: 1px solid #dee2e6; border-bottom: 2px solid #dee2e6;"></th>
+                        <th class="cmp-table__th" style="width: 50px; position: sticky; left: 0; z-index: 22; background: #f8f9fa; border-right: 1px solid #dee2e6; border-bottom: 2px solid #dee2e6;"></th>
                         {% set fields = [
                             ('序号', '序号', 'sticky'), ('位号', '位号', ''), ('名称', '名称', ''), ('装置名称', '装置名称', ''),
                             ('设备等级', '设备等级', ''), ('型号规格', '型号规格', ''), ('生产厂家', '生产厂家', ''),
@@ -160,7 +127,7 @@
                             ('状态', '状态', 'sticky'), ('操作', '操作', 'sticky')
                         ] %}
                         {% for field, label, style in fields %}
-                        <th {% if style == 'sticky' %}style="white-space: nowrap; position: sticky; right: {{ '100px' if field == '状态' else '0px' }}; z-index: 22; background: #f8f9fa; border-bottom: 2px solid #dee2e6;"{% else %}class="filter-header" data-field="{{ field }}" style="white-space: nowrap; cursor: pointer; position: sticky; top: 50px; z-index: 21; background: #f8f9fa; border-bottom: 2px solid #dee2e6;" onclick="showFilterDropdown(event, '{{ field }}')"{% endif %}>
+                        <th {% if style == 'sticky' %}class="cmp-table__th" style="white-space: nowrap; position: sticky; right: {{ '100px' if field == '状态' else '0px' }}; z-index: 22; background: #f8f9fa; border-bottom: 2px solid #dee2e6;"{% else %}class="cmp-table__th filter-header" data-field="{{ field }}" style="white-space: nowrap; cursor: pointer; position: sticky; top: 50px; z-index: 21; background: #f8f9fa; border-bottom: 2px solid #dee2e6;" onclick="showFilterDropdown(event, '{{ field }}')"{% endif %}>
                             {% if style != 'sticky' %}
                             <div class="d-flex align-items-center justify-content-between">
                                 <span>{{ label }}</span>
@@ -180,65 +147,65 @@
                 <tbody style="white-space: nowrap;">
                     {% for valve in valves %}
                     <tr>
-                        <td style="position: sticky; left: 0; z-index: 2; background: #fff; border-right: 1px solid #dee2e6;"><input type="checkbox" name="ids" value="{{ valve.id }}" class="form-check-input item-checkbox"></td>
-                        <td>{{ (pagination.page - 1) * pagination.per_page + loop.index }}</td>
-                        <td><a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
-                        <td>{{ valve.名称 or '-' }}</td>
-                        <td>{{ valve.装置名称 or '-' }}</td>
-                        <td>{{ valve.设备等级 or '-' }}</td>
-                        <td>{{ valve.型号规格 or '-' }}</td>
-                        <td>{{ valve.生产厂家 or '-' }}</td>
-                        <td>{{ valve.安装位置及用途 or '-' }}</td>
-                        <td>{{ valve.设备编号 or '-' }}</td>
-                        <td>{{ valve.是否联锁 or '-' }}</td>
-                        <td>{{ valve.备注[:10] + '...' if valve.备注 and valve.备注|length > 10 else valve.备注 or '-' }}</td>
-                        <td>{{ valve.工艺条件_介质名称 or '-' }}</td>
-                        <td>{{ valve.工艺条件_设计温度 or '-' }}</td>
-                        <td>{{ valve.工艺条件_阀前压力 or '-' }}</td>
-                        <td>{{ valve.工艺条件_阀后压力 or '-' }}</td>
-                        <td>{{ valve.阀体_公称通径 or '-' }}</td>
-                        <td>{{ valve.阀体_连接方式及规格 or '-' }}</td>
-                        <td>{{ valve.阀体_材质 or '-' }}</td>
-                        <td>{{ valve.阀内件_阀座直径 or '-' }}</td>
-                        <td>{{ valve.阀内件_阀芯材质 or '-' }}</td>
-                        <td>{{ valve.阀内件_阀座材质 or '-' }}</td>
-                        <td>{{ valve.阀内件_阀杆材质 or '-' }}</td>
-                        <td>{{ valve.阀内件_流量特性 or '-' }}</td>
-                        <td>{{ valve.阀内件_泄露等级 or '-' }}</td>
-                        <td>{{ valve.阀内件_Cv值 or '-' }}</td>
-                        <td>{{ valve.执行机构_形式 or '-' }}</td>
-                        <td>{{ valve.执行机构_型号规格 or '-' }}</td>
-                        <td>{{ valve.执行机构_厂家 or '-' }}</td>
-                        <td>{{ valve.执行机构_作用形式 or '-' }}</td>
-                        <td>{{ valve.执行机构_行程 or '-' }}</td>
-                        <td>{{ valve.执行机构_弹簧范围 or '-' }}</td>
-                        <td>{{ valve.执行机构_气源压力 or '-' }}</td>
-                        <td>{{ valve.执行机构_故障位置 or '-' }}</td>
-                        <td>{{ valve.执行机构_关阀时间 or '-' }}</td>
-                        <td>{{ valve.执行机构_开阀时间 or '-' }}</td>
-                        <td style="position: sticky; right: 100px; z-index: 2; background: #fff; border-left: 1px solid #dee2e6;">
+                        <td class="cmp-table__td" style="position: sticky; left: 0; z-index: 2; background: #fff; border-right: 1px solid #dee2e6;"><input type="checkbox" name="ids" value="{{ valve.id }}" class="form-check-input item-checkbox"></td>
+                        <td class="cmp-table__td">{{ (pagination.page - 1) * pagination.per_page + loop.index }}</td>
+                        <td class="cmp-table__td"><a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
+                        <td class="cmp-table__td">{{ valve.名称 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.装置名称 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.设备等级 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.型号规格 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.生产厂家 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.安装位置及用途 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.设备编号 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.是否联锁 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.备注[:10] + '...' if valve.备注 and valve.备注|length > 10 else valve.备注 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.工艺条件_介质名称 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.工艺条件_设计温度 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.工艺条件_阀前压力 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.工艺条件_阀后压力 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀体_公称通径 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀体_连接方式及规格 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀体_材质 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀内件_阀座直径 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀内件_阀芯材质 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀内件_阀座材质 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀内件_阀杆材质 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀内件_流量特性 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀内件_泄露等级 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀内件_Cv值 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.执行机构_形式 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.执行机构_型号规格 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.执行机构_厂家 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.执行机构_作用形式 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.执行机构_行程 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.执行机构_弹簧范围 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.执行机构_气源压力 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.执行机构_故障位置 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.执行机构_关阀时间 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.执行机构_开阀时间 or '-' }}</td>
+                        <td class="cmp-table__td" style="position: sticky; right: 100px; z-index: 2; background: #fff; border-left: 1px solid #dee2e6;">
                             {% if valve.status == 'approved' %}
-                            <span class="badge-status badge-approved">已审批</span>
+                            <span class="cmp-badge cmp-badge--approved">已审批</span>
                             {% elif valve.status == 'pending' %}
-                            <span class="badge-status badge-pending">待审批</span>
+                            <span class="cmp-badge cmp-badge--pending">待审批</span>
                             {% elif valve.status == 'rejected' %}
-                            <span class="badge-status badge-rejected">已驳回</span>
+                            <span class="cmp-badge cmp-badge--rejected">已驳回</span>
                             {% else %}
-                            <span class="badge-status badge-draft">草稿</span>
+                            <span class="cmp-badge cmp-badge--draft">草稿</span>
                             {% endif %}
                         </td>
-<td style="position: sticky; right: 0; z-index: 2; background: #fff;">
-                            <a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i></a>
+<td class="cmp-table__td" style="position: sticky; right: 0; z-index: 2; background: #fff;">
+                            <a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="cmp-btn cmp-btn--link" style="padding:4px 8px"><i class="bi bi-eye"></i></a>
                             {# 编辑按钮：仅在"我的台账"界面显示，且是自己的阀门且可编辑状态 #}
                             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id and valve.status in ['draft', 'rejected', 'approved'] %}
-                            <a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.edit', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i></a>
+                            <a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.edit', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="cmp-btn cmp-btn--link" style="padding:4px 8px"><i class="bi bi-pencil"></i></a>
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="38">
-                            <div class="empty-state">
+                        <td class="cmp-table__td" colspan="38">
+                            <div class="cmp-empty">
                                 <i class="bi bi-inbox"></i>
                                 <p>暂无台账数据</p>
                             </div>
@@ -259,26 +226,20 @@
                 <small class="text-muted">共 {{ pagination.total }} 条记录</small>
                 {% if pagination.pages > 1 %}
                 <nav style="display: inline-flex; align-items: center; gap: 8px;">
-                    <ul class="pagination-custom pagination mb-0" style="margin-top: 0;">
+                    <ul class="cmp-pagination pagination mb-0" style="margin-top: 0;">
                         {% if pagination.has_prev %}
-                        <li class="page-item">
-                            <a class="page-link" href="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}{% else %}{{ url_for('valves.list', page=pagination.prev_num, search=search_val, status=status_val, per_page=request.args.get('per_page', 20)) }}{% endif %}">上一页</a>
-                        </li>
+                        <a class="cmp-page-link" href="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}{% else %}{{ url_for('valves.list', page=pagination.prev_num, search=search_val, status=status_val, per_page=request.args.get('per_page', 20)) }}{% endif %}">上一页</a>
                         {% endif %}
                         {% set cur = pagination.page %}{% set total = pagination.pages %}
                         {% for p in range(1, total + 1) %}
                           {% if p == 1 or p == 2 or p == total - 1 or p == total or (p >= cur - 1 and p <= cur + 1) %}
-                          <li class="page-item {% if p == cur %}active{% endif %}">
-                            <a class="page-link" href="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id, page=p) }}{% else %}{{ url_for('valves.list', page=p, search=search_val, status=status_val, per_page=request.args.get('per_page', 20)) }}{% endif %}">{{ p }}</a>
-                          </li>
+                          <a class="cmp-page-link {% if p == cur %}active{% endif %}" href="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id, page=p) }}{% else %}{{ url_for('valves.list', page=p, search=search_val, status=status_val, per_page=request.args.get('per_page', 20)) }}{% endif %}">{{ p }}</a>
                           {% elif (p == 3 and cur > 4) or (p == total - 2 and cur < total - 3) %}
-                          <li class="page-item disabled"><span class="page-link">…</span></li>
+                          <span class="cmp-page-link">…</span>
                           {% endif %}
                         {% endfor %}
                         {% if pagination.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id, page=pagination.next_num) }}{% else %}{{ url_for('valves.list', page=pagination.next_num, search=search_val, status=status_val, per_page=request.args.get('per_page', 20)) }}{% endif %}">下一页</a>
-                        </li>
+                        <a class="cmp-page-link" href="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id, page=pagination.next_num) }}{% else %}{{ url_for('valves.list', page=pagination.next_num, search=search_val, status=status_val, per_page=request.args.get('per_page', 20)) }}{% endif %}">下一页</a>
                         {% endif %}
                     </ul>
                     <select style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-dark); padding: 8px 14px; font-size: 14px; background: #fff; cursor: pointer; outline: none; width: auto;" onchange="location.href=this.dataset.baseUrl + '&per_page=' + this.value" data-base-url="{{ request.full_path.split('&per_page')[0].split('?')[0] + '?' + (request.full_path.split('?')[1].split('&per_page')[0] if '?' in request.full_path and request.full_path.split('?')[1].split('&per_page')[0] else '') }}{{ '&' if request.full_path.split('?')[1]|default('') and request.full_path.split('?')[1].split('&per_page')[0] else '' }}">

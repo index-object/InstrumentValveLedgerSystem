@@ -1,0 +1,27 @@
+{% macro status_badge(text, status) %}
+  <span class="cmp-badge cmp-badge--{{ status }}">{{ text }}</span>
+{% endmacro %}
+
+{% macro table_start() %}
+<div class="cmp-table-wrap"><table class="cmp-table">
+{% endmacro %}
+
+{% macro table_end() %}
+</table></div>
+{% endmacro %}
+
+{% macro th(text) %}
+  <th class="cmp-table__th">{{ text }}</th>
+{% endmacro %}
+
+{% macro td(text, class='') %}
+  <td class="cmp-table__td {{ class }}">{{ text }}</td>
+{% endmacro %}
+
+{% macro row_start() %}
+  <tr class="cmp-table__row">
+{% endmacro %}
+
+{% macro row_end() %}
+  </tr>
+{% endmacro %}

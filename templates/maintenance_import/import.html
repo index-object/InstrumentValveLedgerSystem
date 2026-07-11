@@ -11,10 +11,10 @@
     </button>
     <div class="collapse mt-2" id="skippedList">
         <table class="table table-sm table-bordered mb-0">
-            <thead><tr><th>装置名称</th><th>设备位号</th><th>原因</th></tr></thead>
+            <thead><tr><th class="cmp-table__th">装置名称</th><th class="cmp-table__th">设备位号</th><th class="cmp-table__th">原因</th></tr></thead>
             <tbody>
                 {% for d in skipped %}
-                <tr><td>{{ d.装置名称 }}</td><td>{{ d.设备位号 }}</td><td>{{ d.原因 }}</td></tr>
+                <tr><td class="cmp-table__td">{{ d.装置名称 }}</td><td class="cmp-table__td">{{ d.设备位号 }}</td><td class="cmp-table__td">{{ d.原因 }}</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -23,7 +23,7 @@
 </div>
 {% endif %}
 
-<div class="modern-card mb-4">
+<div class="cmp-card mb-4">
     <div class="card-header-custom"><i class="bi bi-file-earmark-plus"></i> 批量导入维护记录</div>
     <div class="card-body-custom">
         <div class="mb-3 p-3" style="background: #f0fdf4; border-radius: 8px; border-left: 3px solid #22c55e;">
@@ -36,8 +36,8 @@
         <div class="mb-3 p-3" style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
             <h6 style="font-size:14px;font-weight:600;margin-bottom:8px;">导入格式说明：</h6>
             <table class="table table-sm table-bordered mb-0" style="font-size:13px;">
-                <thead><tr><th>装置名称</th><th>设备位号</th><th>设备名称</th><th>检修时间</th><th>检修内容</th><th>检修人员</th><th>类型</th></tr></thead>
-                <tbody><tr><td>气化装置</td><td>PT-001</td><td>压力变送器</td><td>2025-03-15</td><td>更换膜片</td><td>张三</td><td>大修</td></tr></tbody>
+                <thead><tr><th class="cmp-table__th">装置名称</th><th class="cmp-table__th">设备位号</th><th class="cmp-table__th">设备名称</th><th class="cmp-table__th">检修时间</th><th class="cmp-table__th">检修内容</th><th class="cmp-table__th">检修人员</th><th class="cmp-table__th">类型</th></tr></thead>
+                <tbody><tr><td class="cmp-table__td">气化装置</td><td class="cmp-table__td">PT-001</td><td class="cmp-table__td">压力变送器</td><td class="cmp-table__td">2025-03-15</td><td class="cmp-table__td">更换膜片</td><td class="cmp-table__td">张三</td><td class="cmp-table__td">大修</td></tr></tbody>
             </table>
             <small class="text-muted mt-1 d-block">
                 <i class="bi bi-info-circle"></i> 设备名称/检修时间/检修内容/检修人员/类型为可选列，装置名称和设备位号为必填列。
@@ -48,8 +48,8 @@
         </div>
         <form method="POST" enctype="multipart/form-data" action="{{ url_for('maintenance_import.upload') }}">
             <div class="mb-3">
-                <label class="form-label">选择维护记录 Excel 文件</label>
-                <input type="file" name="file" accept=".xlsx,.xls" class="form-control form-control-modern" required>
+                <label class="cmp-label">选择维护记录 Excel 文件</label>
+                <input type="file" name="file" accept=".xlsx,.xls" class="form-control cmp-input" required>
             </div>
             <button type="submit" class="btn btn-primary">上传并预览</button>
             <a href="{{ url_for('valves.maintenance_list') }}" class="btn btn-secondary">返回列表</a>

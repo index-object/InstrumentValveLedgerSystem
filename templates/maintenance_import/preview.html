@@ -42,24 +42,24 @@
                     <table class="table table-sm table-bordered mb-0 preview-table">
                         <thead>
                             <tr>
-                                <th>行</th><th>装置名称</th><th>设备位号</th><th>匹配设备类型</th>
-                                <th>检修时间</th><th>检修内容</th><th>检修人员</th><th>类型</th>
+                                <th class="cmp-table__th">行</th><th class="cmp-table__th">装置名称</th><th class="cmp-table__th">设备位号</th><th class="cmp-table__th">匹配设备类型</th>
+                                <th class="cmp-table__th">检修时间</th><th class="cmp-table__th">检修内容</th><th class="cmp-table__th">检修人员</th><th class="cmp-table__th">类型</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for m in matched %}
                             <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ m.snapshot.装置名称 }}</td>
-                                <td>{{ m.snapshot.设备位号 }}</td>
-                                <td>
+                                <td class="cmp-table__td">{{ loop.index }}</td>
+                                <td class="cmp-table__td">{{ m.snapshot.装置名称 }}</td>
+                                <td class="cmp-table__td">{{ m.snapshot.设备位号 }}</td>
+                                <td class="cmp-table__td">
                                     {% set cfg = get_device_type_config(m.device_type) %}
                                     <span class="badge bg-success">{{ cfg.name if cfg else m.device_type }}</span>
                                 </td>
-                                <td>{{ m.data.get('检修时间', '') }}</td>
-                                <td>{{ m.data.get('检修内容', '')[:20] }}</td>
-                                <td>{{ m.data.get('检修人员', '') }}</td>
-                                <td>{{ m.data.get('类型', '') }}</td>
+                                <td class="cmp-table__td">{{ m.data.get('检修时间', '') }}</td>
+                                <td class="cmp-table__td">{{ m.data.get('检修内容', '')[:20] }}</td>
+                                <td class="cmp-table__td">{{ m.data.get('检修人员', '') }}</td>
+                                <td class="cmp-table__td">{{ m.data.get('类型', '') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -89,21 +89,21 @@
                     <table class="table table-sm table-bordered mb-0 preview-table">
                         <thead>
                             <tr>
-                                <th>行</th><th>装置名称</th><th>设备位号</th><th>设备名称</th>
-                                <th>检修时间</th><th>检修内容</th><th>检修人员</th><th>类型</th>
+                                <th class="cmp-table__th">行</th><th class="cmp-table__th">装置名称</th><th class="cmp-table__th">设备位号</th><th class="cmp-table__th">设备名称</th>
+                                <th class="cmp-table__th">检修时间</th><th class="cmp-table__th">检修内容</th><th class="cmp-table__th">检修人员</th><th class="cmp-table__th">类型</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for um in unmatched %}
                             <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ um.data.get('装置名称', '') }}</td>
-                                <td>{{ um.data.get('设备位号', '') }}</td>
-                                <td>{{ um.data.get('设备名称', '') }}</td>
-                                <td>{{ um.data.get('检修时间', '') }}</td>
-                                <td>{{ um.data.get('检修内容', '')[:20] }}</td>
-                                <td>{{ um.data.get('检修人员', '') }}</td>
-                                <td>{{ um.data.get('类型', '') }}</td>
+                                <td class="cmp-table__td">{{ loop.index }}</td>
+                                <td class="cmp-table__td">{{ um.data.get('装置名称', '') }}</td>
+                                <td class="cmp-table__td">{{ um.data.get('设备位号', '') }}</td>
+                                <td class="cmp-table__td">{{ um.data.get('设备名称', '') }}</td>
+                                <td class="cmp-table__td">{{ um.data.get('检修时间', '') }}</td>
+                                <td class="cmp-table__td">{{ um.data.get('检修内容', '')[:20] }}</td>
+                                <td class="cmp-table__td">{{ um.data.get('检修人员', '') }}</td>
+                                <td class="cmp-table__td">{{ um.data.get('类型', '') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -123,20 +123,20 @@
                     <table class="table table-sm table-bordered mb-0 preview-table">
                         <thead>
                             <tr>
-                                <th>行</th><th>装置名称</th><th>设备位号</th>
-                                <th>检修时间</th><th>检修内容</th><th>检修人员</th><th>类型</th>
+                                <th class="cmp-table__th">行</th><th class="cmp-table__th">装置名称</th><th class="cmp-table__th">设备位号</th>
+                                <th class="cmp-table__th">检修时间</th><th class="cmp-table__th">检修内容</th><th class="cmp-table__th">检修人员</th><th class="cmp-table__th">类型</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for d in duplicates %}
                             <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ d.data.get('装置名称', '') }}</td>
-                                <td>{{ d.data.get('设备位号', '') }}</td>
-                                <td>{{ d.data.get('检修时间', '') }}</td>
-                                <td>{{ d.data.get('检修内容', '')[:20] }}</td>
-                                <td>{{ d.data.get('检修人员', '') }}</td>
-                                <td>{{ d.data.get('类型', '') }}</td>
+                                <td class="cmp-table__td">{{ loop.index }}</td>
+                                <td class="cmp-table__td">{{ d.data.get('装置名称', '') }}</td>
+                                <td class="cmp-table__td">{{ d.data.get('设备位号', '') }}</td>
+                                <td class="cmp-table__td">{{ d.data.get('检修时间', '') }}</td>
+                                <td class="cmp-table__td">{{ d.data.get('检修内容', '')[:20] }}</td>
+                                <td class="cmp-table__td">{{ d.data.get('检修人员', '') }}</td>
+                                <td class="cmp-table__td">{{ d.data.get('类型', '') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -156,29 +156,29 @@
                     <table class="table table-sm table-bordered mb-0 preview-table">
                         <thead>
                             <tr>
-                                <th>行</th><th>装置名称</th><th>设备位号</th>
-                                <th>请选择设备类型</th>
-                                <th>检修时间</th><th>检修内容</th><th>检修人员</th><th>类型</th>
+                                <th class="cmp-table__th">行</th><th class="cmp-table__th">装置名称</th><th class="cmp-table__th">设备位号</th>
+                                <th class="cmp-table__th">请选择设备类型</th>
+                                <th class="cmp-table__th">检修时间</th><th class="cmp-table__th">检修内容</th><th class="cmp-table__th">检修人员</th><th class="cmp-table__th">类型</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for amb in ambiguous %}
                             <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ amb.data.get('装置名称', '') }}</td>
-                                <td>{{ amb.data.get('设备位号', '') }}</td>
-                                <td>
-                                    <select class="form-select form-select-sm" name="ambiguous_choice_{{ amb.index }}">
+                                <td class="cmp-table__td">{{ loop.index }}</td>
+                                <td class="cmp-table__td">{{ amb.data.get('装置名称', '') }}</td>
+                                <td class="cmp-table__td">{{ amb.data.get('设备位号', '') }}</td>
+                                <td class="cmp-table__td">
+                                    <select class="cmp-select cmp-select-sm" name="ambiguous_choice_{{ amb.index }}">
                                         <option value="">— 跳过此行 —</option>
                                         {% for c in amb.candidates %}
                                         <option value="{{ c.code }}">{{ c.name }}</option>
                                         {% endfor %}
                                     </select>
                                 </td>
-                                <td>{{ amb.data.get('检修时间', '') }}</td>
-                                <td>{{ amb.data.get('检修内容', '')[:20] }}</td>
-                                <td>{{ amb.data.get('检修人员', '') }}</td>
-                                <td>{{ amb.data.get('类型', '') }}</td>
+                                <td class="cmp-table__td">{{ amb.data.get('检修时间', '') }}</td>
+                                <td class="cmp-table__td">{{ amb.data.get('检修内容', '')[:20] }}</td>
+                                <td class="cmp-table__td">{{ amb.data.get('检修人员', '') }}</td>
+                                <td class="cmp-table__td">{{ amb.data.get('类型', '') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

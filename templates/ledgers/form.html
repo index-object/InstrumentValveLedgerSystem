@@ -3,24 +3,24 @@
 {% block page_title %}{% if ledger %}编辑台账集合{% else %}新建台账集合{% endif %}{% endblock %}
 
 {% block content %}
-<div class="modern-card" style="max-width: 600px; margin: 0 auto;">
+<div class="cmp-card" style="max-width: 600px; margin: 0 auto;">
     <div class="p-4">
         <h5 class="mb-4">{% if ledger %}编辑台账集合{% else %}新建台账集合{% endif %}</h5>
         
         <form method="post">
             <div class="mb-3">
-                <label class="form-label">集合名称 <span class="text-danger">*</span></label>
-                <input type="text" name="名称" class="form-control form-control-modern" 
+                <label class="cmp-label">集合名称 <span class="text-danger">*</span></label>
+                <input type="text" name="名称" class="form-control cmp-input" 
                        value="{{ ledger.名称 if ledger else '' }}" required>
             </div>
             
             <div class="mb-3">
-                <label class="form-label">描述</label>
-                <textarea name="描述" class="form-control form-control-modern" rows="3">{{ ledger.描述 if ledger else '' }}</textarea>
+                <label class="cmp-label">描述</label>
+                <textarea name="描述" class="form-control cmp-input" rows="3">{{ ledger.描述 if ledger else '' }}</textarea>
             </div>
             
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary-custom">
+                <button type="submit" class="btn cmp-btn cmp-btn--primary">
                     <i class="bi bi-check-lg"></i> 保存
                 </button>
                 {% if request.args.get('from') == 'mine' %}

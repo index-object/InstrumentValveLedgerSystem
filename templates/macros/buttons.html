@@ -1,0 +1,31 @@
+{% macro btn_primary(text, icon=none, href=none, class='', attrs='') %}
+  {% if href %}
+    <a href="{{ href }}" class="cmp-btn cmp-btn--primary {{ class }}" {{ attrs|safe }}>{% if icon %}<i class="bi {{ icon }}"></i> {% endif %}{{ text }}</a>
+  {% else %}
+    <button class="cmp-btn cmp-btn--primary {{ class }}" {{ attrs|safe }}>{% if icon %}<i class="bi {{ icon }}"></i> {% endif %}{{ text }}</button>
+  {% endif %}
+{% endmacro %}
+
+{% macro btn_accent(text, icon=none, href=none, class='') %}
+  {% if href %}
+    <a href="{{ href }}" class="cmp-btn cmp-btn--accent {{ class }}">{% if icon %}<i class="bi {{ icon }}"></i> {% endif %}{{ text }}</a>
+  {% else %}
+    <button class="cmp-btn cmp-btn--accent {{ class }}">{% if icon %}<i class="bi {{ icon }}"></i> {% endif %}{{ text }}</button>
+  {% endif %}
+{% endmacro %}
+
+{% macro btn_danger(text, icon=none, href=none, class='') %}
+  {% if href %}
+    <a href="{{ href }}" class="cmp-btn cmp-btn--danger {{ class }}">{% if icon %}<i class="bi {{ icon }}"></i> {% endif %}{{ text }}</a>
+  {% else %}
+    <button class="cmp-btn cmp-btn--danger {{ class }}">{% if icon %}<i class="bi {{ icon }}"></i> {% endif %}{{ text }}</button>
+  {% endif %}
+{% endmacro %}
+
+{% macro btn_secondary(text, icon=none, href=none, class='') %}
+  {% if href %}
+    <a href="{{ href }}" class="cmp-btn cmp-btn--secondary {{ class }}">{% if icon %}<i class="bi {{ icon }}"></i> {% endif %}{{ text }}</a>
+  {% else %}
+    <button class="cmp-btn cmp-btn--secondary {{ class }}">{% if icon %}<i class="bi {{ icon }}"></i> {% endif %}{{ text }}</button>
+  {% endif %}
+{% endmacro %}

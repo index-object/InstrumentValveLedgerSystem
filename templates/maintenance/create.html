@@ -7,22 +7,22 @@
 {% endblock %}
 
 {% block content %}
-<div class="modern-card">
+<div class="cmp-card">
     <div class="card-header-custom"><i class="bi bi-plus-circle"></i> 新建维护记录</div>
     <div class="card-body-custom">
         <form method="POST">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 设备位号</label>
+                    <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 设备位号</label>
                     <input type="hidden" name="valve_id" id="valve_id" required>
                     <input type="hidden" name="valve_type" id="valve_type" value="">
-                    <button type="button" class="form-control form-control-modern text-start" id="valveSelectorBtn" data-bs-toggle="modal" data-bs-target="#valveSelectModal" style="cursor: pointer; text-align: left;">
+                    <button type="button" class="form-control cmp-input text-start" id="valveSelectorBtn" data-bs-toggle="modal" data-bs-target="#valveSelectModal" style="cursor: pointer; text-align: left;">
                         <i class="bi bi-search"></i> 点击选择位号
                     </button>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label" style="font-weight: 500;">类型</label>
-                    <select name="类型" class="form-control form-control-modern">
+                    <label class="cmp-label" style="font-weight: 500;">类型</label>
+                    <select name="类型" class="form-control cmp-input">
                         <option value="维修">维修</option>
                         <option value="检定">检定</option>
                         <option value="保养">保养</option>
@@ -31,22 +31,22 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修时间</label>
-                    <input type="date" name="检修时间" class="form-control form-control-modern" required>
+                    <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修时间</label>
+                    <input type="date" name="检修时间" class="form-control cmp-input" required>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修人员</label>
-                    <input type="text" name="检修人员" class="form-control form-control-modern" required placeholder="请输入检修人员">
+                    <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修人员</label>
+                    <input type="text" name="检修人员" class="form-control cmp-input" required placeholder="请输入检修人员">
                 </div>
             </div>
             <div class="mb-3">
-                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修内容</label>
-                    <textarea name="检修内容" class="form-control form-control-modern" rows="4" required placeholder="请输入检修内容"></textarea>
+                    <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修内容</label>
+                    <textarea name="检修内容" class="form-control cmp-input" rows="4" required placeholder="请输入检修内容"></textarea>
             </div>
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary-custom"><i class="bi bi-check-lg"></i> 保存</button>
+                <button type="submit" class="btn cmp-btn cmp-btn--primary"><i class="bi bi-check-lg"></i> 保存</button>
                 <a href="{{ url_for('valves.maintenance_list') }}" class="btn" style="background: #e2e8f0; color: #475569;">取消</a>
             </div>
         </form>
@@ -71,7 +71,7 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <select id="valveFilterUnit" class="form-select">
+                        <select id="valveFilterUnit" class="cmp-select">
                             <option value="">全部装置</option>
                             {% for unit in valves_data|map(attribute='device_unit')|unique|sort %}
                             {% if unit %}
@@ -85,20 +85,20 @@
                     </div>
                 </div>
                 <div style="max-height: 400px; overflow-y: auto;">
-                    <table class="modern-table" style="margin: 0;">
+                    <table class="cmp-table" style="margin: 0;">
                         <thead>
                             <tr>
-                                <th style="width: 40%;">位号</th>
-                                <th style="width: 30%;">名称</th>
-                                <th style="width: 30%;">装置名称</th>
+                                <th style="width: 40%;" class="cmp-table__th">位号</th>
+                                <th style="width: 30%;" class="cmp-table__th">名称</th>
+                                <th style="width: 30%;" class="cmp-table__th">装置名称</th>
                             </tr>
                         </thead>
                         <tbody id="valveTableBody">
                             {% for v in valves_data %}
                             <tr class="valve-row" data-id="{{ v.id }}" data-tag="{{ v.tag }}" data-name="{{ v.name }}" data-unit="{{ v.device_unit }}" data-type="{{ v.type }}" style="cursor: pointer;">
-                                <td style="font-weight: 500; color: var(--primary-color);">{{ v.tag }}</td>
-                                <td>{{ v.name }}</td>
-                                <td>{{ v.device_unit }}</td>
+                                <td style="font-weight: 500; color: var(--primary-color);" class="cmp-table__td">{{ v.tag }}</td>
+                                <td class="cmp-table__td">{{ v.name }}</td>
+                                <td class="cmp-table__td">{{ v.device_unit }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -107,7 +107,7 @@
             </div>
             <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 24px;">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="background: #f1f5f9; border: none; color: #475569; padding: 8px 20px; border-radius: 8px;">取消</button>
-                <button type="button" class="btn btn-primary-custom" id="valveSelectConfirm" disabled data-bs-dismiss="modal" style="padding: 8px 20px; border-radius: 8px;">确认选择</button>
+                <button type="button" class="btn cmp-btn cmp-btn--primary" id="valveSelectConfirm" disabled data-bs-dismiss="modal" style="padding: 8px 20px; border-radius: 8px;">确认选择</button>
             </div>
         </div>
     </div>
@@ -135,9 +135,9 @@ function renderValves() {
     });
     tbody.innerHTML = filtered.map(v => `
         <tr class="valve-row${selectedValveId === v.id ? ' active' : ''}" data-id="${v.id}" data-tag="${v.tag}" data-name="${v.name}" data-unit="${v.device_unit}" data-type="${v.type}" style="cursor: pointer;">
-            <td style="font-weight: 500; color: var(--primary-color);">${v.tag}</td>
-            <td>${v.name}</td>
-            <td>${v.device_unit}</td>
+            <td style="font-weight: 500; color: var(--primary-color);" class="cmp-table__td">${v.tag}</td>
+            <td class="cmp-table__td">${v.name}</td>
+            <td class="cmp-table__td">${v.device_unit}</td>
         </tr>
     `).join('');
     document.getElementById('valveCount').textContent = filtered.length + ' 条';

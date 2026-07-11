@@ -44,14 +44,14 @@
                             <table class="table table-sm preview-table mb-0 border-top">
                                 <thead>
                                     <tr>
-                                        <th style="width:120px;"></th>
-                                        <th>#</th>
-                                        <th>装置名称</th>
-                                        <th>位号</th>
+                                        <th style="width:120px;" class="cmp-table__th"></th>
+                                        <th class="cmp-table__th">#</th>
+                                        <th class="cmp-table__th">装置名称</th>
+                                        <th class="cmp-table__th">位号</th>
                                         {% if c.rows %}
                                         {% for k in c.rows[0].data.keys() %}
                                         {% if k not in ("装置名称", "位号") %}
-                                        <th>{{ k }}</th>
+                                        <th class="cmp-table__th">{{ k }}</th>
                                         {% endif %}
                                         {% endfor %}
                                         {% endif %}
@@ -60,18 +60,18 @@
                                 <tbody>
                                     {% for r in c.rows %}
                                     <tr>
-                                        <td class="text-center">
+                                        <td class="cmp-table__td text-center">
                                             <input class="form-check-input conflict-radio" type="radio"
                                                    name="choice_{{ cd.sheet }}__{{ c.key }}"
                                                    value="{{ r.row_index }}"
                                                    data-row="{{ loop.index }}">
                                         </td>
-                                        <td class="text-muted">{{ r.row_index + 1 }}</td>
-                                        <td>{{ c.装置名称 or '' }}</td>
-                                        <td>{{ c.位号 or '' }}</td>
+                                        <td class="cmp-table__td text-muted">{{ r.row_index + 1 }}</td>
+                                        <td class="cmp-table__td">{{ c.装置名称 or '' }}</td>
+                                        <td class="cmp-table__td">{{ c.位号 or '' }}</td>
                                         {% for k, v in r.data.items() %}
                                         {% if k not in ("装置名称", "位号") %}
-                                        <td>{{ v }}</td>
+                                        <td class="cmp-table__td">{{ v }}</td>
                                         {% endif %}
                                         {% endfor %}
                                     </tr>

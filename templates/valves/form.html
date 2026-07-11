@@ -2,9 +2,7 @@
 
 {% block page_title %}{% if valve %}编辑{% else %}新建{% endif %}台账{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
-{% endblock %}
+
 
 {% block back_btn %}
 {% set from_param = from_param|default(request.args.get('from', 'all')) %}
@@ -22,9 +20,9 @@
 {% block header_actions %}{% endblock %}
 
 {% block content %}
-<div class="form-page-header">
+<div style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%); color: white; padding: 24px; border-radius: var(--radius-md); margin-bottom: 24px;">
     <div>
-        <h2><i class="bi bi-{% if valve %}pencil-square{% else %}plus-circle{% endif %}"></i> {% if valve %}编辑{% else %}新建{% endif %}台账{% if ledger %} - {{ ledger.名称 }}{% endif %}</h2>
+        <h2 style="margin: 0; font-size: 20px; font-weight: 600;"><i class="bi bi-{% if valve %}pencil-square{% else %}plus-circle{% endif %}"></i> {% if valve %}编辑{% else %}新建{% endif %}台账{% if ledger %} - {{ ledger.名称 }}{% endif %}</h2>
         <p>填写仪表阀门详细信息{% if ledger %}，保存后在台账集合详情页提交审批{% else %}，保存后等待审批{% endif %}</p>
     </div>
 </div>
@@ -59,261 +57,261 @@
 
 <form method="POST" id="valveForm">
     <div class="form-step active" data-step="1">
-        <div class="form-section" id="basic-info">
-            <div class="form-section-header">
+        <div class="cmp-form-section" id="basic-info">
+            <div class="cmp-form-section__header">
                 <i class="bi bi-id-card"></i>
                 <h5>基本信息</h5>
             </div>
-            <div class="form-section-body">
-                <div class="field-row">
-                    <div class="field-item">
-                        <label class="form-label"><span class="required">*</span> <i class="bi bi-upc" style="color: var(--text-muted);"></i> 位号</label>
-                        <input type="text" name="位号" class="form-control form-control-modern" value="{{ valve.位号 or '' }}" required placeholder="请输入位号" id="tagInput">
+            <div class="cmp-form-section__body">
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><span class="required">*</span> <i class="bi bi-upc" style="color: var(--text-muted);"></i> 位号</label>
+                        <input type="text" name="位号" class="form-control cmp-input" value="{{ valve.位号 or '' }}" required placeholder="请输入位号" id="tagInput">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><span class="required">*</span> <i class="bi bi-tag" style="color: var(--text-muted);"></i> 名称</label>
-                        <input type="text" name="名称" class="form-control form-control-modern" value="{{ valve.名称 or '' }}" required placeholder="请输入设备名称">
-                    </div>
-                </div>
-                <div class="field-row">
-                    <div class="field-item">
-                        <label class="form-label"><span class="required">*</span> <i class="bi bi-building" style="color: var(--text-muted);"></i> 装置名称</label>
-                        <input type="text" name="装置名称" class="form-control form-control-modern" value="{{ valve.装置名称 or '' }}" required placeholder="请输入装置名称">
-                    </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-layers" style="color: var(--text-muted);"></i> 设备等级</label>
-                        <input type="text" name="设备等级" class="form-control form-control-modern" value="{{ valve.设备等级 or '' }}" placeholder="如：A级、B级">
-                    </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-aspect-ratio" style="color: var(--text-muted);"></i> 型号规格</label>
-                        <input type="text" name="型号规格" class="form-control form-control-modern" value="{{ valve.型号规格 or '' }}" placeholder="请输入型号规格">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><span class="required">*</span> <i class="bi bi-tag" style="color: var(--text-muted);"></i> 名称</label>
+                        <input type="text" name="名称" class="form-control cmp-input" value="{{ valve.名称 or '' }}" required placeholder="请输入设备名称">
                     </div>
                 </div>
-                <div class="field-row">
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-factory" style="color: var(--text-muted);"></i> 生产厂家</label>
-                        <input type="text" name="生产厂家" class="form-control form-control-modern" value="{{ valve.生产厂家 or '' }}" placeholder="请输入生产厂家">
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><span class="required">*</span> <i class="bi bi-building" style="color: var(--text-muted);"></i> 装置名称</label>
+                        <input type="text" name="装置名称" class="form-control cmp-input" value="{{ valve.装置名称 or '' }}" required placeholder="请输入装置名称">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-geo-alt" style="color: var(--text-muted);"></i> 安装位置及用途</label>
-                        <input type="text" name="安装位置及用途" class="form-control form-control-modern" value="{{ valve.安装位置及用途 or '' }}" placeholder="请输入安装位置">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-layers" style="color: var(--text-muted);"></i> 设备等级</label>
+                        <input type="text" name="设备等级" class="form-control cmp-input" value="{{ valve.设备等级 or '' }}" placeholder="如：A级、B级">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-qr-code" style="color: var(--text-muted);"></i> 设备编号</label>
-                        <input type="text" name="设备编号" class="form-control form-control-modern" value="{{ valve.设备编号 or '' }}" placeholder="请输入设备编号">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-aspect-ratio" style="color: var(--text-muted);"></i> 型号规格</label>
+                        <input type="text" name="型号规格" class="form-control cmp-input" value="{{ valve.型号规格 or '' }}" placeholder="请输入型号规格">
                     </div>
                 </div>
-                <div class="field-row">
-                    <div class="field-item" style="flex: 0 0 300px;">
-                        <label class="form-label"><i class="bi bi-exclamation-triangle" style="color: var(--text-muted);"></i> 是否联锁</label>
-                        <input type="text" name="是否联锁" class="form-control form-control-modern" value="{{ valve.是否联锁 or '' }}" placeholder="是/否">
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-factory" style="color: var(--text-muted);"></i> 生产厂家</label>
+                        <input type="text" name="生产厂家" class="form-control cmp-input" value="{{ valve.生产厂家 or '' }}" placeholder="请输入生产厂家">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-geo-alt" style="color: var(--text-muted);"></i> 安装位置及用途</label>
+                        <input type="text" name="安装位置及用途" class="form-control cmp-input" value="{{ valve.安装位置及用途 or '' }}" placeholder="请输入安装位置">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-qr-code" style="color: var(--text-muted);"></i> 设备编号</label>
+                        <input type="text" name="设备编号" class="form-control cmp-input" value="{{ valve.设备编号 or '' }}" placeholder="请输入设备编号">
+                    </div>
+                </div>
+                <div class="cmp-field-row">
+                    <div class="cmp-field" style="flex: 0 0 300px;">
+                        <label class="cmp-label"><i class="bi bi-exclamation-triangle" style="color: var(--text-muted);"></i> 是否联锁</label>
+                        <input type="text" name="是否联锁" class="form-control cmp-input" value="{{ valve.是否联锁 or '' }}" placeholder="是/否">
                     </div>
                 </div>
             </div>
         </div>
         <div class="step-actions">
             <div></div>
-            <button type="button" class="btn-submit" onclick="goToStep(2)">
+            <button type="button" class="cmp-btn cmp-btn--primary" onclick="goToStep(2)">
                 下一步 <i class="bi bi-arrow-right"></i>
             </button>
         </div>
     </div>
 
     <div class="form-step" data-step="2">
-        <div class="form-section" id="process-conditions">
-            <div class="form-section-header" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
+        <div class="cmp-form-section" id="process-conditions">
+            <div class="cmp-form-section__header" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
                 <i class="bi bi-thermometer-half"></i>
                 <h5>工艺条件</h5>
             </div>
-            <div class="form-section-body">
-                <div class="field-row">
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-droplet" style="color: var(--text-muted);"></i> 介质名称</label>
-                        <input type="text" name="工艺条件_介质名称" class="form-control form-control-modern" value="{{ valve.工艺条件_介质名称 or '' }}" placeholder="请输入介质名称">
+            <div class="cmp-form-section__body">
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-droplet" style="color: var(--text-muted);"></i> 介质名称</label>
+                        <input type="text" name="工艺条件_介质名称" class="form-control cmp-input" value="{{ valve.工艺条件_介质名称 or '' }}" placeholder="请输入介质名称">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-thermometer" style="color: var(--text-muted);"></i> 设计温度</label>
-                        <input type="text" name="工艺条件_设计温度" class="form-control form-control-modern" value="{{ valve.工艺条件_设计温度 or '' }}" placeholder="如：200℃">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-thermometer" style="color: var(--text-muted);"></i> 设计温度</label>
+                        <input type="text" name="工艺条件_设计温度" class="form-control cmp-input" value="{{ valve.工艺条件_设计温度 or '' }}" placeholder="如：200℃">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-arrow-left-right" style="color: var(--text-muted);"></i> 阀前压力</label>
-                        <input type="text" name="工艺条件_阀前压力" class="form-control form-control-modern" value="{{ valve.工艺条件_阀前压力 or '' }}" placeholder="如：1.6MPa">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-arrow-left-right" style="color: var(--text-muted);"></i> 阀前压力</label>
+                        <input type="text" name="工艺条件_阀前压力" class="form-control cmp-input" value="{{ valve.工艺条件_阀前压力 or '' }}" placeholder="如：1.6MPa">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-arrow-right" style="color: var(--text-muted);"></i> 阀后压力</label>
-                        <input type="text" name="工艺条件_阀后压力" class="form-control form-control-modern" value="{{ valve.工艺条件_阀后压力 or '' }}" placeholder="如：0.8MPa">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-arrow-right" style="color: var(--text-muted);"></i> 阀后压力</label>
+                        <input type="text" name="工艺条件_阀后压力" class="form-control cmp-input" value="{{ valve.工艺条件_阀后压力 or '' }}" placeholder="如：0.8MPa">
                     </div>
                 </div>
             </div>
         </div>
         <div class="step-actions">
-            <button type="button" class="btn-back" onclick="goToStep(1)">
+            <button type="button" class="cmp-btn cmp-btn--secondary" onclick="goToStep(1)">
                 <i class="bi bi-arrow-left"></i> 上一步
             </button>
-            <button type="button" class="btn-submit" onclick="goToStep(3)">
+            <button type="button" class="cmp-btn cmp-btn--primary" onclick="goToStep(3)">
                 下一步 <i class="bi bi-arrow-right"></i>
             </button>
         </div>
     </div>
 
     <div class="form-step" data-step="3">
-        <div class="form-section" id="valve-body">
-            <div class="form-section-header" style="background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);">
+        <div class="cmp-form-section" id="valve-body">
+            <div class="cmp-form-section__header" style="background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);">
                 <i class="bi bi-box-seam"></i>
                 <h5>阀体信息</h5>
             </div>
-            <div class="form-section-body">
-                <div class="field-row">
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-rulers" style="color: var(--text-muted);"></i> 公称通径</label>
-                        <input type="text" name="阀体_公称通径" class="form-control form-control-modern" value="{{ valve.阀体_公称通径 or '' }}" placeholder="如：DN100">
+            <div class="cmp-form-section__body">
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-rulers" style="color: var(--text-muted);"></i> 公称通径</label>
+                        <input type="text" name="阀体_公称通径" class="form-control cmp-input" value="{{ valve.阀体_公称通径 or '' }}" placeholder="如：DN100">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-link-45deg" style="color: var(--text-muted);"></i> 连接方式及规格</label>
-                        <input type="text" name="阀体_连接方式及规格" class="form-control form-control-modern" value="{{ valve.阀体_连接方式及规格 or '' }}" placeholder="如：法兰连接">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-link-45deg" style="color: var(--text-muted);"></i> 连接方式及规格</label>
+                        <input type="text" name="阀体_连接方式及规格" class="form-control cmp-input" value="{{ valve.阀体_连接方式及规格 or '' }}" placeholder="如：法兰连接">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-gem" style="color: var(--text-muted);"></i> 阀体材质</label>
-                        <input type="text" name="阀体_材质" class="form-control form-control-modern" value="{{ valve.阀体_材质 or '' }}" placeholder="请输入阀体材质">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-gem" style="color: var(--text-muted);"></i> 阀体材质</label>
+                        <input type="text" name="阀体_材质" class="form-control cmp-input" value="{{ valve.阀体_材质 or '' }}" placeholder="请输入阀体材质">
                     </div>
                 </div>
             </div>
         </div>
         <div class="step-actions">
-            <button type="button" class="btn-back" onclick="goToStep(2)">
+            <button type="button" class="cmp-btn cmp-btn--secondary" onclick="goToStep(2)">
                 <i class="bi bi-arrow-left"></i> 上一步
             </button>
-            <button type="button" class="btn-submit" onclick="goToStep(4)">
+            <button type="button" class="cmp-btn cmp-btn--primary" onclick="goToStep(4)">
                 下一步 <i class="bi bi-arrow-right"></i>
             </button>
         </div>
     </div>
 
     <div class="form-step" data-step="4">
-        <div class="form-section" id="valve-internal">
-            <div class="form-section-header" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+        <div class="cmp-form-section" id="valve-internal">
+            <div class="cmp-form-section__header" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
                 <i class="bi bi-sliders"></i>
                 <h5>阀内件信息</h5>
             </div>
-            <div class="form-section-body">
-                <div class="field-row">
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-circle" style="color: var(--text-muted);"></i> 阀座直径</label>
-                        <input type="text" name="阀内件_阀座直径" class="form-control form-control-modern" value="{{ valve.阀内件_阀座直径 or '' }}" placeholder="请输入阀座直径">
+            <div class="cmp-form-section__body">
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-circle" style="color: var(--text-muted);"></i> 阀座直径</label>
+                        <input type="text" name="阀内件_阀座直径" class="form-control cmp-input" value="{{ valve.阀内件_阀座直径 or '' }}" placeholder="请输入阀座直径">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-gem" style="color: var(--text-muted);"></i> 阀芯材质</label>
-                        <input type="text" name="阀内件_阀芯材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀芯材质 or '' }}" placeholder="请输入阀芯材质">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-gem" style="color: var(--text-muted);"></i> 阀芯材质</label>
+                        <input type="text" name="阀内件_阀芯材质" class="form-control cmp-input" value="{{ valve.阀内件_阀芯材质 or '' }}" placeholder="请输入阀芯材质">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-gem"></i> 阀座材质</label>
-                        <input type="text" name="阀内件_阀座材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀座材质 or '' }}" placeholder="请输入阀座材质">
-                    </div>
-                </div>
-                <div class="field-row">
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-stickies" style="color: var(--text-muted);"></i> 阀杆材质</label>
-                        <input type="text" name="阀内件_阀杆材质" class="form-control form-control-modern" value="{{ valve.阀内件_阀杆材质 or '' }}" placeholder="请输入阀杆材质">
-                    </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-graph-up" style="color: var(--text-muted);"></i> 流量特性</label>
-                        <input type="text" name="阀内件_流量特性" class="form-control form-control-modern" value="{{ valve.阀内件_流量特性 or '' }}" placeholder="如：线性、等百分比">
-                    </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-shield-check" style="color: var(--text-muted);"></i> 泄露等级</label>
-                        <input type="text" name="阀内件_泄露等级" class="form-control form-control-modern" value="{{ valve.阀内件_泄露等级 or '' }}" placeholder="如：IV级、V级">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-gem"></i> 阀座材质</label>
+                        <input type="text" name="阀内件_阀座材质" class="form-control cmp-input" value="{{ valve.阀内件_阀座材质 or '' }}" placeholder="请输入阀座材质">
                     </div>
                 </div>
-                <div class="field-row">
-                    <div class="field-item" style="flex: 0 0 300px;">
-                        <label class="form-label"><i class="bi bi-calculator" style="color: var(--text-muted);"></i> Cv值</label>
-                        <input type="text" name="阀内件_Cv值" class="form-control form-control-modern" value="{{ valve.阀内件_Cv值 or '' }}" placeholder="请输入Cv值">
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-stickies" style="color: var(--text-muted);"></i> 阀杆材质</label>
+                        <input type="text" name="阀内件_阀杆材质" class="form-control cmp-input" value="{{ valve.阀内件_阀杆材质 or '' }}" placeholder="请输入阀杆材质">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-graph-up" style="color: var(--text-muted);"></i> 流量特性</label>
+                        <input type="text" name="阀内件_流量特性" class="form-control cmp-input" value="{{ valve.阀内件_流量特性 or '' }}" placeholder="如：线性、等百分比">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-shield-check" style="color: var(--text-muted);"></i> 泄露等级</label>
+                        <input type="text" name="阀内件_泄露等级" class="form-control cmp-input" value="{{ valve.阀内件_泄露等级 or '' }}" placeholder="如：IV级、V级">
+                    </div>
+                </div>
+                <div class="cmp-field-row">
+                    <div class="cmp-field" style="flex: 0 0 300px;">
+                        <label class="cmp-label"><i class="bi bi-calculator" style="color: var(--text-muted);"></i> Cv值</label>
+                        <input type="text" name="阀内件_Cv值" class="form-control cmp-input" value="{{ valve.阀内件_Cv值 or '' }}" placeholder="请输入Cv值">
                     </div>
                 </div>
             </div>
         </div>
         <div class="step-actions">
-            <button type="button" class="btn-back" onclick="goToStep(3)">
+            <button type="button" class="cmp-btn cmp-btn--secondary" onclick="goToStep(3)">
                 <i class="bi bi-arrow-left"></i> 上一步
             </button>
-            <button type="button" class="btn-submit" onclick="goToStep(5)">
+            <button type="button" class="cmp-btn cmp-btn--primary" onclick="goToStep(5)">
                 下一步 <i class="bi bi-arrow-right"></i>
             </button>
         </div>
     </div>
 
     <div class="form-step" data-step="5">
-        <div class="form-section" id="actuator">
-            <div class="form-section-header" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
+        <div class="cmp-form-section" id="actuator">
+            <div class="cmp-form-section__header" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
                 <i class="bi bi-lightning-charge"></i>
                 <h5>执行机构信息</h5>
             </div>
-            <div class="form-section-body">
-                <div class="field-row">
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-cpu" style="color: var(--text-muted);"></i> 形式</label>
-                        <input type="text" name="执行机构_形式" class="form-control form-control-modern" value="{{ valve.执行机构_形式 or '' }}" placeholder="如：气动薄膜式">
+            <div class="cmp-form-section__body">
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-cpu" style="color: var(--text-muted);"></i> 形式</label>
+                        <input type="text" name="执行机构_形式" class="form-control cmp-input" value="{{ valve.执行机构_形式 or '' }}" placeholder="如：气动薄膜式">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-aspect-ratio" style="color: var(--text-muted);"></i> 型号规格</label>
-                        <input type="text" name="执行机构_型号规格" class="form-control form-control-modern" value="{{ valve.执行机构_型号规格 or '' }}" placeholder="请输入型号规格">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-aspect-ratio" style="color: var(--text-muted);"></i> 型号规格</label>
+                        <input type="text" name="执行机构_型号规格" class="form-control cmp-input" value="{{ valve.执行机构_型号规格 or '' }}" placeholder="请输入型号规格">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-factory" style="color: var(--text-muted);"></i> 厂家</label>
-                        <input type="text" name="执行机构_厂家" class="form-control form-control-modern" value="{{ valve.执行机构_厂家 or '' }}" placeholder="请输入生产厂家">
-                    </div>
-                </div>
-                <div class="field-row">
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-arrow-repeat" style="color: var(--text-muted);"></i> 作用形式</label>
-                        <input type="text" name="执行机构_作用形式" class="form-control form-control-modern" value="{{ valve.执行机构_作用形式 or '' }}" placeholder="如：正作用，反作用">
-                    </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-arrows-expand" style="color: var(--text-muted);"></i> 行程</label>
-                        <input type="text" name="执行机构_行程" class="form-control form-control-modern" value="{{ valve.执行机构_行程 or '' }}" placeholder="如：30mm">
-                    </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-bounding-box" style="color: var(--text-muted);"></i> 弹簧范围</label>
-                        <input type="text" name="执行机构_弹簧范围" class="form-control form-control-modern" value="{{ valve.执行机构_弹簧范围 or '' }}" placeholder="如：0.2-0.8MPa">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-factory" style="color: var(--text-muted);"></i> 厂家</label>
+                        <input type="text" name="执行机构_厂家" class="form-control cmp-input" value="{{ valve.执行机构_厂家 or '' }}" placeholder="请输入生产厂家">
                     </div>
                 </div>
-                <div class="field-row">
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-wind" style="color: var(--text-muted);"></i> 气源压力</label>
-                        <input type="text" name="执行机构_气源压力" class="form-control form-control-modern" value="{{ valve.执行机构_气源压力 or '' }}" placeholder="如：0.5MPa">
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-arrow-repeat" style="color: var(--text-muted);"></i> 作用形式</label>
+                        <input type="text" name="执行机构_作用形式" class="form-control cmp-input" value="{{ valve.执行机构_作用形式 or '' }}" placeholder="如：正作用，反作用">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-exclamation-octagon" style="color: var(--text-muted);"></i> 故障位置</label>
-                        <input type="text" name="执行机构_故障位置" class="form-control form-control-modern" value="{{ valve.执行机构_故障位置 or '' }}" placeholder="如：故障关、故障开">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-arrows-expand" style="color: var(--text-muted);"></i> 行程</label>
+                        <input type="text" name="执行机构_行程" class="form-control cmp-input" value="{{ valve.执行机构_行程 or '' }}" placeholder="如：30mm">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-clock" style="color: var(--text-muted);"></i> 关阀时间</label>
-                        <input type="text" name="执行机构_关阀时间" class="form-control form-control-modern" value="{{ valve.执行机构_关阀时间 or '' }}" placeholder="如：5s">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-bounding-box" style="color: var(--text-muted);"></i> 弹簧范围</label>
+                        <input type="text" name="执行机构_弹簧范围" class="form-control cmp-input" value="{{ valve.执行机构_弹簧范围 or '' }}" placeholder="如：0.2-0.8MPa">
                     </div>
-                    <div class="field-item">
-                        <label class="form-label"><i class="bi bi-clock-history" style="color: var(--text-muted);"></i> 开阀时间</label>
-                        <input type="text" name="执行机构_开阀时间" class="form-control form-control-modern" value="{{ valve.执行机构_开阀时间 or '' }}" placeholder="如：8s">
+                </div>
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-wind" style="color: var(--text-muted);"></i> 气源压力</label>
+                        <input type="text" name="执行机构_气源压力" class="form-control cmp-input" value="{{ valve.执行机构_气源压力 or '' }}" placeholder="如：0.5MPa">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-exclamation-octagon" style="color: var(--text-muted);"></i> 故障位置</label>
+                        <input type="text" name="执行机构_故障位置" class="form-control cmp-input" value="{{ valve.执行机构_故障位置 or '' }}" placeholder="如：故障关、故障开">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-clock" style="color: var(--text-muted);"></i> 关阀时间</label>
+                        <input type="text" name="执行机构_关阀时间" class="form-control cmp-input" value="{{ valve.执行机构_关阀时间 or '' }}" placeholder="如：5s">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-clock-history" style="color: var(--text-muted);"></i> 开阀时间</label>
+                        <input type="text" name="执行机构_开阀时间" class="form-control cmp-input" value="{{ valve.执行机构_开阀时间 or '' }}" placeholder="如：8s">
                     </div>
                 </div>
             </div>
         </div>
         <div class="step-actions">
-            <button type="button" class="btn-back" onclick="goToStep(4)">
+            <button type="button" class="cmp-btn cmp-btn--secondary" onclick="goToStep(4)">
                 <i class="bi bi-arrow-left"></i> 上一步
             </button>
-            <button type="button" class="btn-submit" onclick="goToStep(6)">
+            <button type="button" class="cmp-btn cmp-btn--primary" onclick="goToStep(6)">
                 下一步 <i class="bi bi-arrow-right"></i>
             </button>
         </div>
     </div>
 
     <div class="form-step" data-step="6">
-        <div class="form-section" id="attachments">
-            <div class="form-section-header" style="background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);">
+        <div class="cmp-form-section" id="attachments">
+            <div class="cmp-form-section__header" style="background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);">
                 <i class="bi bi-paperclip"></i>
                 <h5>附件信息</h5>
             </div>
-            <div class="form-section-body">
+            <div class="cmp-form-section__body">
                 <div id="attachments-container"></div>
                 <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addAttachment()">
                     <i class="bi bi-plus-circle"></i> 添加附件
@@ -321,15 +319,15 @@
             </div>
         </div>
         <div class="step-actions">
-            <button type="button" class="btn-back" onclick="goToStep(5)">
+            <button type="button" class="cmp-btn cmp-btn--secondary" onclick="goToStep(5)">
                 <i class="bi bi-arrow-left"></i> 上一步
             </button>
             <div class="d-flex gap-3">
-                <button type="submit" class="btn-submit">
+                <button type="submit" class="cmp-btn cmp-btn--primary">
                     <i class="bi bi-check-circle"></i> {% if valve %}保存{% elif ledger %}保存{% else %}提交审批{% endif %}
                 </button>
                 {% set from_param = from_param|default(request.args.get('from', 'all')) %}
-                <a href="{{ url_with_params('ledgers.detail', id=ledger.id) if ledger else url_for('valves.list') }}" class="btn-back">
+                <a href="{{ url_with_params('ledgers.detail', id=ledger.id) if ledger else url_for('valves.list') }}" class="cmp-btn cmp-btn--secondary">
                     <i class="bi bi-x-circle"></i> 取消
                 </a>
             </div>
@@ -341,8 +339,8 @@
     <div class="attachment-row card mb-3 p-3">
         <div class="row g-3">
             <div class="col-md-2">
-                <label class="form-label">附件类型</label>
-                <select name="attachment_type" class="form-select form-select-modern">
+                <label class="cmp-label">附件类型</label>
+                <select name="attachment_type" class="form-select">
                     <option value="">请选择</option>
                     <option value="定位器">定位器</option>
                     <option value="过滤减压阀">过滤减压阀</option>
@@ -353,12 +351,12 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label">名称</label>
-                <input type="text" name="attachment_name" class="form-control form-control-modern" placeholder="名称">
+                <label class="cmp-label">名称</label>
+                <input type="text" name="attachment_name" class="form-control cmp-input" placeholder="名称">
             </div>
             <div class="col-md-2">
-                <label class="form-label">设备等级</label>
-                <select name="attachment_grade" class="form-select form-select-modern">
+                <label class="cmp-label">设备等级</label>
+                <select name="attachment_grade" class="form-select">
                     <option value="">请选择</option>
                     <option value="A">A</option>
                     <option value="B">B</option>
@@ -367,12 +365,12 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label">型号规格</label>
-                <input type="text" name="attachment_model" class="form-control form-control-modern" placeholder="型号规格">
+                <label class="cmp-label">型号规格</label>
+                <input type="text" name="attachment_model" class="form-control cmp-input" placeholder="型号规格">
             </div>
             <div class="col-md-3">
-                <label class="form-label">生产厂家</label>
-                <input type="text" name="attachment_manufacturer" class="form-control form-control-modern" placeholder="生产厂家">
+                <label class="cmp-label">生产厂家</label>
+                <input type="text" name="attachment_manufacturer" class="form-control cmp-input" placeholder="生产厂家">
             </div>
             <div class="col-md-1 d-flex align-items-end">
                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAttachment(this)">

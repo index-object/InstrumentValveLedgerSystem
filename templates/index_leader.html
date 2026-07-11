@@ -2,9 +2,7 @@
 
 {% block page_title %}首页{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
-{% endblock %}
+
 
 {% block content %}
 <div class="main-body main-body-index">
@@ -32,43 +30,43 @@
     </div>
 
     <div class="stats-grid">
-        <a href="{{ url_for('ledgers.list') }}" class="stat-card info">
-            <div class="stat-icon info">
+        <a href="{{ url_for('ledgers.list') }}" class="cmp-stat info">
+            <div >
                 <i class="bi bi-list-columns"></i>
             </div>
-            <div class="stat-content">
+            <div >
                 <h3>全部台账</h3>
-                <p><span class="stat-value">{{ total_ledgers }}</span> 个合集 · 共 {{ total_valves }} 条记录</p>
+                <p><span >{{ total_ledgers }}</span> 个合集 · 共 {{ total_valves }} 条记录</p>
             </div>
         </a>
         
-        <a href="{{ url_for('approvals.index') }}" class="stat-card success">
-            <div class="stat-icon success">
+        <a href="{{ url_for('approvals.index') }}" class="cmp-stat success">
+            <div >
                 <i class="bi bi-shield-check"></i>
             </div>
-            <div class="stat-content">
+            <div >
                 <h3>审批中心</h3>
-                <p><span class="stat-value">{{ pending }}</span> 项待审批</p>
+                <p><span >{{ pending }}</span> 项待审批</p>
             </div>
         </a>
         
-        <div class="stat-card purple" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#userStatsModal">
-            <div class="stat-icon purple">
+        <div class="cmp-stat purple" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#userStatsModal">
+            <div >
                 <i class="bi bi-people-fill"></i>
             </div>
-            <div class="stat-content">
+            <div >
                 <h3>用户统计</h3>
-                <p><span class="stat-value">{{ user_stats|length }}</span> 位用户</p>
+                <p><span >{{ user_stats|length }}</span> 位用户</p>
             </div>
         </div>
         
-        <a href="{{ url_for('valves.maintenance_list') }}" class="stat-card warning">
-            <div class="stat-icon warning">
+        <a href="{{ url_for('valves.maintenance_list') }}" class="cmp-stat warning">
+            <div >
                 <i class="bi bi-tools"></i>
             </div>
-            <div class="stat-content">
+            <div >
                 <h3>维护记录</h3>
-                <p><span class="stat-value">{{ maintenance_count or 0 }}</span> 条记录</p>
+                <p><span >{{ maintenance_count or 0 }}</span> 条记录</p>
             </div>
         </a>
     </div>
@@ -82,7 +80,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <table class="modern-table">
+                <table class="cmp-table">
                     <thead>
                         <tr><th>用户名</th><th>台账数量</th></tr>
                     </thead>

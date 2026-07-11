@@ -21,10 +21,10 @@
 {% set from_param = from_param|default(request.args.get('from', 'all')) %}
 {# 以下按钮仅在"我的台账"界面显示 #}
 {% if from_param == 'mine' %}
-<div class="d-flex gap-2">
+<div style="display:flex;gap:8px;align-items:center">
     {# 编辑：员工所有者和管理员 #}
     {% if current_user.role == 'admin' or (current_user.role == 'employee' and ledger.created_by == current_user.id) %}
-    <a href="{{ url_with_params('ledgers.edit', id=ledger.id) }}" class="btn btn-outline-primary">
+    <a href="{{ url_with_params('ledgers.edit', id=ledger.id) }}" class="cmp-btn cmp-btn--accent">
         <i class="bi bi-pencil"></i> 编辑
     </a>
     {% endif %}
@@ -32,7 +32,7 @@
     {# 提交审批：员工所有者且有草稿 #}
     {% if current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.draft_count > 0 %}
     <form method="POST" action="{{ url_with_params('ledgers.submit', id=ledger.id) }}" style="display:inline;">
-        <button type="submit" class="btn btn-primary-custom">
+        <button type="submit" class="cmp-btn cmp-btn--primary">
             <i class="bi bi-send"></i> 提交审批
         </button>
     </form>
@@ -45,7 +45,7 @@
             <input type="checkbox" name="delete_maintenance" value="1" id="deleteMaintenanceLedger" class="form-check-input" style="width:14px;height:14px;" checked>
             <label for="deleteMaintenanceLedger" style="font-size:12px; cursor:pointer;">清理维护记录</label>
         </div>
-        <button type="submit" class="btn btn-outline-danger">
+        <button type="submit" class="cmp-btn cmp-btn--danger">
             <i class="bi bi-trash"></i> 删除
         </button>
     </form>
@@ -56,37 +56,33 @@
 
 {% block toolbar %}
 {% set from_param = from_param|default(request.args.get('from', 'all')) %}
-<div class="table-toolbar-compact">
-    <div class="table-toolbar">
-        <div class="toolbar-left">
-            <div class="form-check">
-                <input type="checkbox" class="form-check-input" id="selectAll">
-            </div>
-            <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
-            {# 新增/提交按钮：仅在"我的台账"界面显示 #}
-            {% if from_param == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
-                {% if ledger.display_status != 'pending' %}
-                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
-                    <i class="bi bi-plus-lg"></i> 新增台账
-                </a>
-                {% endif %}
-                {% if ledger.display_status != 'approved' and ledger.draft_count > 0 and ledger.display_status != 'pending' %}
-                <form method="post" action="{{ url_with_params('ledgers.submit', id=ledger.id) }}" style="display:inline;" onsubmit="return handleFormSubmit(this)">
-                    <button type="submit" class="toolbar-btn toolbar-btn-success toolbar-btn-compact">
-                        <i class="bi bi-send"></i> 提交审批
-                    </button>
-                </form>
-                {% endif %}
+<div class="cmp-toolbar cmp-toolbar--compact">
+    <div class="d-flex align-items-center gap-2 flex-wrap w-100">
+        <div class="form-check" style="margin-bottom:0">
+            <input type="checkbox" class="form-check-input" id="selectAll" style="margin:0;cursor:pointer">
+        </div>
+        <span style="font-size: 13px;color:var(--color-text-muted);white-space:nowrap">已选 <span id="selectedCount">0</span> 项</span>
+        <span style="font-size: 13px;color:var(--color-text-muted);white-space:nowrap">
+            <i class="bi bi-file-earmark-text"></i> 台账数量：{{ valves|length }}
+            {% if ledger.pending_count > 0 %}
+            <span style="color:var(--mode-color);margin-left:4px;"><i class="bi bi-clock"></i> 待审批：{{ ledger.pending_count }}</span>
             {% endif %}
-        </div>
-        <div class="toolbar-right">
-            <span class="text-muted" style="font-size: 13px;">
-                <i class="bi bi-file-earmark-text"></i> 台账数量：{{ valves|length }}
-                {% if ledger.pending_count > 0 %}
-                <span class="ms-2" style="color: var(--primary-color);"><i class="bi bi-clock"></i> 待审批：{{ ledger.pending_count }}</span>
-                {% endif %}
-            </span>
-        </div>
+        </span>
+        {# 新增/提交按钮：仅在"我的台账"界面显示 #}
+        {% if from_param == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
+            {% if ledger.display_status != 'pending' %}
+            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--sm">
+                <i class="bi bi-plus-lg"></i> 新增台账
+            </a>
+            {% endif %}
+            {% if ledger.display_status != 'approved' and ledger.draft_count > 0 and ledger.display_status != 'pending' %}
+            <form method="post" action="{{ url_with_params('ledgers.submit', id=ledger.id) }}" style="display:inline;" onsubmit="return handleFormSubmit(this)">
+                <button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--success cmp-toolbar-btn--sm">
+                    <i class="bi bi-send"></i> 提交审批
+                </button>
+            </form>
+            {% endif %}
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -96,7 +92,7 @@
     <input type="hidden" name="action" id="actionInput" value="">
     <input type="hidden" name="comment" id="commentInput" value="">
     
-    <div class="modern-card mb-3">
+    <div class="cmp-card mb-3">
         <div class="d-flex justify-content-between align-items-center p-3" style="border-bottom: 1px solid var(--border-color);">
             <div class="d-flex align-items-center gap-3">
                 <div class="form-check">
@@ -107,7 +103,7 @@
             {# 新增按钮：仅在"我的台账"界面显示 #}
             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
             {% if ledger.display_status != 'pending' %}
-            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="btn btn-accent">
+            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="cmp-btn cmp-btn--accent">
                 <i class="bi bi-plus-lg"></i> 新增台账
             </a>
             {% endif %}
@@ -115,9 +111,9 @@
         </div>
     </div>
 
-    <div class="modern-card">
+    <div class="cmp-card">
         <div class="table-responsive" style="max-height: calc(100vh - 340px); overflow-y: auto; overflow-x: auto;">
-            <table class="modern-table table-sm table-bordered" style="min-width: 1600px; border-spacing: 0;">
+            <table class="cmp-table table-sm table-bordered" style="min-width: 1600px; border-spacing: 0;">
                 <thead class="table-light">
                     <tr>
                         <th style="width: 50px; min-width: 50px; vertical-align: middle; position: sticky; left: 0; z-index: 3; background: #f8f9fa; border-right: 1px solid #dee2e6;">
@@ -193,22 +189,22 @@
                         <td>{{ valve.执行机构_开阀时间 or '-' }}</td>
                         <td>
                             {% if valve.status == 'approved' %}
-                            <span class="badge-status badge-approved">已审批</span>
+                            <span class="cmp-badge cmp-badge--approved">已审批</span>
                             {% elif valve.status == 'pending' %}
-                            <span class="badge-status badge-pending">待审批</span>
+                            <span class="cmp-badge cmp-badge--pending">待审批</span>
                             {% elif valve.status == 'rejected' %}
-                            <span class="badge-status badge-rejected">已驳回</span>
+                            <span class="cmp-badge cmp-badge--rejected">已驳回</span>
                             {% else %}
-                            <span class="badge-status badge-draft">草稿</span>
+                            <span class="cmp-badge cmp-badge--draft">草稿</span>
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}" class="btn-action" style="background: #e2e8f0; color: #475569;">
+                            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}" class="cmp-btn cmp-btn--link" style="background: #e2e8f0; color: #475569;">
                                 <i class="bi bi-eye"></i>
                             </a>
                             {# 编辑按钮：仅在"我的台账"界面显示 #}
                             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id and valve.status in ['draft', 'rejected', 'approved'] %}
-                            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.edit', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% endif %}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
+                            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.edit', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% endif %}" class="cmp-btn cmp-btn--link" style="background: rgba(56,178,172,0.1); color: var(--accent-color);">
                                 <i class="bi bi-pencil"></i>
                             </a>
                             {% endif %}
@@ -217,12 +213,12 @@
                     {% else %}
                     <tr>
                         <td colspan="34">
-                            <div class="empty-state">
+                            <div class="cmp-empty">
                                 <i class="bi bi-inbox"></i>
                                 <p>暂无台账内容</p>
                                 {# 添加按钮：仅在"我的台账"界面显示 #}
                                 {% if from_param|default(request.args.get('from', 'all')) == 'mine' and (ledger.created_by == current_user.id or current_user.role == 'admin') %}
-                                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="btn btn-accent">添加第一个台账</a>
+                                <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="cmp-btn cmp-btn--accent">添加第一个台账</a>
                                 {% endif %}
                             </div>
                         </td>
@@ -235,7 +231,7 @@
         {% if pagination and pagination.pages > 1 %}
         <div class="p-3 border-top">
             <nav>
-                <ul class="pagination-custom pagination mb-2">
+                <ul class="cmp-pagination pagination mb-2">
                     {% if pagination.has_prev %}
                     <li class="page-item"><a class="page-link" href="{{ url_with_params('ledgers.detail', id=ledger.id, page=pagination.prev_num) }}">上一页</a></li>
                     {% endif %}

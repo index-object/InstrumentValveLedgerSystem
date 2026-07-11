@@ -3,50 +3,50 @@
 {% block page_title %}我的申请{% endblock %}
 
 {% block content %}
-<div class="modern-card">
+<div class="cmp-card">
     <div class="table-responsive">
-        <table class="modern-table">
+        <table class="cmp-table">
             <thead>
                 <tr>
-                    <th>序号</th>
-                    <th>位号</th>
-                    <th>名称</th>
-                    <th>装置名称</th>
-                    <th>状态</th>
-                    <th>创建时间</th>
-                    <th style="width: 160px;">操作</th>
+                    <th class="cmp-table__th">序号</th>
+                    <th class="cmp-table__th">位号</th>
+                    <th class="cmp-table__th">名称</th>
+                    <th class="cmp-table__th">装置名称</th>
+                    <th class="cmp-table__th">状态</th>
+                    <th class="cmp-table__th">创建时间</th>
+                    <th style="width: 160px;" class="cmp-table__th">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for valve in valves %}
                 <tr>
-                    <td>{{ loop.index }}</td>
-                    <td><a href="{{ url_for('valves.detail', id=valve.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
-                    <td>{{ valve.名称 }}</td>
-                    <td>{{ valve.装置名称 }}</td>
-                    <td>
+                    <td class="cmp-table__td">{{ loop.index }}</td>
+                    <td class="cmp-table__td"><a href="{{ url_for('valves.detail', id=valve.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
+                    <td class="cmp-table__td">{{ valve.名称 }}</td>
+                    <td class="cmp-table__td">{{ valve.装置名称 }}</td>
+                    <td class="cmp-table__td">
                         {% if valve.status == 'approved' %}
-                        <span class="badge-status badge-approved">已审批</span>
+                        <span class="cmp-badge cmp-badge--approved">已审批</span>
                         {% elif valve.status == 'pending' %}
-                        <span class="badge-status badge-pending">待审批</span>
+                        <span class="cmp-badge cmp-badge--pending">待审批</span>
                         {% elif valve.status == 'rejected' %}
-                        <span class="badge-status badge-rejected">已驳回</span>
+                        <span class="cmp-badge cmp-badge--rejected">已驳回</span>
                         {% else %}
-                        <span class="badge-status badge-draft">草稿</span>
+                        <span class="cmp-badge cmp-badge--draft">草稿</span>
                         {% endif %}
                     </td>
-                    <td>{{ valve.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>
-                        <a href="{{ url_for('valves.detail', id=valve.id) }}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i> 查看</a>
+                    <td class="cmp-table__td">{{ valve.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="cmp-table__td">
+                        <a href="{{ url_for('valves.detail', id=valve.id) }}" class="cmp-btn cmp-btn--link" style="background: #e2e8f0; color: #475569;"><i class="bi bi-eye"></i> 查看</a>
                         {% if valve.status in ['draft', 'rejected', 'approved'] %}
-                        <a href="{{ url_for('valves.edit', id=valve.id) }}" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i> 编辑</a>
+                        <a href="{{ url_for('valves.edit', id=valve.id) }}" class="cmp-btn cmp-btn--link" style="background: rgba(56,178,172,0.1); color: var(--accent-color);"><i class="bi bi-pencil"></i> 编辑</a>
                         {% endif %}
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7">
-                        <div class="empty-state">
+                    <td colspan="7" class="cmp-table__td">
+                        <div class="cmp-empty">
                             <i class="bi bi-inbox"></i>
                             <p>暂无申请记录</p>
                         </div>

@@ -19,88 +19,88 @@
 {% block header_actions %}{% endblock %}
 
 {% block content %}
-<div class="modern-card mb-4">
+<div class="cmp-card mb-4">
     <div class="card-header-custom"><i class="bi bi-person-plus"></i> 添加用户</div>
     <div class="card-body-custom">
         <form method="POST">
             <div class="row">
                 <div class="col-md-2 mb-3">
-                    <label class="form-label">用户名</label>
-                    <input type="text" name="username" class="form-control form-control-modern" required>
+                    <label class="cmp-label">用户名</label>
+                    <input type="text" name="username" class="form-control cmp-input" required>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label class="form-label">密码</label>
-                    <input type="password" name="password" class="form-control form-control-modern" required>
+                    <label class="cmp-label">密码</label>
+                    <input type="password" name="password" class="form-control cmp-input" required>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label class="form-label">角色</label>
-                    <select name="role" class="form-control form-control-modern">
+                    <label class="cmp-label">角色</label>
+                    <select name="role" class="form-control cmp-input">
                         <option value="employee">员工</option>
                         <option value="leader">领导</option>
                         <option value="admin">管理员</option>
                     </select>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label class="form-label">姓名</label>
-                    <input type="text" name="real_name" class="form-control form-control-modern">
+                    <label class="cmp-label">姓名</label>
+                    <input type="text" name="real_name" class="form-control cmp-input">
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label class="form-label">班组</label>
-                    <input type="text" name="dept" class="form-control form-control-modern">
+                    <label class="cmp-label">班组</label>
+                    <input type="text" name="dept" class="form-control cmp-input">
                 </div>
                 <div class="col-md-2 mb-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary-custom"><i class="bi bi-plus-lg"></i> 添加</button>
+                    <button type="submit" class="btn cmp-btn cmp-btn--primary"><i class="bi bi-plus-lg"></i> 添加</button>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-<div class="modern-card">
+<div class="cmp-card">
     <div class="table-responsive">
-        <table class="modern-table">
+        <table class="cmp-table">
             <thead>
                 <tr>
-                    <th>用户名</th>
-                    <th>姓名</th>
-                    <th>角色</th>
-                    <th>班组</th>
-                    <th>状态</th>
-                    <th>创建时间</th>
-                    <th style="width: 200px;">操作</th>
+                    <th class="cmp-table__th">用户名</th>
+                    <th class="cmp-table__th">姓名</th>
+                    <th class="cmp-table__th">角色</th>
+                    <th class="cmp-table__th">班组</th>
+                    <th class="cmp-table__th">状态</th>
+                    <th class="cmp-table__th">创建时间</th>
+                    <th style="width: 200px;" class="cmp-table__th">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for user in users %}
                 <tr>
-                    <td style="font-weight: 500;">{{ user.username }}</td>
-                    <td>{{ user.real_name or '-' }}</td>
-                    <td>
+                    <td style="font-weight: 500;" class="cmp-table__td">{{ user.username }}</td>
+                    <td class="cmp-table__td">{{ user.real_name or '-' }}</td>
+                    <td class="cmp-table__td">
                         {% if user.role == 'admin' %}
-                        <span class="badge-status badge-rejected">管理员</span>
+                        <span class="cmp-badge cmp-badge--rejected">管理员</span>
                         {% elif user.role == 'leader' %}
-                        <span class="badge-status badge-pending">领导</span>
+                        <span class="cmp-badge cmp-badge--pending">领导</span>
                         {% else %}
-                        <span class="badge-status badge-draft">员工</span>
+                        <span class="cmp-badge cmp-badge--draft">员工</span>
                         {% endif %}
                     </td>
-                    <td>{{ user.dept or '-' }}</td>
-                    <td>
+                    <td class="cmp-table__td">{{ user.dept or '-' }}</td>
+                    <td class="cmp-table__td">
                         {% if user.status == 'active' %}
-                        <span class="badge-status badge-approved">活跃</span>
+                        <span class="cmp-badge cmp-badge--approved">活跃</span>
                         {% else %}
-                        <span class="badge-status badge-draft">禁用</span>
+                        <span class="cmp-badge cmp-badge--draft">禁用</span>
                         {% endif %}
                     </td>
-                    <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '-' }}</td>
-                    <td>
+                    <td class="cmp-table__td">{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '-' }}</td>
+                    <td class="cmp-table__td">
                         {% if user.status == 'active' and user.id != current_user.id %}
-                        <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="btn-action" style="background: #e2e8f0; color: #475569;"><i class="bi bi-pencil"></i> 编辑</a>
+                        <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="cmp-btn cmp-btn--link" style="background: #e2e8f0; color: #475569;"><i class="bi bi-pencil"></i> 编辑</a>
                         <form method="POST" action="{{ url_for('admin.reset_password', id=user.id) }}" style="display:inline;">
-                            <button type="submit" class="btn-action" style="background: #fef3c7; color: #92400e;" onclick="return confirm('确定重置密码为123456?')"><i class="bi bi-key"></i> 重置</button>
+                            <button type="submit" class="cmp-btn cmp-btn--link" style="background: #fef3c7; color: #92400e;" onclick="return confirm('确定重置密码为123456?')"><i class="bi bi-key"></i> 重置</button>
                         </form>
                         <form method="POST" action="{{ url_for('admin.delete_user', id=user.id) }}" style="display:inline;">
-                            <button type="submit" class="btn-action" style="background: #fee2e2; color: #991b1b;" onclick="return confirm('确定禁用该用户?')"><i class="bi bi-x-lg"></i> 禁用</button>
+                            <button type="submit" class="cmp-btn cmp-btn--link" style="background: #fee2e2; color: #991b1b;" onclick="return confirm('确定禁用该用户?')"><i class="bi bi-x-lg"></i> 禁用</button>
                         </form>
                         {% endif %}
                     </td>

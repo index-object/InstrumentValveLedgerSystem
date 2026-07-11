@@ -2,14 +2,10 @@
 
 {% block page_title %}
 <span style="display: flex; align-items: center; gap: 8px;">
-    <i class="bi bi-collection-fill" style="color: #3b82f6;"></i>
+    <span style="color:var(--mode-color)"><i class="bi bi-collection-fill"></i></span>
     全部台账
     <span class="page-tag"><i class="bi bi-people"></i> 团队</span>
 </span>
-{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/ledgers-list.css') }}">
 {% endblock %}
 
 {% block back_btn %}{% endblock %}
@@ -17,95 +13,88 @@
 {% block header_actions %}{% endblock %}
 
 {% block toolbar %}
-<div class="table-toolbar-card">
-    <div class="table-toolbar">
-        <div class="toolbar-left">
-            {# 创建按钮已移至"我的台账"视图，全部台账视图不显示 #}
-        </div>
-        <div class="toolbar-right">
-            <form method="get" class="d-flex gap-2 align-items-center">
-                <div class="toolbar-search">
-                    <i class="bi bi-search"></i>
-                    <input type="text" name="search" class="form-control form-control-modern" 
-                           placeholder="搜索合集名称..." value="{{ request.args.get('search', '') }}">
-                </div>
-                <select name="status" class="form-control form-control-modern toolbar-filter">
-                    <option value="">全部状态</option>
-                    <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
-                    <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
-                    <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
-                    <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
-                </select>
-                <button type="submit" class="toolbar-btn toolbar-btn-primary">
-                    <i class="bi bi-search"></i>
-                </button>
-            </form>
-        </div>
+<div class="cmp-toolbar cmp-toolbar--card">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        <form method="get" class="d-flex gap-2 align-items-center" style="margin:0">
+            <div class="cmp-toolbar-search">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" class="cmp-input" 
+                       placeholder="搜索合集名称..." value="{{ request.args.get('search', '') }}" style="padding-left:32px;height:36px;width:200px">
+            </div>
+            <select name="status" class="cmp-select cmp-toolbar-filter">
+                <option value="">全部状态</option>
+                <option value="draft" {% if request.args.get('status')=='draft' %}selected{% endif %}>草稿</option>
+                <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>待审批</option>
+                <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>已审批</option>
+                <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>已驳回</option>
+            </select>
+            <button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--primary"><i class="bi bi-search"></i></button>
+        </form>
     </div>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="modern-card">
-    <div class="table-responsive">
-        <table class="modern-table">
+<div class="cmp-card">
+    <div class="cmp-table-wrap">
+        <table class="cmp-table">
             <thead>
                 <tr>
-                    <th style="width: 25%;">合集名称</th>
-                    <th style="width: 12%;">类型</th>
-                    <th style="width: 12%;">台账</th>
-                    <th style="width: 18%;">创建人</th>
-                    <th style="width: 18%;">创建时间</th>
-                    <th style="width: 15%;">操作</th>
+                    <th class="cmp-table__th" style="width: 25%;">合集名称</th>
+                    <th class="cmp-table__th" style="width: 12%;">类型</th>
+                    <th class="cmp-table__th" style="width: 12%;">台账</th>
+                    <th class="cmp-table__th" style="width: 18%;">创建人</th>
+                    <th class="cmp-table__th" style="width: 18%;">创建时间</th>
+                    <th class="cmp-table__th" style="width: 15%;">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for ledger in ledgers %}
                 <tr>
-                    <td>
+                    <td class="cmp-table__td">
                         <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="ledger-name-link">
-                            <i class="bi bi-folder2 folder-icon" style="color: #3b82f6;"></i>{{ ledger.名称 }}
+                            <i class="bi bi-folder2" style="color:var(--mode-color)"></i> {{ ledger.名称 }}
                         </a>
                     </td>
-                    <td>
+                    <td class="cmp-table__td">
                         {% set dt_config = get_device_type_config(ledger.类型) %}
                         {% set tc = dt_config.color_scheme if dt_config else ['#f1f5f9','#e2e8f0','#475569','#cbd5e1'] %}
-                        <span class="badge-status" style="background: linear-gradient(135deg, {{ tc[0] }} 0%, {{ tc[1] }} 100%); color: {{ tc[2] }}; border: 1px solid {{ tc[3] }};">{{ dt_config.name if dt_config else ledger.类型 }}</span>
+                        <span class="cmp-badge" style="background: linear-gradient(135deg, {{ tc[0] }} 0%, {{ tc[1] }} 100%); color: {{ tc[2] }}; border: 1px solid {{ tc[3] }};">{{ dt_config.name if dt_config else ledger.类型 }}</span>
                     </td>
-                    <td>
+                    <td class="cmp-table__td">
                         {% if ledger.valve_count >= 500 %}
-                        <span class="table-creator" style="background: #fee2e2; color: #991b1b; font-weight: 600;">
+                        <span class="cmp-badge" style="background: #fee2e2; color: #991b1b; font-weight: 600;">
                             <span style="background: #ef4444; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: white;">{{ ledger.valve_count }}</span>
                         </span>
                         {% elif ledger.valve_count >= 200 %}
-                        <span class="table-creator" style="background: #ffedd5; color: #9a3412; font-weight: 600;">
+                        <span class="cmp-badge" style="background: #ffedd5; color: #9a3412; font-weight: 600;">
                             <span style="background: #f97316; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: white;">{{ ledger.valve_count }}</span>
                         </span>
                         {% elif ledger.valve_count >= 100 %}
-                        <span class="table-creator" style="background: #fef3c7; color: #92400e; font-weight: 600;">
+                        <span class="cmp-badge" style="background: #fef3c7; color: #92400e; font-weight: 600;">
                             <span style="background: #f59e0b; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: white;">{{ ledger.valve_count }}</span>
                         </span>
                         {% elif ledger.valve_count >= 50 %}
-                        <span class="table-creator" style="background: #d1fae5; color: #065f46; font-weight: 600;">
+                        <span class="cmp-badge" style="background: #d1fae5; color: #065f46; font-weight: 600;">
                             <span style="background: #10b981; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: white;">{{ ledger.valve_count }}</span>
                         </span>
                         {% else %}
-                        <span class="table-creator" style="background: #dbeafe; color: #1e40af; font-weight: 600;">
+                        <span class="cmp-badge" style="background: #dbeafe; color: #1e40af; font-weight: 600;">
                             <span style="background: #3b82f6; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: white;">{{ ledger.valve_count }}</span>
                         </span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="cmp-table__td">
                         {% set color_index = ledger.creator.id % 8 %}
                         <div class="table-creator creator-color-{{ color_index }}">
                             <span class="avatar">{{ (ledger.creator.real_name or ledger.creator.username)[0]|upper }}</span>
                             <span>{{ ledger.creator.real_name or ledger.creator.username }}</span>
                         </div>
                     </td>
-                    <td style="color: var(--text-muted); font-size: 13px;">{{ ledger.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td style="white-space: nowrap;">
+                    <td class="cmp-table__td" style="color: var(--text-muted); font-size: 13px;">{{ ledger.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="cmp-table__td" style="white-space: nowrap;">
                         <div class="action-btns">
-                            <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="btn-action" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px;">
+                            <a href="{{ url_for('ledgers.detail', id=ledger.id) }}" class="cmp-btn cmp-btn--link" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px;">
                                 <i class="bi bi-eye"></i><span>查看</span>
                             </a>
                             {# 全部台账界面为只读，不显示编辑按钮 #}
@@ -114,8 +103,8 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6">
-                        <div class="empty-state">
+                    <td class="cmp-table__td" colspan="6">
+                        <div class="cmp-empty">
                             <i class="bi bi-inbox"></i>
                             <p>暂无台账合集</p>
                             {# 创建按钮已移至"我的台账"视图 #}

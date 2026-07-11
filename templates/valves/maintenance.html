@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="modern-card mb-4">
+<div class="cmp-card mb-4">
     <div class="card-header-custom"><i class="bi bi-wrench"></i> 添加维护记录 - {{ valve.位号 }}</div>
     <div class="card-body-custom">
         <form method="POST" id="maintenanceForm">
@@ -15,59 +15,59 @@
             <input type="hidden" name="设备名称" value="{{ valve.名称 }}">
             <div class="row">
                 <div class="col-md-4 mb-3">
-                    <label class="form-label" style="font-weight: 500;">类型</label>
-                    <select name="类型" class="form-control form-control-modern">
+                    <label class="cmp-label" style="font-weight: 500;">类型</label>
+                    <select name="类型" class="form-control cmp-input">
                         <option value="维修">维修</option>
                         <option value="检定">检定</option>
                         <option value="保养">保养</option>
                     </select>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修时间</label>
-                    <input type="date" name="检修时间" class="form-control form-control-modern" required>
+                    <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修时间</label>
+                    <input type="date" name="检修时间" class="form-control cmp-input" required>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修人员</label>
-                    <input type="text" name="检修人员" class="form-control form-control-modern" required placeholder="请输入检修人员">
+                    <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修人员</label>
+                    <input type="text" name="检修人员" class="form-control cmp-input" required placeholder="请输入检修人员">
                 </div>
             </div>
             <div class="mb-3">
-                    <label class="form-label" style="font-weight: 500;"><span class="required">*</span> 检修内容</label>
-                    <textarea name="检修内容" class="form-control form-control-modern" rows="3" required placeholder="请输入检修内容"></textarea>
+                    <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修内容</label>
+                    <textarea name="检修内容" class="form-control cmp-input" rows="3" required placeholder="请输入检修内容"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary-custom"><i class="bi bi-plus-lg"></i> 添加</button>
+            <button type="submit" class="btn cmp-btn cmp-btn--primary"><i class="bi bi-plus-lg"></i> 添加</button>
         </form>
     </div>
 </div>
 
-<div class="modern-card">
+<div class="cmp-card">
     <div class="card-header-custom"><i class="bi bi-list-ul"></i> 维护记录列表</div>
     <div class="card-body-custom">
         {% if records %}
-        <table class="modern-table">
+        <table class="cmp-table">
             <thead>
                 <tr>
-                    <th>检修时间</th>
-                    <th>类型</th>
-                    <th>检修人员</th>
-                    <th>检修内容</th>
+                    <th class="cmp-table__th">检修时间</th>
+                    <th class="cmp-table__th">类型</th>
+                    <th class="cmp-table__th">检修人员</th>
+                    <th class="cmp-table__th">检修内容</th>
                 </tr>
             </thead>
             <tbody>
                 {% for record in records %}
                 <tr>
-                    <td>{{ record.检修时间.strftime('%Y-%m-%d') if record.检修时间 else '-' }}</td>
-                    <td>{{ record.类型 or '-' }}</td>
-                    <td>{{ record.检修人员 or '-' }}</td>
-                    <td>{{ record.检修内容 or '-' }}</td>
+                    <td class="cmp-table__td">{{ record.检修时间.strftime('%Y-%m-%d') if record.检修时间 else '-' }}</td>
+                    <td class="cmp-table__td">{{ record.类型 or '-' }}</td>
+                    <td class="cmp-table__td">{{ record.检修人员 or '-' }}</td>
+                    <td class="cmp-table__td">{{ record.检修内容 or '-' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% else %}
-        <div class="empty-state">
+        <div class="cmp-empty">
             <i class="bi bi-wrench"></i>
             <p>暂无维护记录</p>
         </div>

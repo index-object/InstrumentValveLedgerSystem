@@ -32,45 +32,43 @@
 {% set type_code = ledger.类型 if ledger else config.code %}
 {% set from_param = from_param|default(request.args.get('from', '')) %}
 {% set is_mine = (from_param == 'mine') %}
-<div class="table-toolbar-compact">
-  <div class="table-toolbar">
-    <div class="toolbar-left">
+<div class="cmp-toolbar cmp-toolbar--compact">
+  <div class="cmp-toolbar">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
       {% if is_mine %}
-      <div class="form-check">
-        <input type="checkbox" class="form-check-input" id="selectAll">
+      <div class="form-check" style="margin-bottom:0">
+        <input type="checkbox" class="form-check-input" id="selectAll" style="cursor:pointer">
       </div>
-      <span style="font-size: 13px;">已选 <span id="selectedCount">0</span> 项</span>
-      <a href="{{ url_with_params('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="toolbar-btn toolbar-btn-primary toolbar-btn-compact">
+      <span style="font-size: 13px; white-space:nowrap;">已选 <span id="selectedCount">0</span> 项</span>
+      <a href="{{ url_with_params('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--sm">
         <i class="bi bi-plus-lg"></i> 新增
       </a>
-      <a href="{{ url_for('devices.import_data', type_code=type_code) }}" class="toolbar-btn toolbar-btn-secondary toolbar-btn-compact">
+      <a href="{{ url_for('devices.import_data', type_code=type_code) }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm">
         <i class="bi bi-upload"></i> 导入
       </a>
-      <button type="submit" form="batch-form" class="toolbar-btn toolbar-btn-danger toolbar-btn-compact" onclick="return confirm('确认删除选中记录？')">
+      <button type="submit" form="batch-form" class="cmp-toolbar-btn cmp-toolbar-btn--danger cmp-toolbar-btn--sm" onclick="return confirm('确认删除选中记录？')">
         <i class="bi bi-trash"></i> 删除
       </button>
       {% endif %}
-      <a href="{{ url_for('devices.export', type_code=type_code) }}" class="toolbar-btn toolbar-btn-secondary toolbar-btn-compact">
+      <a href="{{ url_for('devices.export', type_code=type_code) }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm">
         <i class="bi bi-download"></i> 导出
       </a>
-    </div>
-    <div class="toolbar-right">
       <form method="GET" class="d-flex gap-2 align-items-center">
         {% if from_param %}<input type="hidden" name="from" value="{{ from_param }}">{% endif %}
-        <div class="toolbar-search">
+        <div class="cmp-toolbar-search">
           <i class="bi bi-search"></i>
-          <input type="text" name="search" class="form-control form-control-modern"
+          <input type="text" name="search" class="form-control cmp-input"
                  placeholder="搜索位号/设备名称..." value="{{ search or '' }}"
                  style="height: 32px; padding-left: 32px; width: 180px;">
         </div>
-        <select name="status" class="form-control form-control-modern toolbar-filter" style="height: 32px;">
+        <select name="status" class="form-control cmp-input cmp-toolbar-filter" style="height: 32px;">
           <option value="">全部状态</option>
           <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>草稿</option>
           <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>待审批</option>
           <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>已审批</option>
           <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>已驳回</option>
         </select>
-        <button type="submit" class="toolbar-btn toolbar-btn-primary" style="height: 32px; padding: 0 12px;">
+        <button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--primary" style="height: 32px; padding: 0 12px;">
           <i class="bi bi-search"></i>
         </button>
       </form>
@@ -84,18 +82,18 @@
 {% set total_data_cols = all_fields | length %}
 {% set from_param = from_param|default(request.args.get('from', '')) %}
 {% set is_mine = (from_param == 'mine') %}
-<div class="modern-card">
+<div class="cmp-card">
   <div class="table-responsive" style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: auto; position: relative;">
-    <table class="modern-table table-sm table-bordered" style="min-width: {{ 800 + total_data_cols * 100 }}px;">
+    <table class="cmp-table table-sm table-bordered" style="min-width: {{ 800 + total_data_cols * 100 }}px;">
       <thead class="table-light" style="position: sticky; top: 0; z-index: 20;">
         <tr>
           {% if is_mine %}
-          <th style="width: 50px; min-width: 50px; position: sticky; left: 0; z-index: 23; background: #f8f9fa; border-right: 1px solid #dee2e6;">
+          <th style="width: 50px; min-width: 50px; position: sticky; left: 0; z-index: 23; background: #f8f9fa; border-right: 1px solid #dee2e6;" class="cmp-table__th">
             <input type="checkbox" class="form-check-input" id="selectAllTop">
           </th>
           {% endif %}
           {% for field in all_fields %}
-          <th class="filter-header" data-field="{{ field }}" style="white-space: nowrap; cursor: pointer; min-width: 100px; position: sticky; top: 0; z-index: 21; background: #f8f9fa;" onclick="showFilterDropdown(event, '{{ field }}')">
+          <th class="cmp-table__th filter-header" data-field="{{ field }}" style="white-space: nowrap; cursor: pointer; min-width: 100px; position: sticky; top: 0; z-index: 21; background: #f8f9fa;" onclick="showFilterDropdown(event, '{{ field }}')">
             <div class="d-flex align-items-center justify-content-between">
               <span>{{ field }}</span>
               {% if active_filters and field in active_filters %}
@@ -106,48 +104,48 @@
             </div>
           </th>
           {% endfor %}
-          <th style="width: 100px; white-space: nowrap; position: sticky; top: 0; z-index: 21; background: #f8f9fa;">状态</th>
-          <th style="width: 120px; white-space: nowrap; position: sticky; right: 0; top: 0; z-index: 23; background: #f8f9fa; border-left: 1px solid #dee2e6;">操作</th>
+          <th style="width: 100px; white-space: nowrap; position: sticky; top: 0; z-index: 21; background: #f8f9fa;" class="cmp-table__th">状态</th>
+          <th style="width: 120px; white-space: nowrap; position: sticky; right: 0; top: 0; z-index: 23; background: #f8f9fa; border-left: 1px solid #dee2e6;" class="cmp-table__th">操作</th>
         </tr>
       </thead>
       <tbody>
         {% for device in devices %}
         <tr>
           {% if is_mine %}
-          <td style="position: sticky; left: 0; z-index: 2; background: #fff; border-right: 1px solid #dee2e6;">
+          <td style="position: sticky; left: 0; z-index: 2; background: #fff; border-right: 1px solid #dee2e6;" class="cmp-table__td">
             <input type="checkbox" name="ids" value="{{ device.id }}" class="form-check-input item-checkbox">
           </td>
           {% endif %}
           {% for field in all_fields %}
-          <td>{% if field == '位号' %}<a href="{{ url_with_params('devices.detail', type_code=type_code, id=device.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ device|attr(field) or '-' }}</a>{% else %}{{ device|attr(field) or '-' }}{% endif %}</td>
+          <td class="cmp-table__td">{% if field == '位号' %}<a href="{{ url_with_params('devices.detail', type_code=type_code, id=device.id) }}" style="color: var(--primary-color); font-weight: 500;">{{ device|attr(field) or '-' }}</a>{% else %}{{ device|attr(field) or '-' }}{% endif %}</td>
           {% endfor %}
-          <td>
+          <td class="cmp-table__td">
             {% if device.status == 'approved' %}
-            <span class="badge-status badge-approved">已审批</span>
+            <span class="cmp-badge cmp-badge--approved">已审批</span>
             {% elif device.status == 'pending' %}
-            <span class="badge-status badge-pending">待审批</span>
+            <span class="cmp-badge cmp-badge--pending">待审批</span>
             {% elif device.status == 'rejected' %}
-            <span class="badge-status badge-rejected">已驳回</span>
+            <span class="cmp-badge cmp-badge--rejected">已驳回</span>
             {% else %}
-            <span class="badge-status badge-draft">草稿</span>
+            <span class="cmp-badge cmp-badge--draft">草稿</span>
             {% endif %}
           </td>
-          <td style="position: sticky; right: 0; z-index: 2; background: #fff; border-left: 1px solid #dee2e6; white-space: nowrap;">
+          <td style="position: sticky; right: 0; z-index: 2; background: #fff; border-left: 1px solid #dee2e6; white-space: nowrap;" class="cmp-table__td">
             <a href="{{ url_with_params('devices.detail', type_code=type_code, id=device.id) }}"
-               class="btn-action" style="background: #e2e8f0; color: #475569;" title="查看">
+               class="cmp-btn cmp-btn--link" style="background: #e2e8f0; color: #475569;" title="查看">
               <i class="bi bi-eye"></i>
             </a>
             {% if is_mine %}
             {% if device.status == 'draft' and (current_user.role == 'admin' or device.created_by == current_user.id) %}
             <form method="POST" action="{{ url_for('devices.submit', type_code=type_code, id=device.id) }}" style="display:inline;">
-              <button type="submit" class="btn-action" style="background: rgba(56,178,172,0.1); color: var(--accent-color);" title="提交审批">
+              <button type="submit" class="cmp-btn cmp-btn--link" style="background: rgba(56,178,172,0.1); color: var(--accent-color);" title="提交审批">
                 <i class="bi bi-send"></i>
               </button>
             </form>
             {% endif %}
             {% if device.status in ['draft', 'rejected'] and (current_user.role == 'admin' or device.created_by == current_user.id) %}
             <a href="{{ url_with_params('devices.edit', type_code=type_code, id=device.id) }}"
-               class="btn-action" style="background: rgba(59,130,246,0.1); color: #3b82f6;" title="编辑">
+               class="cmp-btn cmp-btn--link" style="background: rgba(59,130,246,0.1); color: #3b82f6;" title="编辑">
               <i class="bi bi-pencil"></i>
             </a>
             {% endif %}
@@ -156,12 +154,12 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="{{ (1 if is_mine else 0) + total_data_cols + 2 }}">
-            <div class="empty-state">
+          <td colspan="{{ (1 if is_mine else 0) + total_data_cols + 2 }}" class="cmp-table__td">
+            <div class="cmp-empty">
               <i class="bi bi-inbox"></i>
               <p>暂无{{ config.name }}数据</p>
               {% if is_mine %}
-              <a href="{{ url_with_params('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="btn btn-accent">添加第一个{{ config.name }}</a>
+              <a href="{{ url_with_params('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="btn cmp-btn cmp-btn--accent">添加第一个{{ config.name }}</a>
               {% endif %}
             </div>
           </td>
@@ -176,26 +174,20 @@
       <small class="text-muted">共 {{ pagination.total }} 条记录</small>
       {% if pagination.pages > 1 %}
       <nav style="display: inline-flex; align-items: center; gap: 8px;">
-        <ul class="pagination-custom pagination mb-0" style="margin-top: 0;">
+        <ul class="cmp-pagination pagination mb-0" style="margin-top: 0;">
           {% if pagination.has_prev %}
-          <li class="page-item">
-            <a class="page-link" href="?page={{ pagination.prev_num }}&search={{ search or '' }}&status={{ status_filter }}&per_page={{ request.args.get('per_page', 20) }}{% if from_param %}&from={{ from_param }}{% endif %}">上一页</a>
-          </li>
+          <a class="cmp-page-link" href="?page={{ pagination.prev_num }}&search={{ search or '' }}&status={{ status_filter }}&per_page={{ request.args.get('per_page', 20) }}{% if from_param %}&from={{ from_param }}{% endif %}">上一页</a>
           {% endif %}
           {% set cur = pagination.page %}{% set total = pagination.pages %}
           {% for p in range(1, total + 1) %}
             {% if p == 1 or p == 2 or p == total - 1 or p == total or (p >= cur - 1 and p <= cur + 1) %}
-            <li class="page-item {% if p == cur %}active{% endif %}">
-              <a class="page-link" href="?page={{ p }}&search={{ search or '' }}&status={{ status_filter }}&per_page={{ request.args.get('per_page', '20') }}{% if from_param %}&from={{ from_param }}{% endif %}">{{ p }}</a>
-            </li>
+            <a class="cmp-page-link" href="?page={{ p }}&search={{ search or '' }}&status={{ status_filter }}&per_page={{ request.args.get('per_page', '20') }}{% if from_param %}&from={{ from_param }}{% endif %}">{{ p }}</a>
             {% elif (p == 3 and cur > 4) or (p == total - 2 and cur < total - 3) %}
-            <li class="page-item disabled"><span class="page-link">…</span></li>
+            <span class="cmp-page-link">…</span>
             {% endif %}
           {% endfor %}
           {% if pagination.has_next %}
-          <li class="page-item">
-            <a class="page-link" href="?page={{ pagination.next_num }}&search={{ search or '' }}&status={{ status_filter }}&per_page={{ request.args.get('per_page', '20') }}{% if from_param %}&from={{ from_param }}{% endif %}">下一页</a>
-          </li>
+          <a class="cmp-page-link" href="?page={{ pagination.next_num }}&search={{ search or '' }}&status={{ status_filter }}&per_page={{ request.args.get('per_page', '20') }}{% if from_param %}&from={{ from_param }}{% endif %}">下一页</a>
           {% endif %}
         </ul>
         <select style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-dark); padding: 8px 14px; font-size: 14px; background: #fff; cursor: pointer; outline: none; width: auto;" onchange="location.href=this.dataset.baseUrl + '&per_page=' + this.value" data-base-url="{{ request.full_path.split('&per_page')[0].split('?')[0] + '?' + (request.full_path.split('?')[1].split('&per_page')[0] if '?' in request.full_path and request.full_path.split('?')[1].split('&per_page')[0] else '') }}{{ '&' if request.full_path.split('?')[1]|default('') and request.full_path.split('?')[1].split('&per_page')[0] else '' }}">

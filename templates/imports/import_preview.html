@@ -57,19 +57,19 @@
                                 <table class="table table-sm preview-table mb-0">
                                     <thead>
                                         <tr>
-                                            <th class="text-success bg-success-subtle">新数据</th>
-                                            <th>装置名称</th><th>位号</th>
-                                            {% for k in dup_keys %}<th>{{ k }}</th>{% endfor %}
+                                            <th class="cmp-table__th text-success bg-success-subtle">新数据</th>
+                                            <th class="cmp-table__th">装置名称</th><th class="cmp-table__th">位号</th>
+                                            {% for k in dup_keys %}<th class="cmp-table__th">{{ k }}</th>{% endfor %}
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for d in p.duplicates %}
                                         <tr>
-                                            <td class="text-success text-center">{{ loop.index }}</td>
-                                            <td>{{ d.装置名称 or '' }}</td>
-                                            <td>{{ d.位号 or '' }}</td>
+                                            <td class="cmp-table__td text-success text-center">{{ loop.index }}</td>
+                                            <td class="cmp-table__td">{{ d.装置名称 or '' }}</td>
+                                            <td class="cmp-table__td">{{ d.位号 or '' }}</td>
                                             {% for k in dup_keys %}
-                                            <td>{{ d.new_data.get(k, '') }}</td>
+                                            <td class="cmp-table__td">{{ d.new_data.get(k, '') }}</td>
                                             {% endfor %}
                                         </tr>
                                         {% endfor %}
@@ -80,19 +80,19 @@
                                 <table class="table table-sm preview-table mb-0">
                                     <thead>
                                         <tr>
-                                            <th class="text-danger bg-danger-subtle">现有数据</th>
-                                            <th>装置名称</th><th>位号</th>
-                                            {% for k in dup_keys %}<th>{{ k }}</th>{% endfor %}
+                                            <th class="cmp-table__th text-danger bg-danger-subtle">现有数据</th>
+                                            <th class="cmp-table__th">装置名称</th><th class="cmp-table__th">位号</th>
+                                            {% for k in dup_keys %}<th class="cmp-table__th">{{ k }}</th>{% endfor %}
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for d in p.duplicates %}
                                         <tr>
-                                            <td class="text-danger text-center">{{ loop.index }}</td>
-                                            <td>{{ d.装置名称 or '' }}</td>
-                                            <td>{{ d.位号 or '' }}</td>
+                                            <td class="cmp-table__td text-danger text-center">{{ loop.index }}</td>
+                                            <td class="cmp-table__td">{{ d.装置名称 or '' }}</td>
+                                            <td class="cmp-table__td">{{ d.位号 or '' }}</td>
                                             {% for k in dup_keys %}
-                                            <td>{{ d.existing_data.get(k, '') }}</td>
+                                            <td class="cmp-table__td">{{ d.existing_data.get(k, '') }}</td>
                                             {% endfor %}
                                         </tr>
                                         {% endfor %}
@@ -125,7 +125,7 @@
                 </div>
                 {% endif %}
                 <div class="mb-2">
-                    <label class="form-label">台账合集名称</label>
+                    <label class="cmp-label">台账合集名称</label>
                     <input type="text" class="form-control form-control-sm ledger-name-input"
                            name="ledger_name_{{ p.sheet }}" value="{{ p.sheet }}"
                            style="max-width:300px;">
@@ -136,7 +136,7 @@
                         <thead>
                             <tr>
                                 {% for h in p.sample[0].keys() %}
-                                <th>{{ h }}</th>
+                                <th class="cmp-table__th">{{ h }}</th>
                                 {% endfor %}
                             </tr>
                         </thead>
@@ -144,7 +144,7 @@
                             {% for r in p.sample[:3] %}
                             <tr>
                                 {% for v in r.values() %}
-                                <td>{{ v }}</td>
+                                <td class="cmp-table__td">{{ v }}</td>
                                 {% endfor %}
                             </tr>
                             {% endfor %}

@@ -7,18 +7,18 @@
 {% endblock %}
 
 {% block content %}
-<div class="modern-card">
+<div class="cmp-card">
     <div class="card-header-custom"><i class="bi bi-person"></i> 编辑用户 - {{ user.username }}</div>
     <div class="card-body-custom">
         <form method="POST">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">用户名</label>
-                    <input type="text" name="username" class="form-control form-control-modern" value="{{ user.username }}" required>
+                    <label class="cmp-label">用户名</label>
+                    <input type="text" name="username" class="form-control cmp-input" value="{{ user.username }}" required>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">角色</label>
-                    <select name="role" class="form-control form-control-modern">
+                    <label class="cmp-label">角色</label>
+                    <select name="role" class="form-control cmp-input">
                         <option value="employee" {% if user.role == 'employee' %}selected{% endif %}>员工</option>
                         <option value="leader" {% if user.role == 'leader' %}selected{% endif %}>领导</option>
                         <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>管理员</option>
@@ -27,18 +27,18 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">姓名</label>
-                    <input type="text" name="real_name" class="form-control form-control-modern" value="{{ user.real_name or '' }}">
+                    <label class="cmp-label">姓名</label>
+                    <input type="text" name="real_name" class="form-control cmp-input" value="{{ user.real_name or '' }}">
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">班组</label>
-                    <input type="text" name="dept" class="form-control form-control-modern" value="{{ user.dept or '' }}">
+                    <label class="cmp-label">班组</label>
+                    <input type="text" name="dept" class="form-control cmp-input" value="{{ user.dept or '' }}">
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">新密码（留空则不修改）</label>
-                    <input type="password" name="new_password" class="form-control form-control-modern" placeholder="请输入新密码">
+                    <label class="cmp-label">新密码（留空则不修改）</label>
+                    <input type="password" name="new_password" class="form-control cmp-input" placeholder="请输入新密码">
                 </div>
                 <div class="col-md-6 mb-3 d-flex align-items-end">
                     <div class="form-check">
@@ -48,8 +48,8 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary-custom"><i class="bi bi-check-lg"></i> 保存</button>
-                <a href="{{ url_for('admin.users') }}" class="btn-back">取消</a>
+                <button type="submit" class="btn cmp-btn cmp-btn--primary"><i class="bi bi-check-lg"></i> 保存</button>
+                <a href="{{ url_for('admin.users') }}" class="cmp-btn cmp-btn--secondary">取消</a>
             </div>
         </form>
     </div>

@@ -1,0 +1,23 @@
+{% macro form_section(title, icon=none) %}
+  <div class="cmp-form-section">
+    <div class="cmp-form-section__header">
+      {% if icon %}<i class="bi {{ icon }}"></i>{% endif %}
+      <h5>{{ title }}</h5>
+    </div>
+    <div class="cmp-form-section__body">
+      {{ caller() }}
+    </div>
+  </div>
+{% endmacro %}
+
+{% macro field_row() %}
+  <div class="cmp-field-row">{{ caller() }}</div>
+{% endmacro %}
+
+{% macro field() %}
+  <div class="cmp-field">{{ caller() }}</div>
+{% endmacro %}
+
+{% macro label(text, required=false, icon=none) %}
+  <label class="cmp-label">{% if icon %}<i class="bi {{ icon }}"></i>{% endif %}{{ text }}{% if required %}<span class="required">*</span>{% endif %}</label>
+{% endmacro %}

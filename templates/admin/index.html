@@ -4,37 +4,37 @@
 
 {% block content %}
 <div class="stats-grid">
-    <a href="{{ url_for('admin.users') }}" class="stat-card">
-        <div class="stat-icon primary"><i class="bi bi-people"></i></div>
-        <div class="stat-content">
+    <a href="{{ url_for('admin.users') }}" class="cmp-stat">
+        <div class=" primary"><i class="bi bi-people"></i></div>
+        <div class="">
             <h3>{{ user_count }}</h3>
             <p>用户管理</p>
         </div>
     </a>
     
-    <a href="{{ url_for('admin.settings') }}" class="stat-card">
-        <div class="stat-icon success"><i class="bi bi-gear"></i></div>
-        <div class="stat-content">
+    <a href="{{ url_for('admin.settings') }}" class="cmp-stat">
+        <div class=" success"><i class="bi bi-gear"></i></div>
+        <div class="">
             <h3>设置</h3>
             <p>系统配置</p>
         </div>
     </a>
-    <a href="{{ url_for('admin.sheet_mappings') }}" class="stat-card">
-        <div class="stat-icon warning"><i class="bi bi-bookmark"></i></div>
-        <div class="stat-content">
+    <a href="{{ url_for('admin.sheet_mappings') }}" class="cmp-stat">
+        <div class=" warning"><i class="bi bi-bookmark"></i></div>
+        <div class="">
             <h3>{{ mappings_count }}</h3>
             <p>Sheet 映射记忆</p>
         </div>
     </a>
 </div>
 
-<div class="modern-card">
+<div class="cmp-card">
     <div class="card-header-custom"><i class="bi bi-grid"></i> 管理功能</div>
     <div class="card-body-custom">
         <div class="row">
             <div class="col-md-6 mb-3">
                 <a href="{{ url_for('admin.users') }}" class="quick-action-btn w-100" style="background: #f8fafc; color: var(--text-dark); border: 1px solid var(--border-color); justify-content: flex-start; padding: 20px;">
-                    <div class="stat-icon primary" style="width: 48px; height: 48px; font-size: 20px;"><i class="bi bi-people"></i></div>
+                    <div class=" primary" style="width: 48px; height: 48px; font-size: 20px;"><i class="bi bi-people"></i></div>
                     <div>
                         <div style="font-weight: 600;">用户管理</div>
                         <small class="text-muted">管理用户账户、角色和权限</small>
@@ -43,7 +43,7 @@
             </div>
             <div class="col-md-6 mb-3">
                 <a href="{{ url_for('admin.settings') }}" class="quick-action-btn w-100" style="background: #f8fafc; color: var(--text-dark); border: 1px solid var(--border-color); justify-content: flex-start; padding: 20px;">
-                    <div class="stat-icon success" style="width: 48px; height: 48px; font-size: 20px;"><i class="bi bi-gear"></i></div>
+                    <div class=" success" style="width: 48px; height: 48px; font-size: 20px;"><i class="bi bi-gear"></i></div>
                     <div>
                         <div style="font-weight: 600;">系统设置</div>
                         <small class="text-muted">配置系统参数和审批流程</small>
@@ -52,7 +52,7 @@
             </div>
             <div class="col-md-6 mb-3">
                 <a href="{{ url_for('admin.sheet_mappings') }}" class="quick-action-btn w-100" style="background: #f8fafc; color: var(--text-dark); border: 1px solid var(--border-color); justify-content: flex-start; padding: 20px;">
-                    <div class="stat-icon warning" style="width: 48px; height: 48px; font-size: 20px;"><i class="bi bi-bookmark"></i></div>
+                    <div class=" warning" style="width: 48px; height: 48px; font-size: 20px;"><i class="bi bi-bookmark"></i></div>
                     <div>
                         <div style="font-weight: 600;">Sheet 映射记忆</div>
                         <small class="text-muted">管理导入记忆映射</small>

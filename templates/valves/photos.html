@@ -7,33 +7,33 @@
 {% endblock %}
 
 {% block content %}
-<div class="modern-card mb-4">
+<div class="cmp-card mb-4">
     <div class="card-header-custom"><i class="bi bi-cloud-upload"></i> 上传新照片 - {{ valve.位号 }}</div>
     <div class="card-body-custom">
         <form method="POST" enctype="multipart/form-data">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label" style="font-weight: 500;">选择照片</label>
-                    <input type="file" name="photo" class="form-control form-control-modern" accept="image/*" required>
+                    <label class="cmp-label" style="font-weight: 500;">选择照片</label>
+                    <input type="file" name="photo" class="form-control cmp-input" accept="image/*" required>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label" style="font-weight: 500;">描述</label>
-                    <input type="text" name="description" class="form-control form-control-modern" placeholder="可选描述">
+                    <label class="cmp-label" style="font-weight: 500;">描述</label>
+                    <input type="text" name="description" class="form-control cmp-input" placeholder="可选描述">
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary-custom"><i class="bi bi-upload"></i> 上传</button>
+            <button type="submit" class="btn cmp-btn cmp-btn--primary"><i class="bi bi-upload"></i> 上传</button>
         </form>
     </div>
 </div>
 
-<div class="modern-card">
+<div class="cmp-card">
     <div class="card-header-custom"><i class="bi bi-images"></i> 已有照片</div>
     <div class="card-body-custom">
         {% if valve.photos %}
         <div class="row">
             {% for photo in valve.photos %}
             <div class="col-md-3 mb-3">
-                <div class="modern-card" style="overflow: hidden; padding: 0;">
+                <div class="cmp-card" style="overflow: hidden; padding: 0;">
                     <img src="{{ '/uploads/' + photo.filename }}" class="card-img-top" alt="{{ photo.description }}" style="height: 200px; object-fit: cover;">
                     <div class="p-3">
                         <small class="text-muted d-block">{{ photo.description or '无描述' }}</small>
@@ -44,7 +44,7 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="empty-state">
+        <div class="cmp-empty">
             <i class="bi bi-image"></i>
             <p>暂无照片</p>
         </div>

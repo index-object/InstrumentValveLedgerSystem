@@ -17,44 +17,42 @@
 {% block header_actions %}{% endblock %}
 
 {% block toolbar %}
-<div class="table-toolbar-card">
-    <div class="table-toolbar">
-        <div class="toolbar-left">
+<div class="cmp-toolbar cmp-toolbar--card">
+    <div class="cmp-toolbar">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
             {# 新建按钮：仅员工和管理员可见 #}
             {% if current_user.role in ['employee', 'admin'] %}
-            <a href="{{ url_for('valves.maintenance_create') }}" class="toolbar-btn toolbar-btn-primary">
+            <a href="{{ url_for('valves.maintenance_create') }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary">
                 <i class="bi bi-plus-lg"></i> 新建
             </a>
             {% endif %}
             {# 导出按钮：所有用户可见 #}
-            <button type="button" class="toolbar-btn toolbar-btn-secondary" onclick="batchExport()">
+            <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--secondary" onclick="batchExport()">
                 <i class="bi bi-upload"></i> 导出选中
             </button>
-            <a href="{{ url_for('valves.maintenance_export') }}" class="toolbar-btn toolbar-btn-secondary">
+            <a href="{{ url_for('valves.maintenance_export') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary">
                 <i class="bi bi-upload"></i> 导出全部
             </a>
-            <a href="{{ url_for('maintenance_import.index') }}" class="toolbar-btn toolbar-btn-secondary">
+            <a href="{{ url_for('maintenance_import.index') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary">
                 <i class="bi bi-download"></i> 导入
             </a>
             {# 删除按钮 #}
-            <button type="button" class="toolbar-btn toolbar-btn-danger" onclick="batchDelete()">
+            <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--danger" onclick="batchDelete()">
                 <i class="bi bi-trash"></i> 删除选中
             </button>
-        </div>
-        <div class="toolbar-right">
             <form method="get" class="d-flex gap-2 align-items-center">
-                <select name="valve_id" class="form-control form-control-modern toolbar-filter" onchange="this.form.submit()">
+                <select name="valve_id" class="form-control cmp-input cmp-toolbar-filter" onchange="this.form.submit()">
                     <option value="">全部位号</option>
                     {% for v in valves %}
                     <option value="{{ v.id }}" {% if request.args.get('valve_id')|int == v.id %}selected{% endif %}>{{ v.位号 }}</option>
                     {% endfor %}
                 </select>
-                <div class="toolbar-search">
+                <div class="cmp-toolbar-search">
                     <i class="bi bi-search"></i>
-                    <input type="text" name="search" class="form-control form-control-modern" 
+                    <input type="text" name="search" class="form-control cmp-input" 
                            placeholder="搜索检修内容..." value="{{ request.args.get('search', '') }}">
                 </div>
-                <button type="submit" class="toolbar-btn toolbar-btn-primary">
+                <button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--primary">
                     <i class="bi bi-search"></i>
                 </button>
             </form>
@@ -64,29 +62,29 @@
 {% endblock %}
 
 {% block content %}
-<div class="modern-card">
+<div class="cmp-card">
     <form id="batchForm" method="POST" action="{{ url_for('valves.maintenance_batch_delete') }}">
     <div class="table-responsive">
-        <table class="modern-table">
+        <table class="cmp-table">
             <thead>
                 <tr>
-                    <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="selectAll"></th>
-                    <th>装置名称</th>
-                    <th>设备位号</th>
-                    <th>设备名称</th>
-                    <th>检修时间</th>
-                    <th>检修人员</th>
-                    <th>类型</th>
-                    <th>检修内容</th>
-                    <th style="width: 100px;">操作</th>
+                    <th style="width: 40px;" class="cmp-table__th"><input type="checkbox" class="form-check-input" id="selectAll"></th>
+                    <th class="cmp-table__th">装置名称</th>
+                    <th class="cmp-table__th">设备位号</th>
+                    <th class="cmp-table__th">设备名称</th>
+                    <th class="cmp-table__th">检修时间</th>
+                    <th class="cmp-table__th">检修人员</th>
+                    <th class="cmp-table__th">类型</th>
+                    <th class="cmp-table__th">检修内容</th>
+                    <th style="width: 100px;" class="cmp-table__th">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for record in records %}
                 <tr>
-                    <td><input type="checkbox" name="ids" value="{{ record.id }}" class="form-check-input item-checkbox"></td>
-                    <td>{{ record.装置名称 or '-' }}</td>
-                    <td>
+                    <td class="cmp-table__td"><input type="checkbox" name="ids" value="{{ record.id }}" class="form-check-input item-checkbox"></td>
+                    <td class="cmp-table__td">{{ record.装置名称 or '-' }}</td>
+                    <td class="cmp-table__td">
                         {% if not record.device_type %}
                         <span style="color: var(--text-muted);">{{ record.设备位号 or '-' }}</span>
                         <span class="badge bg-secondary" style="font-size: 10px; margin-left: 4px;">找不到设备</span>
@@ -99,12 +97,12 @@
                         <a href="{{ url_for('devices.detail', type_code=record.device_type, id=record.device_id) }}" style="color: var(--primary-color); font-weight: 500;">{{ record.设备位号 or '-' }}</a>
                         {% endif %}
                     </td>
-                    <td>{{ record.设备名称 or '-' }}</td>
-                    <td>{{ record.检修时间.strftime('%Y-%m-%d') if record.检修时间 else '-' }}</td>
-                    <td>{{ record.检修人员 or '-' }}</td>
-                    <td>{{ record.类型 or '-' }}</td>
-                    <td>{{ record.检修内容[:15] if record.检修内容 else '-' }}{% if record.检修内容 and record.检修内容|length > 15 %}...{% endif %}</td>
-                    <td>
+                    <td class="cmp-table__td">{{ record.设备名称 or '-' }}</td>
+                    <td class="cmp-table__td">{{ record.检修时间.strftime('%Y-%m-%d') if record.检修时间 else '-' }}</td>
+                    <td class="cmp-table__td">{{ record.检修人员 or '-' }}</td>
+                    <td class="cmp-table__td">{{ record.类型 or '-' }}</td>
+                    <td class="cmp-table__td">{{ record.检修内容[:15] if record.检修内容 else '-' }}{% if record.检修内容 and record.检修内容|length > 15 %}...{% endif %}</td>
+                    <td class="cmp-table__td">
                         {# 编辑按钮：仅管理员和创建者可见 #}
                         {% if current_user.role == 'admin' or (current_user.role == 'employee' and record.created_by == current_user.id) %}
                         <a href="{{ url_for('valves.maintenance_edit', id=record.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> 编辑</a>
@@ -115,8 +113,8 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="9">
-                        <div class="empty-state">
+                    <td colspan="9" class="cmp-table__td">
+                        <div class="cmp-empty">
                             <i class="bi bi-wrench"></i>
                             <p>暂无维护记录</p>
                         </div>
@@ -136,26 +134,20 @@
             <small class="text-muted">共 {{ pagination.total }} 条记录</small>
             {% if pagination.pages > 1 %}
             <nav style="display: inline-flex; align-items: center; gap: 8px;">
-                <ul class="pagination-custom pagination mb-0" style="margin-top: 0;">
+                <ul class="cmp-pagination pagination mb-0" style="margin-top: 0;">
                     {% if pagination.has_prev %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('valves.maintenance_list', page=pagination.prev_num, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">上一页</a>
-                    </li>
+                    <a class="cmp-page-link" href="{{ url_for('valves.maintenance_list', page=pagination.prev_num, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">上一页</a>
                     {% endif %}
                     {% set cur = pagination.page %}{% set total = pagination.pages %}
                     {% for p in range(1, total + 1) %}
                       {% if p == 1 or p == 2 or p == total - 1 or p == total or (p >= cur - 1 and p <= cur + 1) %}
-                      <li class="page-item {% if p == cur %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('valves.maintenance_list', page=p, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">{{ p }}</a>
-                      </li>
+                      <a class="cmp-page-link {% if p == cur %}active{% endif %}" href="{{ url_for('valves.maintenance_list', page=p, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">{{ p }}</a>
                       {% elif (p == 3 and cur > 4) or (p == total - 2 and cur < total - 3) %}
-                      <li class="page-item disabled"><span class="page-link">…</span></li>
+                      <span class="cmp-page-link">…</span>
                       {% endif %}
                     {% endfor %}
                     {% if pagination.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('valves.maintenance_list', page=pagination.next_num, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">下一页</a>
-                    </li>
+                    <a class="cmp-page-link" href="{{ url_for('valves.maintenance_list', page=pagination.next_num, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">下一页</a>
                     {% endif %}
                 </ul>
                 <select style="border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-dark);padding:8px 14px;font-size:14px;background:#fff;cursor:pointer;outline:none;width:auto;" onchange="location.href=this.dataset.baseUrl + '&per_page=' + this.value" data-base-url="{{ url_for('valves.maintenance_list', valve_id=valve_val, search=search_val) }}">
@@ -191,12 +183,12 @@ function batchDelete() {
 }
 </script>
 <style>
-.toolbar-btn-danger {
+.cmp-toolbar-btn--danger {
     background: #fef2f2;
     color: #dc2626;
     border: 1px solid #fecaca;
 }
-.toolbar-btn-danger:hover {
+.cmp-toolbar-btn--danger:hover {
     background: #dc2626;
     color: white;
     border-color: #dc2626;
