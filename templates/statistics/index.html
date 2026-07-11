@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+<span style="display: flex; align-items: center; gap: 8px;">
+    <i class="bi bi-bar-chart-fill" style="color: #6366f1;"></i>
+    数据统计
+    <span class="page-tag"><i class="bi bi-graph-up"></i> 仪表盘</span>
+</span>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+  --stat-card-radius: 14px;
+  --user-card-radius: 12px;
+}
+
+/* ── Overview Cards ── */
+.stat-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 32px;
+}
+.stat-overview-card {
+  background: white;
+  border-radius: var(--stat-card-radius);
+  padding: 22px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  transition: all 0.25s ease;
+}
+.stat-overview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+.stat-overview-card .icon-box {
+  width: 52px; height: 52px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+}
+.stat-overview-card .info h3 {
+  margin: 0; font-size: 26px; font-weight: 700; color: #111827; line-height: 1.2;
+}
+.stat-overview-card .info p {
+  margin: 2px 0 0; font-size: 13px; color: #6b7280; font-weight: 500;
+}
+
+/* ── User Section ── */
+.user-stat-section {
+  background: white;
+  border-radius: var(--user-card-radius);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.user-stat-section:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+.user-stat-header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e5e7eb;
+}
+.user-avatar-stat {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 20px; color: white; flex-shrink: 0;
+}
+.user-stat-header .user-meta { flex: 1; }
+.user-stat-header .user-meta .name {
+  font-size: 18px; font-weight: 600; color: #111827;
+  display: flex; align-items: center; gap: 10px;
+}
+.user-stat-header .user-meta .dept {
+  font-size: 15px; color: #6b7280; margin-top: 2px;
+}
+.user-stat-header .user-summary {
+  display: flex; gap: 24px; align-items: center;
+}
+.user-stat-header .user-summary .stat-item { text-align: center; }
+.user-stat-header .user-summary .stat-item .num {
+  font-size: 22px; font-weight: 700; color: #111827; display: block;
+}
+.user-stat-header .user-summary .stat-item .label {
+  font-size: 13px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px;
+}
+
+/* ── Compact Ledger Table ── */
+.stat-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.stat-table th {
+  text-align: left;
+  padding: 12px 24px 12px 56px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fafbfc;
+}
+.stat-table th:last-child,
+.stat-table td:last-child {
+  text-align: center;
+  padding-right: 24px;
+}
+.stat-table th:nth-child(2),
+.stat-table td:nth-child(2) {
+  text-align: center;
+}
+.stat-table td {
+  padding: 14px 24px 14px 56px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+.stat-table tr:last-child td { border-bottom: none; }
+.stat-table tr:hover td { background: #f9fafb; }
+
+.stat-table .ledger-name-cell {
+  font-weight: 600;
+  font-size: 16px;
+}
+.stat-table .ledger-name-cell a {
+  color: #1e293b;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.stat-table .ledger-name-cell a:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+.stat-table .type-badge {
+  font-size: 13px; font-weight: 500;
+  padding: 3px 12px; border-radius: 20px;
+  white-space: nowrap;
+}
+.approved-count-cell {
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+}
+.approved-count-cell.has { color: #10b981; }
+.approved-count-cell.none { color: #d1d5db; }
+
+.maintenance-badge-stat {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 20px;
+  font-size: 15px; font-weight: 600;
+  text-decoration: none;
+  justify-content: center;
+}
+.maintenance-badge-stat.has-records {
+  background: #fef3c7; color: #92400e;
+}
+.maintenance-badge-stat.has-records:hover {
+  background: #fde68a;
+}
+.maintenance-badge-stat.no-records {
+  background: #f3f4f6; color: #9ca3af;
+}
+
+@media (max-width: 768px) {
+  .stat-overview-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-table th, .stat-table td { padding-left: 24px; }
+  .user-stat-header { flex-direction: column; align-items: flex-start; }
+  .user-stat-header .user-summary { width: 100%; justify-content: space-around; }
+}
+</style>
+{% endblock %}
+
+{% block back_btn %}
+<a href="{{ url_for('main.index') }}" class="btn-back-header">
+    <i class="bi bi-arrow-left"></i> 返回
+</a>
+{% endblock %}
+
+{% block header_actions %}{% endblock %}
+
+{% block toolbar %}{% endblock %}
+
+{% block content %}
+<div class="main-body">
+
+  {# ── 顶部概览卡 ── #}
+  <div class="stat-overview-grid">
+    <div class="stat-overview-card">
+      <div class="icon-box" style="background:#eff6ff;color:#3b82f6;">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <div class="info">
+        <h3>{{ user_count }}</h3>
+        <p>活跃用户</p>
+      </div>
+    </div>
+    <div class="stat-overview-card">
+      <div class="icon-box" style="background:#ecfdf5;color:#10b981;">
+        <i class="bi bi-folder-fill"></i>
+      </div>
+      <div class="info">
+        <h3>{{ ledger_count }}</h3>
+        <p>台账合集</p>
+      </div>
+    </div>
+    <div class="stat-overview-card">
+      <div class="icon-box" style="background:#fef3c7;color:#f59e0b;">
+        <i class="bi bi-boxes"></i>
+      </div>
+      <div class="info">
+        <h3>{{ device_count }}</h3>
+        <p>设备总数</p>
+      </div>
+    </div>
+    <div class="stat-overview-card">
+      <div class="icon-box" style="background:#fce7f3;color:#ec4899;">
+        <i class="bi bi-tools"></i>
+      </div>
+      <div class="info">
+        <h3>{{ maintenance_count }}</h3>
+        <p>维护记录</p>
+      </div>
+    </div>
+  </div>
+
+  {# ── 按用户分组 ── #}
+  {% for stat in user_stats %}
+  <div class="user-stat-section">
+    <div class="user-stat-header">
+      <div class="user-avatar-stat" style="background: {{ stat.avatar_color }};">
+        {{ stat.real_name[0]|upper }}
+      </div>
+      <div class="user-meta">
+        <div class="name">
+          {{ stat.real_name }}
+          <span class="cmp-badge" style="font-size:11px;padding:1px 10px;background:{{ stat.role_badge[0] }};color:{{ stat.role_badge[1] }};">
+            {{ stat.role_name }}
+          </span>
+        </div>
+        <div class="dept"><i class="bi bi-building" style="font-size:12px;"></i> {{ stat.dept }}</div>
+      </div>
+      <div class="user-summary">
+        <div class="stat-item">
+          <span class="num">{{ stat.ledger_count }}</span>
+          <span class="label">合集</span>
+        </div>
+        <div class="stat-item">
+          <span class="num">{{ stat.device_count }}</span>
+          <span class="label">设备</span>
+        </div>
+        <div class="stat-item">
+          <span class="num" style="color: #f59e0b;">{{ stat.maintenance_count }}</span>
+          <span class="label">维护</span>
+        </div>
+      </div>
+    </div>
+
+    {% if stat.ledgers %}
+      <table class="stat-table">
+        <thead>
+          <tr>
+            <th>合集名称</th>
+            <th>已审批</th>
+            <th>维护</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for ledger in stat.ledgers %}
+          <tr>
+            <td class="ledger-name-cell">
+              <a href="{{ url_for('ledgers.detail', id=ledger.id, from='statistics') }}">
+                <i class="bi bi-folder2" style="color:#3b82f6;"></i>
+                {{ ledger.名称 }}
+                <span class="type-badge"
+                  style="background:{{ ledger.type_color[0] }};color:{{ ledger.type_color[2] }};border:1px solid {{ ledger.type_color[3] }};">
+                  {{ ledger.type_name }}
+                </span>
+              </a>
+            </td>
+            <td class="approved-count-cell {% if ledger.approved_count > 0 %}has{% else %}none{% endif %}">
+              {{ ledger.approved_count }}
+            </td>
+            <td>
+              <a href="{{ url_for('valves.maintenance_list', valve_id='') }}?search="
+                 class="maintenance-badge-stat {% if ledger.maintenance_count > 0 %}has-records{% else %}no-records{% endif %}"
+                 title="查看维护记录">
+                <i class="bi bi-wrench"></i> {{ ledger.maintenance_count }}
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div style="padding: 24px; text-align: center; color: #9ca3af; font-size: 13px;">
+        <i class="bi bi-inbox"></i> 暂无台账合集
+      </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

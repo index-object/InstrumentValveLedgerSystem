@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据统计 - 预览</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css">
+    <style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #f8fafc; margin: 0; padding: 0; color: #1e293b;
+    }
+    .page-wrap { max-width: 1200px; margin: 0 auto; padding: 32px; }
+
+    .page-head {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+    }
+    .page-head h1 {
+        font-size: 22px; font-weight: 700; margin: 0;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .page-head h1 i { color: #6366f1; }
+    .page-head .tag {
+        font-size: 12px; font-weight: 500; padding: 4px 10px;
+        border-radius: 20px; background: #eef2ff; color: #6366f1;
+    }
+    .page-head .sub { font-size: 13px; color: #94a3b8; }
+
+    .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px; margin-bottom: 32px;
+    }
+    .overview-card {
+        background: white; border-radius: 14px; padding: 22px 24px;
+        border: 1px solid #e5e7eb;
+        display: flex; align-items: center; gap: 18px;
+        transition: all .25s;
+    }
+    .overview-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+    .overview-card .ico {
+        width: 52px; height: 52px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px; flex-shrink: 0;
+    }
+    .overview-card .info h3 {
+        margin: 0; font-size: 26px; font-weight: 700; color: #111827; line-height: 1.2;
+    }
+    .overview-card .info p {
+        margin: 2px 0 0; font-size: 13px; color: #6b7280; font-weight: 500;
+    }
+
+    .user-stat-section {
+        background: white; border-radius: 12px;
+        border: 1px solid #e5e7eb; margin-bottom: 20px;
+        overflow: hidden; transition: box-shadow .2s;
+    }
+    .user-stat-section:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+    .user-stat-header {
+        display: flex; align-items: center; gap: 16px;
+        padding: 18px 24px;
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .user-avatar-stat {
+        width: 44px; height: 44px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 600; font-size: 20px; color: white; flex-shrink: 0;
+    }
+    .user-stat-header .user-meta { flex: 1; }
+    .user-stat-header .user-meta .name {
+        font-size: 18px; font-weight: 600; color: #111827;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .user-stat-header .user-meta .dept {
+        font-size: 15px; color: #6b7280; margin-top: 2px;
+    }
+    .user-stat-header .user-summary {
+        display: flex; gap: 24px; align-items: center;
+    }
+    .user-stat-header .user-summary .stat-item { text-align: center; }
+    .user-stat-header .user-summary .stat-item .num {
+        font-size: 22px; font-weight: 700; color: #111827; display: block;
+    }
+    .user-stat-header .user-summary .stat-item .label {
+        font-size: 13px; color: #9ca3af; text-transform: uppercase; letter-spacing: .3px;
+    }
+
+    .stat-table { width: 100%; border-collapse: collapse; }
+    .stat-table th {
+        text-align: left;
+        padding: 12px 24px 12px 56px;
+        font-size: 14px; font-weight: 600; color: #6b7280;
+        border-bottom: 1px solid #e5e7eb;
+        background: #fafbfc;
+    }
+    .stat-table th:last-child,
+    .stat-table td:last-child {
+        text-align: center;
+        padding-right: 24px;
+    }
+    .stat-table th:nth-child(2),
+    .stat-table td:nth-child(2) {
+        text-align: center;
+    }
+    .stat-table td {
+        padding: 14px 24px 14px 56px;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+    }
+    .stat-table tr:last-child td { border-bottom: none; }
+    .stat-table tr:hover td { background: #f9fafb; }
+
+    .stat-table .ledger-name-cell {
+        font-weight: 600;
+        font-size: 16px;
+    }
+    .stat-table .ledger-name-cell a {
+        color: #1e293b;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .stat-table .ledger-name-cell a:hover {
+        color: #3b82f6;
+        text-decoration: underline;
+    }
+    .stat-table .type-badge {
+        font-size: 13px; font-weight: 500;
+        padding: 3px 12px; border-radius: 20px;
+        white-space: nowrap;
+    }
+    .approved-count-cell {
+        font-size: 22px;
+        font-weight: 700;
+        text-align: center;
+    }
+    .approved-count-cell.has { color: #10b981; }
+    .approved-count-cell.none { color: #d1d5db; }
+
+    .maintenance-badge-stat {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 4px 12px; border-radius: 20px;
+        font-size: 15px; font-weight: 600;
+        text-decoration: none;
+        justify-content: center;
+    }
+    .maintenance-badge-stat.has-records {
+        background: #fef3c7; color: #92400e;
+    }
+    .maintenance-badge-stat.has-records:hover {
+        background: #fde68a;
+    }
+    .maintenance-badge-stat.no-records {
+        background: #f3f4f6; color: #9ca3af;
+    }
+
+    .empty-state {
+        padding: 24px; text-align: center; color: #9ca3af; font-size: 13px;
+    }
+
+    @media (max-width: 768px) {
+        .page-wrap { padding: 16px; }
+        .overview-grid { grid-template-columns: repeat(2, 1fr); }
+        .stat-table th, .stat-table td { padding-left: 24px; }
+        .user-stat-header { flex-direction: column; align-items: flex-start; }
+        .user-stat-header .user-summary { width: 100%; justify-content: space-around; }
+    }
+    </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+    <div class="page-head">
+        <div>
+            <h1><i class="bi bi-bar-chart-fill"></i> 数据统计</h1>
+            <div style="margin-top:4px;"><span class="tag"><i class="bi bi-graph-up"></i> 仪表盘</span><span class="sub"> 全局概览 · 按账号维度透视台账分布</span></div>
+        </div>
+    </div>
+
+    <div class="overview-grid">
+        <div class="overview-card">
+            <div class="ico" style="background:#eff6ff;color:#3b82f6;"><i class="bi bi-people-fill"></i></div>
+            <div class="info"><h3>12</h3><p>活跃用户</p></div>
+        </div>
+        <div class="overview-card">
+            <div class="ico" style="background:#ecfdf5;color:#10b981;"><i class="bi bi-folder-fill"></i></div>
+            <div class="info"><h3>45</h3><p>台账合集</p></div>
+        </div>
+        <div class="overview-card">
+            <div class="ico" style="background:#fef3c7;color:#f59e0b;"><i class="bi bi-boxes"></i></div>
+            <div class="info"><h3>892</h3><p>设备总数</p></div>
+        </div>
+        <div class="overview-card">
+            <div class="ico" style="background:#fce7f3;color:#ec4899;"><i class="bi bi-tools"></i></div>
+            <div class="info"><h3>156</h3><p>维护记录</p></div>
+        </div>
+    </div>
+
+    <div id="userList">
+
+    <!-- 张三 -->
+    <div class="user-stat-section">
+        <div class="user-stat-header">
+            <div class="user-avatar-stat" style="background:#3b82f6;">张</div>
+            <div class="user-meta">
+                <div class="name">张三<span class="cmp-badge" style="font-size:11px;padding:1px 10px;background:#e0e7ff;color:#3730a3;border-radius:20px;">员工</span></div>
+                <div class="dept"><i class="bi bi-building" style="font-size:12px;"></i> 仪表一班</div>
+            </div>
+            <div class="user-summary">
+                <div class="stat-item"><span class="num">5</span><span class="label">合集</span></div>
+                <div class="stat-item"><span class="num">86</span><span class="label">设备</span></div>
+                <div class="stat-item"><span class="num" style="color:#f59e0b;">12</span><span class="label">维护</span></div>
+            </div>
+        </div>
+        <table class="stat-table">
+            <thead><tr>
+                <th>合集名称</th>
+                <th>已审批</th>
+                <th>维护</th>
+            </tr></thead>
+            <tbody>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 项目A_调节阀合集 <span class="type-badge" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;">调节阀</span></a></td><td class="approved-count-cell has">32</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 3</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 项目B_压力变送器 <span class="type-badge" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;">远传压力</span></a></td><td class="approved-count-cell none">0</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 项目C_流量计台账 <span class="type-badge" style="background:#e0e7ff;color:#4338ca;border:1px solid #a5b4fc;">流量计</span></a></td><td class="approved-count-cell has">10</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 7</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 装置D_就地仪表 <span class="type-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">就地压力表</span></a></td><td class="approved-count-cell has">10</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 反应釜_温度计 <span class="type-badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;">远传温度</span></a></td><td class="approved-count-cell none">0</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 2</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 李四 -->
+    <div class="user-stat-section">
+        <div class="user-stat-header">
+            <div class="user-avatar-stat" style="background:#10b981;">李</div>
+            <div class="user-meta">
+                <div class="name">李四<span class="cmp-badge" style="font-size:11px;padding:1px 10px;background:#e0e7ff;color:#3730a3;border-radius:20px;">员工</span></div>
+                <div class="dept"><i class="bi bi-building" style="font-size:12px;"></i> 化工班</div>
+            </div>
+            <div class="user-summary">
+                <div class="stat-item"><span class="num">12</span><span class="label">合集</span></div>
+                <div class="stat-item"><span class="num">203</span><span class="label">设备</span></div>
+                <div class="stat-item"><span class="num" style="color:#f59e0b;">38</span><span class="label">维护</span></div>
+            </div>
+        </div>
+        <table class="stat-table">
+            <thead><tr>
+                <th>合集名称</th>
+                <th>已审批</th>
+                <th>维护</th>
+            </tr></thead>
+            <tbody>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 反应器_RCS_调节阀 <span class="type-badge" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;">调节阀</span></a></td><td class="approved-count-cell has">18</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 6</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 精馏塔_T101_温度 <span class="type-badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;">远传温度</span></a></td><td class="approved-count-cell has">22</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 11</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 压缩机_K101_仪表 <span class="type-badge" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;">远传压力</span></a></td><td class="approved-count-cell has">16</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 换热器_E201_流量 <span class="type-badge" style="background:#e0e7ff;color:#4338ca;border:1px solid #a5b4fc;">流量计</span></a></td><td class="approved-count-cell has">10</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 4</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 汽包_D001_液位 <span class="type-badge" style="background:#ccfbf1;color:#115e59;border:1px solid #5eead4;">远传液位</span></a></td><td class="approved-count-cell has">8</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 泵房_P301_压力表 <span class="type-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">就地压力表</span></a></td><td class="approved-count-cell has">30</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 8</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 储罐_V501_液位计 <span class="type-badge" style="background:#ffedd5;color:#9a3412;border:1px solid #fdba74;">就地液位计</span></a></td><td class="approved-count-cell has">14</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 加热炉_F101_温度 <span class="type-badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;">远传温度</span></a></td><td class="approved-count-cell has">20</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 5</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 冷却塔_C101_仪表 <span class="type-badge" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;">远传压力</span></a></td><td class="approved-count-cell has">12</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 干燥器_D201_温度 <span class="type-badge" style="background:#fce7f3;color:#9d174d;border:1px solid #f9a8d4;">就地温度计</span></a></td><td class="approved-count-cell has">6</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 分离器_S301_液位 <span class="type-badge" style="background:#ccfbf1;color:#115e59;border:1px solid #5eead4;">远传液位</span></a></td><td class="approved-count-cell has">24</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 4</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 吸收塔_T401_流量 <span class="type-badge" style="background:#e0e7ff;color:#4338ca;border:1px solid #a5b4fc;">流量计</span></a></td><td class="approved-count-cell has">10</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 王五 -->
+    <div class="user-stat-section">
+        <div class="user-stat-header">
+            <div class="user-avatar-stat" style="background:#f59e0b;">王</div>
+            <div class="user-meta">
+                <div class="name">王五<span class="cmp-badge" style="font-size:11px;padding:1px 10px;background:#e0e7ff;color:#3730a3;border-radius:20px;">员工</span></div>
+                <div class="dept"><i class="bi bi-building" style="font-size:12px;"></i> 动力班</div>
+            </div>
+            <div class="user-summary">
+                <div class="stat-item"><span class="num">8</span><span class="label">合集</span></div>
+                <div class="stat-item"><span class="num">156</span><span class="label">设备</span></div>
+                <div class="stat-item"><span class="num" style="color:#f59e0b;">31</span><span class="label">维护</span></div>
+            </div>
+        </div>
+        <table class="stat-table">
+            <thead><tr>
+                <th>合集名称</th>
+                <th>已审批</th>
+                <th>维护</th>
+            </tr></thead>
+            <tbody>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 蒸汽管网_调节阀 <span class="type-badge" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;">调节阀</span></a></td><td class="approved-count-cell has">35</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 14</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 给水系统_压力 <span class="type-badge" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;">远传压力</span></a></td><td class="approved-count-cell has">20</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 空压站_流量 <span class="type-badge" style="background:#e0e7ff;color:#4338ca;border:1px solid #a5b4fc;">流量计</span></a></td><td class="approved-count-cell has">12</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 3</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 脱盐水_液位 <span class="type-badge" style="background:#ccfbf1;color:#115e59;border:1px solid #5eead4;">远传液位</span></a></td><td class="approved-count-cell has">8</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 锅炉_B101_温度 <span class="type-badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;">远传温度</span></a></td><td class="approved-count-cell has">25</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 9</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 循环水_就地表 <span class="type-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">就地压力表</span></a></td><td class="approved-count-cell has">18</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 凝结水_液位计 <span class="type-badge" style="background:#ffedd5;color:#9a3412;border:1px solid #fdba74;">就地液位计</span></a></td><td class="approved-count-cell has">10</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 5</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 排污系统_开关阀 <span class="type-badge" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;">开关阀</span></a></td><td class="approved-count-cell has">16</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 赵六（0 合集） -->
+    <div class="user-stat-section">
+        <div class="user-stat-header">
+            <div class="user-avatar-stat" style="background:#94a3b8;">赵</div>
+            <div class="user-meta">
+                <div class="name">赵六<span class="cmp-badge" style="font-size:11px;padding:1px 10px;background:#e0e7ff;color:#3730a3;border-radius:20px;">员工</span></div>
+                <div class="dept"><i class="bi bi-building" style="font-size:12px;"></i> 化验班</div>
+            </div>
+            <div class="user-summary">
+                <div class="stat-item"><span class="num" style="color:#9ca3af;">0</span><span class="label">合集</span></div>
+                <div class="stat-item"><span class="num" style="color:#9ca3af;">0</span><span class="label">设备</span></div>
+                <div class="stat-item"><span class="num" style="color:#9ca3af;">0</span><span class="label">维护</span></div>
+            </div>
+        </div>
+        <div class="empty-state"><i class="bi bi-inbox"></i> 暂无台账合集</div>
+    </div>
+
+    <!-- 孙七 -->
+    <div class="user-stat-section">
+        <div class="user-stat-header">
+            <div class="user-avatar-stat" style="background:#8b5cf6;">孙</div>
+            <div class="user-meta">
+                <div class="name">孙七<span class="cmp-badge" style="font-size:11px;padding:1px 10px;background:#e0e7ff;color:#3730a3;border-radius:20px;">员工</span></div>
+                <div class="dept"><i class="bi bi-building" style="font-size:12px;"></i> 仪表二班</div>
+            </div>
+            <div class="user-summary">
+                <div class="stat-item"><span class="num">6</span><span class="label">合集</span></div>
+                <div class="stat-item"><span class="num">134</span><span class="label">设备</span></div>
+                <div class="stat-item"><span class="num" style="color:#f59e0b;">22</span><span class="label">维护</span></div>
+            </div>
+        </div>
+        <table class="stat-table">
+            <thead><tr>
+                <th>合集名称</th>
+                <th>已审批</th>
+                <th>维护</th>
+            </tr></thead>
+            <tbody>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 裂解炉_F201_温度 <span class="type-badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;">远传温度</span></a></td><td class="approved-count-cell has">28</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 9</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 急冷塔_T201_液位 <span class="type-badge" style="background:#ccfbf1;color:#115e59;border:1px solid #5eead4;">远传液位</span></a></td><td class="approved-count-cell has">24</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 洗涤塔_T301_流量 <span class="type-badge" style="background:#e0e7ff;color:#4338ca;border:1px solid #a5b4fc;">流量计</span></a></td><td class="approved-count-cell has">15</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 7</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 原料罐区_压力 <span class="type-badge" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;">远传压力</span></a></td><td class="approved-count-cell has">30</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 产品罐区_液位 <span class="type-badge" style="background:#ccfbf1;color:#115e59;border:1px solid #5eead4;">远传液位</span></a></td><td class="approved-count-cell has">18</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 6</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 尾气处理_开关阀 <span class="type-badge" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;">开关阀</span></a></td><td class="approved-count-cell has">12</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 周八 -->
+    <div class="user-stat-section">
+        <div class="user-stat-header">
+            <div class="user-avatar-stat" style="background:#ec4899;">周</div>
+            <div class="user-meta">
+                <div class="name">周八<span class="cmp-badge" style="font-size:11px;padding:1px 10px;background:#e0e7ff;color:#3730a3;border-radius:20px;">员工</span></div>
+                <div class="dept"><i class="bi bi-building" style="font-size:12px;"></i> 电气班</div>
+            </div>
+            <div class="user-summary">
+                <div class="stat-item"><span class="num">3</span><span class="label">合集</span></div>
+                <div class="stat-item"><span class="num">78</span><span class="label">设备</span></div>
+                <div class="stat-item"><span class="num" style="color:#f59e0b;">15</span><span class="label">维护</span></div>
+            </div>
+        </div>
+        <table class="stat-table">
+            <thead><tr>
+                <th>合集名称</th>
+                <th>已审批</th>
+                <th>维护</th>
+            </tr></thead>
+            <tbody>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 变压器区_温度 <span class="type-badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;">远传温度</span></a></td><td class="approved-count-cell has">30</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 10</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 配电室_仪表 <span class="type-badge" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;">远传压力</span></a></td><td class="approved-count-cell has">22</td><td><span class="maintenance-badge-stat no-records"><i class="bi bi-wrench"></i> 0</span></td></tr>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 发电机_润滑油 <span class="type-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">就地压力表</span></a></td><td class="approved-count-cell has">20</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 5</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 吴九 -->
+    <div class="user-stat-section">
+        <div class="user-stat-header">
+            <div class="user-avatar-stat" style="background:#14b8a6;">吴</div>
+            <div class="user-meta">
+                <div class="name">吴九<span class="cmp-badge" style="font-size:11px;padding:1px 10px;background:#e0e7ff;color:#3730a3;border-radius:20px;">员工</span></div>
+                <div class="dept"><i class="bi bi-building" style="font-size:12px;"></i> 安全环保部</div>
+            </div>
+            <div class="user-summary">
+                <div class="stat-item"><span class="num">1</span><span class="label">合集</span></div>
+                <div class="stat-item"><span class="num">35</span><span class="label">设备</span></div>
+                <div class="stat-item"><span class="num" style="color:#f59e0b;">5</span><span class="label">维护</span></div>
+            </div>
+        </div>
+        <table class="stat-table">
+            <thead><tr>
+                <th>合集名称</th>
+                <th>已审批</th>
+                <th>维护</th>
+            </tr></thead>
+            <tbody>
+                <tr><td class="ledger-name-cell"><a href="#"><i class="bi bi-folder2" style="color:#3b82f6;"></i> 环境监测_仪表 <span class="type-badge" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;">调节阀</span></a></td><td class="approved-count-cell has">30</td><td><span class="maintenance-badge-stat has-records"><i class="bi bi-wrench"></i> 5</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    </div>
+</div>
+
+</body>
+</html>

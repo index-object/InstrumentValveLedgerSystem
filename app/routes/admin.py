@@ -9,7 +9,7 @@ admin = Blueprint("admin", __name__, url_prefix="/admin")
 def require_admin(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if current_user.role not in ["leader", "admin"]:
+        if current_user.role != "admin":
             flash("需要管理员权限")
             return redirect(url_for("valves.list"))
         return f(*args, **kwargs)

@@ -35,6 +35,11 @@ NAVIGATION_CONTEXTS = {
         'list_endpoint': 'valves.maintenance_list',
         'list_label': '维修记录',
     },
+    'statistics': {
+        'name': '数据统计',
+        'list_endpoint': 'statistics.index',
+        'list_label': '数据统计',
+    },
 }
 
 

@@ -15,6 +15,10 @@
     <a href="{{ url_for('approvals.index') }}" class="btn-back-header" title="返回审批中心">
         <i class="bi bi-arrow-left"></i> 返回
     </a>
+    {% elif from_param == 'statistics' %}
+    <a href="{{ url_for('statistics.index') }}" class="btn-back-header" title="返回数据统计">
+        <i class="bi bi-arrow-left"></i> 返回
+    </a>
     {% else %}
     <a href="{{ url_for('ledgers.list') }}" class="btn-back-header" title="返回台账列表">
         <i class="bi bi-arrow-left"></i> 返回

@@ -58,6 +58,13 @@
                 <span class="badge bg-danger ms-auto">{{ pending_count }}</span>
                 {% endif %}
             </a>
+            {% endif %}
+            {% if current_user.role in ['leader', 'admin'] %}
+            <a href="{{ url_for('statistics.index') }}" class="sidebar-menu-item {% if request.endpoint == 'statistics.index' %}active{% endif %}">
+                <i class="bi bi-bar-chart-fill"></i><span>数据统计</span>
+            </a>
+            {% endif %}
+            {% if current_user.role == 'admin' %}
             <a href="{{ url_for('admin.index') }}" class="sidebar-menu-item {% if request.endpoint and 'admin' in request.endpoint %}active{% endif %}">
                 <i class="bi bi-sliders"></i><span>后台管理</span>
             </a>
