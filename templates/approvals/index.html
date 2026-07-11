@@ -14,11 +14,7 @@
 </span>
 {% endblock %}
 
-{% block back_btn %}
-<a href="{{ url_for('main.index') }}" class="btn-back-header">
-    <i class="bi bi-arrow-left"></i> 返回
-</a>
-{% endblock %}
+{% block back_btn %}{% endblock %}
 
 {% block header_actions %}{% endblock %}
 
@@ -37,9 +33,47 @@
             <span class="text-muted" style="font-size: 13px;">
                 待审批: <strong>{{ pending_count }}</strong> 项
             </span>
+            <span class="ms-auto d-flex align-items-center gap-2" style="font-size:14px;color:#475569;">
+                <span class="d-flex align-items-center gap-1">
+                    <i class="bi bi-lightning-charge-fill" style="color:#f59e0b;font-size:16px;"></i>
+                    自动审批
+                </span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoApprovalToggle"
+                           onchange="toggleAutoApproval(this)"
+                           {% if auto_approval %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+            </span>
         </div>
     </div>
 </div>
+<style>
+.toggle-switch { position:relative; display:inline-block; width:44px; height:24px; margin:0; }
+.toggle-switch .toggle-slider {
+    position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0;
+    background:#d1d5db; border-radius:24px; transition:.3s;
+}
+.toggle-switch input:checked + .toggle-slider { background: #10b981; }
+.toggle-switch .toggle-slider::before {
+    content: ""; position: absolute; height: 18px; width: 18px;
+    left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .3s;
+}
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+</style>
+<script>
+function toggleAutoApproval(el) {
+    fetch("{{ url_for('approvals.toggle_auto_approval') }}", { method: "POST" })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            el.checked = data.auto_approval;
+        })
+        .catch(function() {
+            el.checked = !el.checked;
+        });
+}
+</script>
 {% endblock %}
 
 {% block content %}

@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
-from app.models import db, Ledger, ApprovalLog
+from app.models import db, Ledger, ApprovalLog, Setting
 from app.devices.valve_helper import get_valve_model, get_all_valve_models, count_valves_by_status, query_valves
 from app.devices import DeviceTypeRegistry
 from app.routes.valves.permissions import require_leader
@@ -48,8 +48,12 @@ def index():
     for ledger in ledgers:
         ledger.valve_count = ledger.total_count
 
+    auto_setting = Setting.query.get("auto_approval")
+    auto_approval = (auto_setting and auto_setting.value == "true")
+
     return render_template(
-        "approvals/index.html", ledgers=ledgers, tab=tab, pending_count=pending_count
+        "approvals/index.html", ledgers=ledgers, tab=tab, pending_count=pending_count,
+        auto_approval=auto_approval,
     )
 
 
@@ -157,3 +161,18 @@ def single_approve(id):
     db.session.commit()
     flash(f"已审批台账合集：{ledger.名称}")
     return redirect(url_for("approvals.index"))
+
+
+@approvals.route("/approvals/toggle-auto-approval", methods=["POST"])
+@login_required
+@require_leader
+def toggle_auto_approval():
+    setting = Setting.query.get("auto_approval")
+    current = setting and setting.value == "true"
+    new_value = "false" if current else "true"
+    if setting:
+        setting.value = new_value
+    else:
+        db.session.add(Setting(key="auto_approval", value=new_value))
+    db.session.commit()
+    return jsonify({"auto_approval": new_value == "true"})
