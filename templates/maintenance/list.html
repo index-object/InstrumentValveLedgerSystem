@@ -33,20 +33,19 @@
             <a href="{{ url_for('valves.maintenance_export') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary">
                 <i class="bi bi-upload"></i> 导出全部
             </a>
+            {# 导入按钮：仅员工和管理员可见 #}
+            {% if current_user.role in ['employee', 'admin'] %}
             <a href="{{ url_for('maintenance_import.index') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary">
                 <i class="bi bi-download"></i> 导入
             </a>
-            {# 删除按钮 #}
+            {% endif %}
+            {# 删除按钮：仅员工和管理员可见 #}
+            {% if current_user.role in ['employee', 'admin'] %}
             <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--danger" onclick="batchDelete()">
                 <i class="bi bi-trash"></i> 删除选中
             </button>
+            {% endif %}
             <form method="get" class="d-flex gap-2 align-items-center">
-                <select name="valve_id" class="form-control cmp-input cmp-toolbar-filter" onchange="this.form.submit()">
-                    <option value="">全部位号</option>
-                    {% for v in valves %}
-                    <option value="{{ v.id }}" {% if request.args.get('valve_id')|int == v.id %}selected{% endif %}>{{ v.位号 }}</option>
-                    {% endfor %}
-                </select>
                 <div class="cmp-toolbar-search">
                     <i class="bi bi-search"></i>
                     <input type="text" name="search" class="form-control cmp-input" 
@@ -128,7 +127,6 @@
     
     {% if pagination %}
     {% set search_val = request.args.get('search', '') %}
-    {% set valve_val = request.args.get('valve_id', '') %}
     <div class="p-3 border-top">
         <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap">
             <small class="text-muted">共 {{ pagination.total }} 条记录</small>
@@ -136,21 +134,21 @@
             <nav style="display: inline-flex; align-items: center; gap: 8px;">
                 <ul class="cmp-pagination pagination mb-0" style="margin-top: 0;">
                     {% if pagination.has_prev %}
-                    <a class="cmp-page-link" href="{{ url_for('valves.maintenance_list', page=pagination.prev_num, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">上一页</a>
+                    <a class="cmp-page-link" href="{{ url_for('valves.maintenance_list', page=pagination.prev_num, search=search_val, per_page=request.args.get('per_page', 20)) }}">上一页</a>
                     {% endif %}
                     {% set cur = pagination.page %}{% set total = pagination.pages %}
                     {% for p in range(1, total + 1) %}
                       {% if p == 1 or p == 2 or p == total - 1 or p == total or (p >= cur - 1 and p <= cur + 1) %}
-                      <a class="cmp-page-link {% if p == cur %}active{% endif %}" href="{{ url_for('valves.maintenance_list', page=p, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">{{ p }}</a>
+                      <a class="cmp-page-link {% if p == cur %}active{% endif %}" href="{{ url_for('valves.maintenance_list', page=p, search=search_val, per_page=request.args.get('per_page', 20)) }}">{{ p }}</a>
                       {% elif (p == 3 and cur > 4) or (p == total - 2 and cur < total - 3) %}
                       <span class="cmp-page-link">…</span>
                       {% endif %}
                     {% endfor %}
                     {% if pagination.has_next %}
-                    <a class="cmp-page-link" href="{{ url_for('valves.maintenance_list', page=pagination.next_num, valve_id=valve_val, search=search_val, per_page=request.args.get('per_page', 20)) }}">下一页</a>
+                    <a class="cmp-page-link" href="{{ url_for('valves.maintenance_list', page=pagination.next_num, search=search_val, per_page=request.args.get('per_page', 20)) }}">下一页</a>
                     {% endif %}
                 </ul>
-                <select style="border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-dark);padding:8px 14px;font-size:14px;background:#fff;cursor:pointer;outline:none;width:auto;" onchange="location.href=this.dataset.baseUrl + '&per_page=' + this.value" data-base-url="{{ url_for('valves.maintenance_list', valve_id=valve_val, search=search_val) }}">
+                <select style="border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-dark);padding:8px 14px;font-size:14px;background:#fff;cursor:pointer;outline:none;width:auto;" onchange="location.href=this.dataset.baseUrl + '&per_page=' + this.value" data-base-url="{{ url_for('valves.maintenance_list', search=search_val) }}">
                     <option value="10" {% if request.args.get('per_page', '20') == '10' %}selected{% endif %}>10 条/页</option>
                     <option value="20" {% if request.args.get('per_page', '20') == '20' %}selected{% endif %}>20 条/页</option>
                     <option value="50" {% if request.args.get('per_page', '20') == '50' %}selected{% endif %}>50 条/页</option>

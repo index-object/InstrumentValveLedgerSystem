@@ -149,10 +149,6 @@ def maintenance_list():
     if search:
         query = query.filter(MaintenanceRecord.检修内容.contains(search))
 
-    valve_id = request.args.get("valve_id")
-    if valve_id:
-        query = query.filter(MaintenanceRecord.device_id == int(valve_id))
-
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
 
@@ -160,16 +156,8 @@ def maintenance_list():
         page=page, per_page=per_page, error_out=False
     )
 
-    # Build valve map for dropdown filter
-    valves = []
-    valve_map = {}
-    for model in get_all_valve_models():
-        for v in model.query.filter(model.status != "draft").all():
-            valves.append(v)
-            valve_map[v.id] = v
-
     return render_template(
-        "maintenance/list.html", records=pagination.items, pagination=pagination, valves=valves, valve_map=valve_map
+        "maintenance/list.html", records=pagination.items, pagination=pagination
     )
 
 
