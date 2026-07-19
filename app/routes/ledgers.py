@@ -277,7 +277,7 @@ def detail(id):
 
     status_filter = request.args.get("status")
 
-    if from_param != "mine" and not status_filter:
+    if from_param not in ("mine", "approvals") and not status_filter:
         if ledger.approved_snapshot_at:
             query = query.filter(
                 model.status == "approved",

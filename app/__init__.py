@@ -38,13 +38,14 @@ def create_app(config_class=Config):
                 "leader",
                 "admin",
             ]:
+                from app.models import Ledger
                 pending_count = 0
-                for model in get_all_valve_models():
-                    pending_count += model.query.filter_by(status="pending").count()
-                valve_model_set = set(get_all_valve_models())
-                for config in DeviceTypeRegistry.all():
-                    if config.model_class and config.model_class not in valve_model_set:
-                        pending_count += config.model_class.query.filter_by(status="pending").count()
+                for ledger in Ledger.query.all():
+                    config = DeviceTypeRegistry.get(ledger.类型)
+                    if config and config.model_class:
+                        model = config.model_class
+                        if model.query.filter_by(ledger_id=ledger.id, status="pending").count() > 0:
+                            pending_count += 1
             else:
                 pending_count = 0
         except:

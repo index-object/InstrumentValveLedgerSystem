@@ -14,11 +14,14 @@ approvals = Blueprint("approvals", __name__)
 @require_leader
 def index():
     tab = request.args.get("tab", "pending")
-    pending_count = sum(
-        config.model_class.query.filter_by(status="pending").count()
-        for config in DeviceTypeRegistry.all()
-        if config.model_class
-    )
+    from app.models import Ledger
+    pending_count = 0
+    for ledger in Ledger.query.all():
+        config = DeviceTypeRegistry.get(ledger.类型)
+        if config and config.model_class:
+            model = config.model_class
+            if model.query.filter_by(ledger_id=ledger.id, status="pending").count() > 0:
+                pending_count += 1
 
     all_ledgers = Ledger.query.order_by(Ledger.created_at.desc()).all()
 
