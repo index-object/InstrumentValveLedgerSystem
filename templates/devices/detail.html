@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block page_title %}{{ config.name }}详情{% endblock %}
-{% block extra_css %}{% endblock %}
 {% block back_btn %}
 {% set from_param = from_param|default(request.args.get('from', '')) %}
 {% if device.ledger_id %}
@@ -39,80 +38,58 @@
 </a>
 {% endblock %}
 {% block content %}
-{% set section_colors = ['', 'section-header-cyan', 'section-header-orange', 'section-header-green', 'section-header-gray'] %}
-<div class="cmp-card mb-4">
-  <div class="detail-header">
-    <div class="detail-header-main">
-      <div class="detail-icon">
-        <i class="bi bi-gear"></i>
-      </div>
-      <div class="detail-header-info">
-        <h2 class="detail-title-text">
-          <span class="valve-tag">{{ device|attr('位号') or '#' ~ device.id }}</span>
-          <span class="valve-name">{{ device|attr('设备名称') or device|attr('名称') or '-' }}</span>
-        </h2>
-        <div class="detail-meta">
-          <span><i class="bi bi-building"></i> {{ device|attr('装置名称') or '-' }}</span>
-          <span class="meta-divider">|</span>
-          <span><i class="bi bi-award"></i> {{ device|attr('设备等级') or '-' }}</span>
-          <span class="meta-divider">|</span>
-          <span><i class="bi bi-box-seam"></i> {{ device|attr('生产厂家') or '-' }}</span>
-        </div>
+<div class="cmp-detail-header mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <div class="detail-icon" style="background:rgba(255,255,255,0.15);width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;">
+      <i class="bi bi-gear" style="font-size:32px;color:white;"></i>
+    </div>
+    <div>
+      <h2 class="cmp-detail-header__title">
+        <span class="valve-tag" style="background:rgba(255,255,255,0.2);padding:4px 12px;border-radius:6px;font-size:18px;">{{ device|attr('位号') or '#' ~ device.id }}</span>
+        <span class="valve-name" style="color:white;">{{ device|attr('设备名称') or device|attr('名称') or '-' }}</span>
+      </h2>
+      <div class="cmp-detail-meta">
+        <span><i class="bi bi-building"></i> {{ device|attr('装置名称') or '-' }}</span>
+        <span class="meta-divider">|</span>
+        <span><i class="bi bi-award"></i> {{ device|attr('设备等级') or '-' }}</span>
+        <span class="meta-divider">|</span>
+        <span><i class="bi bi-box-seam"></i> {{ device|attr('生产厂家') or '-' }}</span>
       </div>
     </div>
-    <div class="detail-header-status">
-      {% if device.status == 'approved' %}
-      <span class="cmp-badge cmp-badge--approved"><i class="bi bi-check-circle"></i> 已审批</span>
-      {% elif device.status == 'pending' %}
-      <span class="cmp-badge cmp-badge--pending"><i class="bi bi-clock"></i> 待审批</span>
-      {% elif device.status == 'rejected' %}
-      <span class="cmp-badge cmp-badge--rejected"><i class="bi bi-x-circle"></i> 已驳回</span>
-      {% else %}
-      <span class="cmp-badge cmp-badge--draft"><i class="bi bi-file-earmark"></i> 草稿</span>
-      {% endif %}
-    </div>
+  </div>
+  <div>
+    {% if device.status == 'approved' %}
+    <span class="cmp-badge cmp-badge--approved"><i class="bi bi-check-circle"></i> 已审批</span>
+    {% elif device.status == 'pending' %}
+    <span class="cmp-badge cmp-badge--pending"><i class="bi bi-clock"></i> 待审批</span>
+    {% elif device.status == 'rejected' %}
+    <span class="cmp-badge cmp-badge--rejected"><i class="bi bi-x-circle"></i> 已驳回</span>
+    {% else %}
+    <span class="cmp-badge cmp-badge--draft"><i class="bi bi-file-earmark"></i> 草稿</span>
+    {% endif %}
   </div>
 </div>
 
 <div class="cmp-card">
-  <ul class="nav nav-tabs detail-tabs" id="detailTab" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-panel" type="button" role="tab">
-        <i class="bi bi-clipboard-data"></i> 数据详情
-      </button>
-    </li>
-  </ul>
-
-  <div class="tab-content detail-tab-content" id="detailTabContent">
-    <div class="tab-pane fade show active" id="data-panel" role="tabpanel">
-      <div class="detail-grid-layout">
-        {% set half = (config.field_groups|length + 1)//2 %}
-        {% for col_idx in range(2) %}
-        {% set col_start = col_idx * half %}
-        <div class="detail-column" style="display: flex; flex-direction: column; gap: 20px;">
-          {% for group in config.field_groups %}
-          {% if loop.index0 >= col_start and loop.index0 < col_start + half %}
-          <div class="info-section" style="flex: none;">
-            <div class="section-header {{ section_colors[loop.index0 % section_colors|length] }}">
-              <i class="bi bi-info-circle"></i>
-              <span>{{ group.title }}</span>
-              <span class="section-count">{{ group.fields|length }}项</span>
-            </div>
-            <div class="info-list">
-              {% for field in group.fields %}
-              <div class="info-row">
-                <span class="info-label">{{ field }}</span>
-                <span class="info-value">{{ device|attr(field) or '-' }}</span>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% endif %}
-          {% endfor %}
+  <div class="cmp-detail-grid">
+    {% for group in config.field_groups %}
+    <div class="cmp-detail-info-section">
+      {% set section_colors = ['red', 'cyan', 'orange', 'green', 'gray'] %}
+      <div class="cmp-detail-info-section__header{% if not loop.first %} cmp-detail-info-section__header--{{ section_colors[loop.index0 % section_colors|length] }}{% endif %}">
+        <i class="bi bi-info-circle"></i>
+        <span>{{ group.title }}</span>
+        <span class="section-count">{{ group.fields|length }}项</span>
+      </div>
+      <div class="cmp-detail-info-section__body">
+        {% for field in group.fields %}
+        <div class="cmp-detail-info-row">
+          <span class="cmp-detail-info-label">{{ field }}</span>
+          <span class="cmp-detail-info-value">{{ device|attr(field) or '-' }}</span>
         </div>
         {% endfor %}
       </div>
     </div>
+    {% endfor %}
   </div>
 </div>
 {% endblock %}

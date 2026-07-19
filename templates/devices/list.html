@@ -47,9 +47,6 @@
       <a href="{{ url_with_params('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--sm">
         <i class="bi bi-plus-lg"></i> 新增
       </a>
-      <a href="{{ url_for('devices.import_data', type_code=type_code) }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm">
-        <i class="bi bi-upload"></i> 导入
-      </a>
       <button type="submit" form="batch-form" class="cmp-toolbar-btn cmp-toolbar-btn--danger cmp-toolbar-btn--sm" onclick="return confirm('确认删除选中记录？')">
         <i class="bi bi-trash"></i> 删除
       </button>
@@ -57,6 +54,11 @@
       <a href="{{ url_for('devices.export', type_code=type_code) }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm">
         <i class="bi bi-download"></i> 导出
       </a>
+      {% if is_mine %}
+      <a href="{{ url_for('devices.import_data', type_code=type_code) }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm">
+        <i class="bi bi-upload"></i> 导入
+      </a>
+      {% endif %}
       <form method="GET" class="d-flex gap-2 align-items-center">
         {% if from_param %}<input type="hidden" name="from" value="{{ from_param }}">{% endif %}
         <div class="cmp-toolbar-search">
@@ -88,7 +90,7 @@
 {% set is_mine = (from_param == 'mine') %}
 <div class="cmp-card">
   <div class="table-responsive" style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: auto; position: relative;">
-    <table class="cmp-table table-sm table-bordered" style="min-width: {{ 800 + total_data_cols * 100 }}px;">
+    <table class="cmp-table table-sm" style="min-width: {{ 800 + total_data_cols * 100 }}px;">
       <thead class="table-light" style="position: sticky; top: 0; z-index: 20;">
         <tr>
           {% if is_mine %}
@@ -185,7 +187,7 @@
           {% set cur = pagination.page %}{% set total = pagination.pages %}
           {% for p in range(1, total + 1) %}
             {% if p == 1 or p == 2 or p == total - 1 or p == total or (p >= cur - 1 and p <= cur + 1) %}
-            <a class="cmp-page-link" href="?page={{ p }}&search={{ search or '' }}&status={{ status_filter }}&per_page={{ request.args.get('per_page', '20') }}{% if from_param %}&from={{ from_param }}{% endif %}">{{ p }}</a>
+            <a class="cmp-page-link {% if p == cur %}active{% endif %}" href="?page={{ p }}&search={{ search or '' }}&status={{ status_filter }}&per_page={{ request.args.get('per_page', '20') }}{% if from_param %}&from={{ from_param }}{% endif %}">{{ p }}</a>
             {% elif (p == 3 and cur > 4) or (p == total - 2 and cur < total - 3) %}
             <span class="cmp-page-link">…</span>
             {% endif %}

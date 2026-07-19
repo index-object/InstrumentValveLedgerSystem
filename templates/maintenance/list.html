@@ -23,24 +23,24 @@
                 <i class="bi bi-plus-lg"></i> 新建
             </a>
             {% endif %}
-            {# 导出按钮：所有用户可见 #}
-            <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--secondary" onclick="batchExport()">
-                <i class="bi bi-upload"></i> 导出选中
-            </button>
-            <a href="{{ url_for('valves.maintenance_export') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary">
-                <i class="bi bi-upload"></i> 导出全部
-            </a>
-            {# 导入按钮：仅员工和管理员可见 #}
-            {% if current_user.role in ['employee', 'admin'] %}
-            <a href="{{ url_for('maintenance_import.index') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary">
-                <i class="bi bi-download"></i> 导入
-            </a>
-            {% endif %}
             {# 删除按钮：仅员工和管理员可见 #}
             {% if current_user.role in ['employee', 'admin'] %}
             <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--danger" onclick="batchDelete()">
                 <i class="bi bi-trash"></i> 删除选中
             </button>
+            {% endif %}
+            {# 导出按钮：所有用户可见 #}
+            <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--secondary" onclick="batchExport()">
+                <i class="bi bi-download"></i> 导出选中
+            </button>
+            <a href="{{ url_for('valves.maintenance_export') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary">
+                <i class="bi bi-download"></i> 导出全部
+            </a>
+            {# 导入按钮：仅员工和管理员可见 #}
+            {% if current_user.role in ['employee', 'admin'] %}
+            <a href="{{ url_for('maintenance_import.index') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary">
+                <i class="bi bi-upload"></i> 导入
+            </a>
             {% endif %}
             <form method="get" class="d-flex gap-2 align-items-center">
                 <div class="cmp-toolbar-search">
