@@ -826,7 +826,8 @@ def valve_detail(ledger_id, id):
     if not valve:
         abort(404)
     return render_template(
-        "valves/detail.html", valve=valve, ledger_id=ledger_id, from_param=from_param
+        "valves/detail.html", valve=valve, ledger_id=ledger_id, from_param=from_param,
+        valve_type=ledger.类型,
     )
 
 

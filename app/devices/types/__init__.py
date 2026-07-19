@@ -12,6 +12,7 @@ from app.devices.types.level_transmitter import LevelTransmitter
 from app.devices.types.local_level import LocalLevel
 from app.devices.types.control_valve import ControlValve
 from app.devices.types.onoff_valve import OnOffValve
+from app.devices.types.electric_valve import ElectricValve
 
 
 def _load_type_config():
@@ -84,6 +85,55 @@ _filterable_fields_valve = [
     ("安装位置及用途", "安装位置及用途"), ("是否联锁", "是否联锁"),
 ]
 
+_field_groups_electric_valve = [
+    {
+        "title": "基本信息",
+        "fields": ["装置名称", "位号", "名称", "安装位置及用途",
+                   "设备等级", "型号规格", "生产厂家", "设备编号"],
+        "cols": 2,
+    },
+    {
+        "title": "工艺参数",
+        "fields": ["介质名称", "设计温度℃", "操作压力",
+                   "设计压力", "公称通径"],
+        "cols": 2,
+    },
+    {
+        "title": "阀体参数",
+        "fields": ["阀体", "阀体材质", "阀座材质", "阀芯材质"],
+        "cols": 2,
+    },
+    {
+        "title": "流量特性",
+        "fields": ["流量特性", "泄露等级"],
+        "cols": 2,
+    },
+    {
+        "title": "电气参数",
+        "fields": ["转矩Nm", "功率", "转速r_per_min", "转圈数r",
+                   "电源", "防护等级"],
+        "cols": 2,
+    },
+    {
+        "title": "执行机构",
+        "fields": ["作用形式", "额定行程"],
+        "cols": 2,
+    },
+    {
+        "title": "其他",
+        "fields": ["是否联锁", "备注"],
+        "cols": 1,
+    },
+]
+
+_filterable_fields_electric_valve = [
+    ("装置名称", "装置名称"), ("位号", "位号"),
+    ("名称", "名称"), ("设备等级", "设备等级"),
+    ("型号规格", "型号规格"), ("生产厂家", "生产厂家"),
+    ("安装位置及用途", "安装位置及用途"),
+    ("是否联锁", "是否联锁"),
+]
+
 
 def register_all():
     DeviceTypeRegistry.register(DeviceTypeConfig(
@@ -99,6 +149,13 @@ def register_all():
         field_groups=_field_groups_valve,
         filterable_fields=_filterable_fields_valve,
         color_scheme=['#d1fae5','#a7f3d0','#065f46','#6ee7b7'],
+    ))
+    DeviceTypeRegistry.register(DeviceTypeConfig(
+        code="electric_valve", name=_type_names.get("electric_valve", "电动阀"),
+        model_class=ElectricValve, icon="fa-bolt",
+        field_groups=_field_groups_electric_valve,
+        filterable_fields=_filterable_fields_electric_valve,
+        color_scheme=['#fef3c7','#fde68a','#92400e','#fcd34d'],
     ))
     DeviceTypeRegistry.register(DeviceTypeConfig(
         code="pressure_transmitter", name=_type_names.get("pressure_transmitter", "远传压力"),

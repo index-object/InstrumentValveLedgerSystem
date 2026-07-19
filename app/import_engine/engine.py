@@ -11,6 +11,7 @@ from app.import_engine.loader import DataLoader
 from app.import_engine.verifier import SummaryVerifier, VerificationResult
 from app.devices.types.control_valve import ControlValve
 from app.devices.types.onoff_valve import OnOffValve
+from app.devices.types.electric_valve import ElectricValve
 
 
 @dataclass
@@ -97,6 +98,7 @@ class ImportEngine:
                 "LocalLevel": LocalLevel,
                 "ControlValve": ControlValve,
                 "OnOffValve": OnOffValve,
+                "ElectricValve": ElectricValve,
             }
             cls = model_map.get(model_class_name)
             if cls:
@@ -193,7 +195,7 @@ class ImportEngine:
         column_mapping = type_cfg.get("column_mapping", {})
         mapped_rows = self._mapper.map_rows(sd.rows, column_mapping)
 
-        preserve = model_cls in (ControlValve, OnOffValve)
+        preserve = model_cls in (ControlValve, OnOffValve, ElectricValve)
         records = self._loader.create_records(model_cls, mapped_rows, preserve_order=preserve)
 
         # 标准化附件字段名（Excel原始列名 → 模型属性名）

@@ -124,6 +124,7 @@
                         </div>
                     </div>
                     
+                    {% if valve_type != 'electric_valve' %}
                     <div class="cmp-detail-info-section">
                         <div class="cmp-detail-info-section__header cmp-detail-info-section__header--red">
                             <i class="bi bi-gear"></i>
@@ -161,6 +162,7 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                     
                     {% if valve.备注 %}
                     <div class="cmp-detail-info-section">
@@ -177,6 +179,7 @@
                     {% endif %}
                 
                 
+                    {% if valve_type != 'electric_valve' %}
                     <div class="cmp-detail-info-section">
                         <div class="cmp-detail-info-section__header cmp-detail-info-section__header--cyan">
                             <i class="bi bi-thermometer-half"></i>
@@ -202,7 +205,9 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                     
+                    {% if valve_type != 'electric_valve' %}
                     <div class="cmp-detail-info-section">
                         <div class="cmp-detail-info-section__header cmp-detail-info-section__header--orange">
                             <i class="bi bi-box-seam"></i>
@@ -224,7 +229,137 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                     
+                    {% if valve_type == 'electric_valve' %}
+                    <div class="cmp-detail-info-section">
+                        <div class="cmp-detail-info-section__header" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white;">
+                            <i class="bi bi-lightning-charge-fill"></i>
+                            <span>电气参数</span>
+                            <span class="section-count">6项</span>
+                        </div>
+                        <div class="cmp-detail-info-section__body">
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-speedometer2"></i> 转矩(Nm)</span>
+                                <span class="cmp-detail-info-value">{{ valve.转矩Nm or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-lightning"></i> 功率</span>
+                                <span class="cmp-detail-info-value">{{ valve.功率 or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-arrow-repeat"></i> 转速(r/min)</span>
+                                <span class="cmp-detail-info-value">{{ valve.转速r_per_min or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-arrow-counterclockwise"></i> 转圈数(r)</span>
+                                <span class="cmp-detail-info-value">{{ valve.转圈数r or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-plug"></i> 电源</span>
+                                <span class="cmp-detail-info-value">{{ valve.电源 or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-shield-check"></i> 防护等级</span>
+                                <span class="cmp-detail-info-value">{{ valve.防护等级 or '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if valve_type == 'electric_valve' %}
+                    <div class="cmp-detail-info-section">
+                        <div class="cmp-detail-info-section__header" style="background: linear-gradient(135deg, #0891b2, #0e7490); color: white;">
+                            <i class="bi bi-thermometer-half"></i>
+                            <span>工艺参数</span>
+                            <span class="section-count">5项</span>
+                        </div>
+                        <div class="cmp-detail-info-section__body">
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-droplet"></i> 介质名称</span>
+                                <span class="cmp-detail-info-value">{{ valve.介质名称 or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-thermometer-sun"></i> 设计温度(℃)</span>
+                                <span class="cmp-detail-info-value">{{ valve.设计温度_c or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-arrow-up-circle"></i> 操作压力</span>
+                                <span class="cmp-detail-info-value">{{ valve.操作压力 or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-arrow-down-circle"></i> 设计压力</span>
+                                <span class="cmp-detail-info-value">{{ valve.设计压力 or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-arrows-angle-expand"></i> 公称通径</span>
+                                <span class="cmp-detail-info-value">{{ valve.公称通径 or '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="cmp-detail-info-section">
+                        <div class="cmp-detail-info-section__header" style="background: linear-gradient(135deg, #7c3aed, #8b5cf6); color: white;">
+                            <i class="bi bi-box-seam"></i>
+                            <span>阀体参数</span>
+                            <span class="section-count">4项</span>
+                        </div>
+                        <div class="cmp-detail-info-section__body">
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-box"></i> 阀体</span>
+                                <span class="cmp-detail-info-value">{{ valve.阀体 or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-gem"></i> 阀体材质</span>
+                                <span class="cmp-detail-info-value">{{ valve.阀体材质 or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-gem"></i> 阀座材质</span>
+                                <span class="cmp-detail-info-value">{{ valve.阀座材质 or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-gem"></i> 阀芯材质</span>
+                                <span class="cmp-detail-info-value">{{ valve.阀芯材质 or '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="cmp-detail-info-section">
+                        <div class="cmp-detail-info-section__header" style="background: linear-gradient(135deg, #059669, #10b981); color: white;">
+                            <i class="bi bi-graph-up"></i>
+                            <span>流量特性</span>
+                            <span class="section-count">2项</span>
+                        </div>
+                        <div class="cmp-detail-info-section__body">
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-graph-up"></i> 流量特性</span>
+                                <span class="cmp-detail-info-value">{{ valve.流量特性 or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-droplet-half"></i> 泄露等级</span>
+                                <span class="cmp-detail-info-value">{{ valve.泄露等级 or '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="cmp-detail-info-section">
+                        <div class="cmp-detail-info-section__header" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white;">
+                            <i class="bi bi-arrow-repeat"></i>
+                            <span>执行机构</span>
+                            <span class="section-count">2项</span>
+                        </div>
+                        <div class="cmp-detail-info-section__body">
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-arrow-left-right"></i> 作用形式</span>
+                                <span class="cmp-detail-info-value">{{ valve.作用形式 or '-' }}</span>
+                            </div>
+                            <div class="cmp-detail-info-row">
+                                <span class="cmp-detail-info-label"><i class="bi bi-rulers"></i> 额定行程</span>
+                                <span class="cmp-detail-info-value">{{ valve.额定行程 or '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if valve_type != 'electric_valve' %}
                     <div class="cmp-detail-info-section">
                         <div class="cmp-detail-info-section__header cmp-detail-info-section__header--green">
                             <i class="bi bi-lightning-charge"></i>
@@ -274,6 +409,7 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
             </div>
             
             {% if valve.attachments %}

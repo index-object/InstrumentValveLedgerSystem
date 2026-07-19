@@ -99,7 +99,7 @@ def detail(id):
     if not can_view_valve(valve):
         flash("无权访问")
         return redirect_to_list(from_param)
-    return render_template("valves/detail.html", valve=valve, from_param=from_param)
+    return render_template("valves/detail.html", valve=valve, from_param=from_param, valve_type=device_type or get_valve_ledger_type(valve))
 
 
 @valves.route("/valve/new", methods=["GET", "POST"])

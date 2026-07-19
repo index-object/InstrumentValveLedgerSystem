@@ -17,7 +17,7 @@
 {% block header_actions %}{% endblock %}
 
 {% block toolbar %}
-<div class="cmp-toolbar cmp-toolbar--card" data-batch-submit-url="{{ url_for('ledgers.batch_submit_ledgers') }}" data-batch-delete-url="{{ url_for('ledgers.batch_delete_ledgers') }}">
+<div class="cmp-toolbar cmp-toolbar--card list-toolbar" data-batch-submit-url="{{ url_for('ledgers.batch_submit_ledgers') }}" data-batch-delete-url="{{ url_for('ledgers.batch_delete_ledgers') }}">
     <div class="d-flex gap-2 align-items-center flex-wrap">
         <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--success" onclick="batchSubmit()">
             <i class="bi bi-send"></i> 批量提交

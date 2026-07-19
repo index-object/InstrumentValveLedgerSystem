@@ -41,7 +41,7 @@
         {% if ledger %}
         <div class="d-flex align-items-center gap-1">
             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.display_status != 'pending' %}
-            <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--sm"><i class="bi bi-plus-lg"></i> 新增</a>
+            <a href="{% if ledger.类型 not in VALVE_TYPES %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--sm"><i class="bi bi-plus-lg"></i> 新增</a>
             <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--danger cmp-toolbar-btn--sm" onclick="batchDelete()"><i class="bi bi-trash"></i> 删除</button>
             {% endif %}
             <a href="{{ url_for('valves.export_data', device_type=ledger.类型, from=from_param, ledger_id=ledger.id) }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-download"></i> 导出</a>
@@ -108,15 +108,42 @@
                         <th class="cmp-table__th" style="width: 50px; vertical-align: middle; position: sticky; left: 0; z-index: 23; background: #f8f9fa; border-right: 1px solid #dee2e6;">
                             <input type="checkbox" class="form-check-input" id="selectAllTop">
                         </th>
+                        {% if ledger and ledger.类型 == 'electric_valve' %}
+                        <th colspan="11" class="cmp-table__th text-center table-secondary" style="position: sticky; left: 50px; z-index: 21;">基础信息</th>
+                        <th colspan="5" class="cmp-table__th text-center table-info" style="position: sticky; z-index: 21;">工艺参数</th>
+                        <th colspan="4" class="cmp-table__th text-center table-warning" style="position: sticky; z-index: 21;">阀体参数</th>
+                        <th colspan="2" class="cmp-table__th text-center table-danger" style="position: sticky; z-index: 21;">流量特性</th>
+                        <th colspan="2" class="cmp-table__th text-center table-success" style="position: sticky; z-index: 21;">执行机构</th>
+                        <th colspan="6" class="cmp-table__th text-center table-warning" style="position: sticky; z-index: 21;">电气参数</th>
+                        <th colspan="2" class="cmp-table__th text-center" style="position: sticky; right: 0; z-index: 23; background: #f8f9fa;">操作列</th>
+                        {% else %}
                         <th colspan="11" class="cmp-table__th text-center table-secondary" style="position: sticky; left: 50px; z-index: 21;">基础信息</th>
                         <th colspan="4" class="cmp-table__th text-center table-info" style="position: sticky; z-index: 21;">工艺条件</th>
                         <th colspan="3" class="cmp-table__th text-center table-warning" style="position: sticky; z-index: 21;">阀体信息</th>
                         <th colspan="7" class="cmp-table__th text-center table-danger" style="position: sticky; z-index: 21;">阀内件信息</th>
                         <th colspan="10" class="cmp-table__th text-center table-success" style="position: sticky; z-index: 21;">执行机构信息</th>
+                        <th colspan="6" class="cmp-table__th text-center table-warning" style="position: sticky; z-index: 21;">电气参数</th>
                         <th colspan="2" class="cmp-table__th text-center" style="position: sticky; right: 0; z-index: 23; background: #f8f9fa;">操作列</th>
+                        {% endif %}
                     </tr>
 <tr>
                         <th class="cmp-table__th" style="width: 50px; position: sticky; left: 0; z-index: 22; background: #f8f9fa; border-right: 1px solid #dee2e6; border-bottom: 2px solid #dee2e6;"></th>
+                        {% if ledger and ledger.类型 == 'electric_valve' %}
+                        {% set fields = [
+                            ('序号', '序号', 'sticky'), ('位号', '位号', ''), ('名称', '名称', ''), ('装置名称', '装置名称', ''),
+                            ('设备等级', '设备等级', ''), ('型号规格', '型号规格', ''), ('生产厂家', '生产厂家', ''),
+                            ('安装位置及用途', '安装位置', ''), ('设备编号', '设备编号', ''), ('是否联锁', '是否联锁', ''), ('备注', '备注', ''),
+                            ('介质名称', '介质名称', ''), ('设计温度_c', '设计温度℃', ''),
+                            ('操作压力', '操作压力', ''), ('设计压力', '设计压力', ''), ('公称通径', '公称通径', ''),
+                            ('阀体', '阀体', ''), ('阀体材质', '阀体材质', ''), ('阀座材质', '阀座材质', ''), ('阀芯材质', '阀芯材质', ''),
+                            ('流量特性', '流量特性', ''), ('泄露等级', '泄露等级', ''),
+                            ('作用形式', '作用形式', ''), ('额定行程', '额定行程', ''),
+                            ('转矩Nm', '转矩Nm', ''), ('功率', '功率', ''),
+                            ('转速r_per_min', '转速', ''), ('转圈数r', '转圈数', ''),
+                            ('电源', '电源', ''), ('防护等级', '防护等级', ''),
+                            ('状态', '状态', 'sticky'), ('操作', '操作', 'sticky')
+                        ] %}
+                        {% else %}
                         {% set fields = [
                             ('序号', '序号', 'sticky'), ('位号', '位号', ''), ('名称', '名称', ''), ('装置名称', '装置名称', ''),
                             ('设备等级', '设备等级', ''), ('型号规格', '型号规格', ''), ('生产厂家', '生产厂家', ''),
@@ -130,9 +157,13 @@
                             ('执行机构_形式', '形式', ''), ('执行机构_型号规格', '型号规格', ''), ('执行机构_厂家', '厂家', ''),
                             ('执行机构_作用形式', '作用形式', ''), ('执行机构_行程', '行程', ''),
                             ('执行机构_弹簧范围', '弹簧范围', ''), ('执行机构_气源压力', '气源压力', ''),
-                            ('执行机构_故障位置', '故障位置', ''), ('执行机构_关阀时间', '关阀时间', ''), ('执行机构_开阀时间', '开阀时间', ''),
+                            ('执行机构_故障位置', '故障位置', ''),                             ('执行机构_关阀时间', '关阀时间', ''), ('执行机构_开阀时间', '开阀时间', ''),
+                            ('转矩Nm', '转矩Nm', ''), ('功率', '功率', ''),
+                            ('转速r_per_min', '转速', ''), ('转圈数r', '转圈数', ''),
+                            ('电源', '电源', ''), ('防护等级', '防护等级', ''),
                             ('状态', '状态', 'sticky'), ('操作', '操作', 'sticky')
                         ] %}
+                        {% endif %}
                         {% for field, label, style in fields %}
                         <th {% if style == 'sticky' %}class="cmp-table__th" style="white-space: nowrap; position: sticky; right: {{ '100px' if field == '状态' else '0px' }}; z-index: 22; background: #f8f9fa; border-bottom: 2px solid #dee2e6;"{% else %}class="cmp-table__th filter-header" data-field="{{ field }}" style="white-space: nowrap; cursor: pointer; position: sticky; top: 50px; z-index: 21; background: #f8f9fa; border-bottom: 2px solid #dee2e6;" onclick="showFilterDropdown(event, '{{ field }}')"{% endif %}>
                             {% if style != 'sticky' %}
@@ -156,7 +187,7 @@
                     <tr>
                         <td class="cmp-table__td" style="position: sticky; left: 0; z-index: 2; background: #fff; border-right: 1px solid #dee2e6;"><input type="checkbox" name="ids" value="{{ valve.id }}" class="form-check-input item-checkbox"></td>
                         <td class="cmp-table__td">{{ (pagination.page - 1) * pagination.per_page + loop.index }}</td>
-                        <td class="cmp-table__td"><a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
+                        <td class="cmp-table__td"><a href="{% if ledger %}{% if ledger.类型 not in VALVE_TYPES %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" style="color: var(--primary-color); font-weight: 500;">{{ valve.位号 }}</a></td>
                         <td class="cmp-table__td">{{ valve.名称 or '-' }}</td>
                         <td class="cmp-table__td">{{ valve.装置名称 or '-' }}</td>
                         <td class="cmp-table__td">{{ valve.设备等级 or '-' }}</td>
@@ -166,6 +197,21 @@
                         <td class="cmp-table__td">{{ valve.设备编号 or '-' }}</td>
                         <td class="cmp-table__td">{{ valve.是否联锁 or '-' }}</td>
                         <td class="cmp-table__td">{{ valve.备注[:10] + '...' if valve.备注 and valve.备注|length > 10 else valve.备注 or '-' }}</td>
+                        {% if ledger and ledger.类型 == 'electric_valve' %}
+                        <td class="cmp-table__td">{{ valve.介质名称 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.设计温度_c or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.操作压力 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.设计压力 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.公称通径 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀体 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀体材质 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀座材质 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.阀芯材质 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.流量特性 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.泄露等级 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.作用形式 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.额定行程 or '-' }}</td>
+                        {% else %}
                         <td class="cmp-table__td">{{ valve.工艺条件_介质名称 or '-' }}</td>
                         <td class="cmp-table__td">{{ valve.工艺条件_设计温度 or '-' }}</td>
                         <td class="cmp-table__td">{{ valve.工艺条件_阀前压力 or '-' }}</td>
@@ -190,6 +236,13 @@
                         <td class="cmp-table__td">{{ valve.执行机构_故障位置 or '-' }}</td>
                         <td class="cmp-table__td">{{ valve.执行机构_关阀时间 or '-' }}</td>
                         <td class="cmp-table__td">{{ valve.执行机构_开阀时间 or '-' }}</td>
+                        {% endif %}
+                        <td class="cmp-table__td">{{ valve.转矩Nm or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.功率 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.转速r_per_min or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.转圈数r or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.电源 or '-' }}</td>
+                        <td class="cmp-table__td">{{ valve.防护等级 or '-' }}</td>
                         <td class="cmp-table__td" style="position: sticky; right: 100px; z-index: 2; background: #fff; border-left: 1px solid #dee2e6;">
                             {% if valve.status == 'approved' %}
                             <span class="cmp-badge cmp-badge--approved">已审批</span>
@@ -202,16 +255,16 @@
                             {% endif %}
                         </td>
 <td class="cmp-table__td" style="position: sticky; right: 0; z-index: 2; background: #fff;">
-                            <a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="cmp-btn cmp-btn--link" style="padding:4px 8px"><i class="bi bi-eye"></i></a>
+                            <a href="{% if ledger %}{% if ledger.类型 not in VALVE_TYPES %}{{ url_with_params('devices.detail', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.valve_detail', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.detail', id=valve.id) }}{% endif %}" class="cmp-btn cmp-btn--link" style="padding:4px 8px"><i class="bi bi-eye"></i></a>
                             {# 编辑按钮：仅在"我的台账"界面显示，且是自己的阀门且可编辑状态 #}
                             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id and valve.status in ['draft', 'rejected', 'approved'] %}
-                            <a href="{% if ledger %}{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.edit', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="cmp-btn cmp-btn--link" style="padding:4px 8px"><i class="bi bi-pencil"></i></a>
+                            <a href="{% if ledger %}{% if ledger.类型 not in VALVE_TYPES %}{{ url_with_params('devices.edit', type_code=ledger.类型, id=valve.id) }}{% else %}{{ url_with_params('ledgers.edit_valve', ledger_id=ledger.id, id=valve.id) }}{% endif %}{% else %}{{ url_for('valves.edit', id=valve.id) }}{% endif %}" class="cmp-btn cmp-btn--link" style="padding:4px 8px"><i class="bi bi-pencil"></i></a>
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td class="cmp-table__td" colspan="38">
+                        <td class="cmp-table__td" colspan="44">
                             <div class="cmp-empty">
                                 <i class="bi bi-inbox"></i>
                                 <p>暂无台账数据</p>

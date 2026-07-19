@@ -1,6 +1,6 @@
 from app.devices import DeviceTypeRegistry
 
-VALVE_TYPES = ["control_valve", "onoff_valve"]
+VALVE_TYPES = ["control_valve", "onoff_valve", "electric_valve"]
 
 
 def get_valve_model(ledger_or_type):

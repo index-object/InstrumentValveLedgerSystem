@@ -47,7 +47,7 @@
     </div>
     <div class="step-item" data-step="5" onclick="goToStep(5)">
         <div class="step-number">5</div>
-        <div class="step-label">执行机构</div>
+        <div class="step-label">{% if ledger and ledger.类型 == 'electric_valve' %}电气参数{% else %}执行机构{% endif %}</div>
     </div>
     <div class="step-item" data-step="6" onclick="goToStep(6)">
         <div class="step-number">6</div>
@@ -121,9 +121,35 @@
         <div class="cmp-form-section" id="process-conditions">
             <div class="cmp-form-section__header" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
                 <i class="bi bi-thermometer-half"></i>
-                <h5>工艺条件</h5>
+                <h5>{% if ledger and ledger.类型 == 'electric_valve' %}工艺参数{% else %}工艺条件{% endif %}</h5>
             </div>
             <div class="cmp-form-section__body">
+                {% if ledger and ledger.类型 == 'electric_valve' %}
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-droplet" style="color: var(--text-muted);"></i> 介质名称</label>
+                        <input type="text" name="介质名称" class="form-control cmp-input" value="{{ valve.介质名称 or '' }}" placeholder="请输入介质名称">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-thermometer" style="color: var(--text-muted);"></i> 设计温度(℃)</label>
+                        <input type="text" name="设计温度_c" class="form-control cmp-input" value="{{ valve.设计温度_c or '' }}" placeholder="如：200℃">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-arrow-left-right" style="color: var(--text-muted);"></i> 操作压力</label>
+                        <input type="text" name="操作压力" class="form-control cmp-input" value="{{ valve.操作压力 or '' }}" placeholder="如：1.6MPa">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-arrow-right" style="color: var(--text-muted);"></i> 设计压力</label>
+                        <input type="text" name="设计压力" class="form-control cmp-input" value="{{ valve.设计压力 or '' }}" placeholder="如：2.5MPa">
+                    </div>
+                </div>
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-rulers" style="color: var(--text-muted);"></i> 公称通径</label>
+                        <input type="text" name="公称通径" class="form-control cmp-input" value="{{ valve.公称通径 or '' }}" placeholder="如：DN100">
+                    </div>
+                </div>
+                {% else %}
                 <div class="cmp-field-row">
                     <div class="cmp-field">
                         <label class="cmp-label"><i class="bi bi-droplet" style="color: var(--text-muted);"></i> 介质名称</label>
@@ -142,6 +168,7 @@
                         <input type="text" name="工艺条件_阀后压力" class="form-control cmp-input" value="{{ valve.工艺条件_阀后压力 or '' }}" placeholder="如：0.8MPa">
                     </div>
                 </div>
+                {% endif %}
             </div>
         </div>
         <div class="step-actions">
@@ -158,9 +185,29 @@
         <div class="cmp-form-section" id="valve-body">
             <div class="cmp-form-section__header" style="background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);">
                 <i class="bi bi-box-seam"></i>
-                <h5>阀体信息</h5>
+                <h5>{% if ledger and ledger.类型 == 'electric_valve' %}阀体参数{% else %}阀体信息{% endif %}</h5>
             </div>
             <div class="cmp-form-section__body">
+                {% if ledger and ledger.类型 == 'electric_valve' %}
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-box" style="color: var(--text-muted);"></i> 阀体</label>
+                        <input type="text" name="阀体" class="form-control cmp-input" value="{{ valve.阀体 or '' }}" placeholder="如：WCB">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-gem" style="color: var(--text-muted);"></i> 阀体材质</label>
+                        <input type="text" name="阀体材质" class="form-control cmp-input" value="{{ valve.阀体材质 or '' }}" placeholder="请输入阀体材质">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-gem"></i> 阀座材质</label>
+                        <input type="text" name="阀座材质" class="form-control cmp-input" value="{{ valve.阀座材质 or '' }}" placeholder="请输入阀座材质">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-gem"></i> 阀芯材质</label>
+                        <input type="text" name="阀芯材质" class="form-control cmp-input" value="{{ valve.阀芯材质 or '' }}" placeholder="请输入阀芯材质">
+                    </div>
+                </div>
+                {% else %}
                 <div class="cmp-field-row">
                     <div class="cmp-field">
                         <label class="cmp-label"><i class="bi bi-rulers" style="color: var(--text-muted);"></i> 公称通径</label>
@@ -175,6 +222,7 @@
                         <input type="text" name="阀体_材质" class="form-control cmp-input" value="{{ valve.阀体_材质 or '' }}" placeholder="请输入阀体材质">
                     </div>
                 </div>
+                {% endif %}
             </div>
         </div>
         <div class="step-actions">
@@ -188,6 +236,26 @@
     </div>
 
     <div class="form-step" data-step="4">
+        {% if ledger and ledger.类型 == 'electric_valve' %}
+        <div class="cmp-form-section" id="valve-flow">
+            <div class="cmp-form-section__header" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+                <i class="bi bi-graph-up"></i>
+                <h5>流量特性</h5>
+            </div>
+            <div class="cmp-form-section__body">
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-graph-up" style="color: var(--text-muted);"></i> 流量特性</label>
+                        <input type="text" name="流量特性" class="form-control cmp-input" value="{{ valve.流量特性 or '' }}" placeholder="如：线性、等百分比">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-shield-check" style="color: var(--text-muted);"></i> 泄露等级</label>
+                        <input type="text" name="泄露等级" class="form-control cmp-input" value="{{ valve.泄露等级 or '' }}" placeholder="如：IV级、V级">
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
         <div class="cmp-form-section" id="valve-internal">
             <div class="cmp-form-section__header" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
                 <i class="bi bi-sliders"></i>
@@ -230,6 +298,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
         <div class="step-actions">
             <button type="button" class="cmp-btn cmp-btn--secondary" onclick="goToStep(3)">
                 <i class="bi bi-arrow-left"></i> 上一步
@@ -240,6 +309,64 @@
         </div>
     </div>
 
+    {% if ledger and ledger.类型 == 'electric_valve' %}
+    <div class="form-step" data-step="5">
+        <div class="cmp-form-section" id="electrical-params">
+            <div class="cmp-form-section__header" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
+                <i class="bi bi-lightning-charge-fill"></i>
+                <h5>电气参数</h5>
+            </div>
+            <div class="cmp-form-section__body">
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-speedometer2" style="color: var(--text-muted);"></i> 转矩(Nm)</label>
+                        <input type="text" name="转矩Nm" class="form-control cmp-input" value="{{ valve.转矩Nm or '' }}" placeholder="如：100Nm">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-lightning" style="color: var(--text-muted);"></i> 功率</label>
+                        <input type="text" name="功率" class="form-control cmp-input" value="{{ valve.功率 or '' }}" placeholder="如：0.37KW">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-arrow-repeat" style="color: var(--text-muted);"></i> 转速(r/min)</label>
+                        <input type="text" name="转速r_per_min" class="form-control cmp-input" value="{{ valve.转速r_per_min or '' }}" placeholder="如：24r/min">
+                    </div>
+                </div>
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-arrow-counterclockwise" style="color: var(--text-muted);"></i> 转圈数(r)</label>
+                        <input type="text" name="转圈数r" class="form-control cmp-input" value="{{ valve.转圈数r or '' }}" placeholder="如：15r">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-plug" style="color: var(--text-muted);"></i> 电源</label>
+                        <input type="text" name="电源" class="form-control cmp-input" value="{{ valve.电源 or '' }}" placeholder="如：380V/3相/50Hz">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-shield-check" style="color: var(--text-muted);"></i> 防护等级</label>
+                        <input type="text" name="防护等级" class="form-control cmp-input" value="{{ valve.防护等级 or '' }}" placeholder="如：IP65">
+                    </div>
+                </div>
+                <div class="cmp-field-row">
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-arrow-repeat" style="color: var(--text-muted);"></i> 作用形式</label>
+                        <input type="text" name="作用形式" class="form-control cmp-input" value="{{ valve.作用形式 or '' }}" placeholder="如：开关型、调节型">
+                    </div>
+                    <div class="cmp-field">
+                        <label class="cmp-label"><i class="bi bi-rulers" style="color: var(--text-muted);"></i> 额定行程</label>
+                        <input type="text" name="额定行程" class="form-control cmp-input" value="{{ valve.额定行程 or '' }}" placeholder="如：90°">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="step-actions">
+            <button type="button" class="cmp-btn cmp-btn--secondary" onclick="goToStep(4)">
+                <i class="bi bi-arrow-left"></i> 上一步
+            </button>
+            <button type="button" class="cmp-btn cmp-btn--primary" onclick="goToStep(6)">
+                下一步 <i class="bi bi-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+    {% else %}
     <div class="form-step" data-step="5">
         <div class="cmp-form-section" id="actuator">
             <div class="cmp-form-section__header" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
@@ -304,6 +431,7 @@
             </button>
         </div>
     </div>
+    {% endif %}
 
     <div class="form-step" data-step="6">
         <div class="cmp-form-section" id="attachments">

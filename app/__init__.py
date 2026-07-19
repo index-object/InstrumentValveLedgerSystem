@@ -50,7 +50,8 @@ def create_app(config_class=Config):
                 pending_count = 0
         except:
             pending_count = 0
-        return dict(pending_count=pending_count)
+        from app.devices.valve_helper import VALVE_TYPES
+        return dict(pending_count=pending_count, VALVE_TYPES=VALVE_TYPES)
 
     # 注册导航上下文处理器
     from app.utils.navigation import inject_navigation
