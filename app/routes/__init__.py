@@ -57,7 +57,10 @@ def index():
     else:
         pending_valves = my_pending_ledgers
 
-    maintenance_count = MaintenanceRecord.query.count()
+    maintenance_query = MaintenanceRecord.query
+    if current_user.role == "employee":
+        maintenance_query = maintenance_query.filter(MaintenanceRecord.created_by == current_user.id)
+    maintenance_count = maintenance_query.count()
 
     user_stats = []
     if current_user.role in ["leader", "admin"]:

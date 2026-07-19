@@ -147,7 +147,11 @@ def maintenance_list():
 
     search = request.args.get("search")
     if search:
-        query = query.filter(MaintenanceRecord.检修内容.contains(search))
+        search_conditions = []
+        for column_name in ["装置名称", "设备位号", "设备名称", "检修人员", "检修内容", "类型"]:
+            col = getattr(MaintenanceRecord, column_name)
+            search_conditions.append(col.contains(search))
+        query = query.filter(db.or_(*search_conditions))
 
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)

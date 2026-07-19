@@ -216,25 +216,6 @@
 window.filterOptions = {{ filter_options | tojson | safe }};
 window.activeFilters = {{ active_filters | tojson | safe }};
 </script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const selectAll = document.getElementById('selectAll') || document.getElementById('selectAllTop');
-  const checkboxes = document.querySelectorAll('.item-checkbox');
-  const selectedCount = document.getElementById('selectedCount');
-
-  function updateCount() {
-    const checked = document.querySelectorAll('.item-checkbox:checked');
-    if (selectedCount) selectedCount.textContent = checked.length;
-  }
-
-  if (selectAll) {
-    selectAll.addEventListener('change', function() {
-      checkboxes.forEach(cb => cb.checked = this.checked);
-      updateCount();
-    });
-  }
-  checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
-});
-</script>
 <script src="{{ url_for('static', filename='js/list.js') }}"></script>
+<script src="{{ url_for('static', filename='js/persist-checkbox.js') }}"></script>
 {% endblock %}
