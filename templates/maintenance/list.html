@@ -16,6 +16,7 @@
 <div class="cmp-toolbar cmp-toolbar--card">
     <div class="cmp-toolbar">
         <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span style="font-size: 12px; color: var(--color-text-muted); white-space:nowrap;">已选 <span id="selectedCount">0</span> 项</span>
             {# 新建按钮：仅员工和管理员可见 #}
             {% if current_user.role in ['employee', 'admin'] %}
             <a href="{{ url_for('valves.maintenance_create') }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary">

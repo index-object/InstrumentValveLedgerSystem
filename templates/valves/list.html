@@ -75,9 +75,9 @@
             </select>
             <button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--sm"><i class="bi bi-search"></i></button>
             {% if active_filters %}
-            <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, from=get_from_param()) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-x-lg"></i></a>
-            <span class="text-muted" style="border-left:1px solid var(--color-border);padding-left:8px;font-size:12px">
-                <i class="bi bi-funnel-fill" style="color:var(--mode-color)"></i> 筛选中
+            <span style="display:inline-flex;align-items:center;gap:6px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:3px 10px;font-size:12px;color:#92400e;font-weight:500;white-space:nowrap;">
+                <i class="bi bi-funnel-fill"></i> 筛选中
+                <a href="{% if ledger %}{{ url_for('ledgers.detail', id=ledger.id, from=get_from_param()) }}{% else %}{{ url_for('valves.list') }}{% endif %}" style="color:#92400e;text-decoration:none;display:inline-flex;align-items:center;opacity:0.6;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6"><i class="bi bi-x-lg" style="font-size:10px"></i></a>
             </span>
             {% endif %}
         </form>
