@@ -1,6 +1,7 @@
 from flask import flash, redirect, url_for, request, render_template, make_response
 from flask_login import login_required, current_user
 from app.models import db
+from app.devices import DeviceTypeRegistry
 from app.devices.valve_helper import get_valve_model, get_valve_by_id, get_all_valve_models, count_valves_by_status
 from app.routes.valves.forms import get_valve_export_data
 from datetime import datetime
@@ -20,14 +21,34 @@ def update_ledger_status(ledger):
 
 def export_data():
     """导出数据"""
+    device_type = request.args.get("device_type")
+    from_param = request.args.get("from")
+    ledger_id = request.args.get("ledger_id", type=int)
     ids = request.args.getlist("ids")
     valves = []
-    if ids:
-        for model in get_all_valve_models():
-            valves.extend(model.query.filter(model.id.in_(ids)).all())
-    else:
-        for model in get_all_valve_models():
-            valves.extend(model.query.filter_by(status="approved").all())
+
+    models = []
+    if device_type:
+        config = DeviceTypeRegistry.get(device_type)
+        if config:
+            models = [config.model_class]
+    if not models:
+        models = get_all_valve_models()
+
+    for model in models:
+        query = model.query
+        if ids:
+            query = query.filter(model.id.in_(ids))
+        else:
+            if from_param in ("mine", "approvals"):
+                pass
+            else:
+                query = query.filter(model.status == "approved")
+        if ledger_id:
+            query = query.filter(model.ledger_id == ledger_id)
+        if from_param == "mine":
+            query = query.filter(model.created_by == current_user.id)
+        valves.extend(query.all())
 
     data = [get_valve_export_data(v) for v in valves]
     import pandas as pd

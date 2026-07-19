@@ -17,6 +17,7 @@
     <div class="cmp-toolbar">
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <span style="font-size: 12px; color: var(--color-text-muted); white-space:nowrap;">已选 <span id="selectedCount">0</span> 项</span>
+            <span id="totalCount" class="d-none">{{ pagination.total }}</span>
             {# 新建按钮：仅员工和管理员可见 #}
             {% if current_user.role in ['employee', 'admin'] %}
             <a href="{{ url_for('valves.maintenance_create') }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary">
@@ -159,11 +160,11 @@
 </div>
 
 <script>
-document.getElementById('selectAll').addEventListener('change', function() {
-    document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
-});
-
 function batchExport() {
+    if (window.isSelectAllMode && window.isSelectAllMode()) {
+        window.location.href = "{{ url_for('valves.maintenance_export') }}";
+        return;
+    }
     const checked = document.querySelectorAll('.item-checkbox:checked');
     if (checked.length === 0) { alert('请先选择要导出的记录'); return; }
     const ids = Array.from(checked).map(cb => cb.value);

@@ -37,13 +37,15 @@
             <input type="checkbox" class="form-check-input" id="selectAll" style="margin:0;cursor:pointer">
         </div>
         <span style="font-size: 12px; color: var(--color-text-muted); white-space:nowrap;">已选 <span id="selectedCount">0</span> 项</span>
+        <span id="totalCount" class="d-none">{{ pagination.total }}</span>
         {% if ledger %}
         <div class="d-flex align-items-center gap-1">
             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and ledger.created_by == current_user.id and ledger.display_status != 'pending' %}
             <a href="{% if ledger.类型 not in ('control_valve', 'onoff_valve') %}{{ url_with_params('devices.new', type_code=ledger.类型, ledger_id=ledger.id) }}{% else %}{{ url_with_params('ledgers.new_valve', id=ledger.id) }}{% endif %}" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--sm"><i class="bi bi-plus-lg"></i> 新增</a>
             <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--danger cmp-toolbar-btn--sm" onclick="batchDelete()"><i class="bi bi-trash"></i> 删除</button>
             {% endif %}
-            <a href="{{ url_for('valves.export_data') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-download"></i> 导出</a>
+            <a href="{{ url_for('valves.export_data', device_type=ledger.类型, from=from_param, ledger_id=ledger.id) }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-download"></i> 导出</a>
+            <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm" onclick="batchExport()"><i class="bi bi-download"></i> 导出选中</button>
             {% if from_param|default(request.args.get('from', 'all')) == 'mine' and current_user.role == 'employee' and ledger.created_by == current_user.id %}
             <a href="{{ url_for('imports.index') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-upload"></i> 导入</a>
             {% endif %}
@@ -56,6 +58,7 @@
             <a href="{{ url_for('imports.index') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-upload"></i> 导入</a>
             {% endif %}
             <a href="{{ url_for('valves.export_data') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm"><i class="bi bi-download"></i> 导出</a>
+            <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm" onclick="batchExport()"><i class="bi bi-download"></i> 导出选中</button>
         </div>
         {% endif %}
         <form method="get" action="{% if ledger %}{{ url_with_params('ledgers.detail', id=ledger.id) }}{% else %}{{ url_for('valves.list') }}{% endif %}" class="d-flex gap-2 align-items-center" style="margin:0">
@@ -294,7 +297,7 @@ window.batchDeleteUrl = "{{ url_with_params('ledgers.batch_delete_valve', id=led
 {% else %}
 window.batchDeleteUrl = "{{ url_for('valves.batch_delete') }}";
 {% endif %}
-window.batchExportUrl = "{{ url_for('valves.export_data') }}";
+window.batchExportUrl = "{{ url_for('valves.export_data', device_type=ledger.类型, from=from_param, ledger_id=ledger.id) if ledger else url_for('valves.export_data') }}";
 </script>
 <script src="{{ url_for('static', filename='js/list.js') }}"></script>
 <script src="{{ url_for('static', filename='js/persist-checkbox.js') }}"></script>

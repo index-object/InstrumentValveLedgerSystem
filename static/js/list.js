@@ -1,24 +1,3 @@
-document.getElementById('selectAll').addEventListener('change', function() {
-    document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
-    document.getElementById('selectAllTop').checked = this.checked;
-    updateSelectedCount();
-});
-
-document.getElementById('selectAllTop').addEventListener('change', function() {
-    document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
-    document.getElementById('selectAll').checked = this.checked;
-    updateSelectedCount();
-});
-
-document.querySelectorAll('.item-checkbox').forEach(cb => {
-    cb.addEventListener('change', updateSelectedCount);
-});
-
-function updateSelectedCount() {
-    const count = document.querySelectorAll('.item-checkbox:checked').length;
-    document.getElementById('selectedCount').textContent = count;
-}
-
 function batchDelete() {
     const checked = document.querySelectorAll('.item-checkbox:checked');
     if (checked.length === 0) { alert('请先选择要删除的记录'); return; }
@@ -46,10 +25,15 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function batchExport() {
+    if (window.isSelectAllMode && window.isSelectAllMode()) {
+        window.location.href = window.batchExportUrl;
+        return;
+    }
     const checked = document.querySelectorAll('.item-checkbox:checked');
     if (checked.length === 0) { alert('请先选择要导出的记录'); return; }
     const ids = Array.from(checked).map(cb => cb.value);
-    window.location.href = window.batchExportUrl + '?' + ids.map(id => 'ids=' + id).join('&');
+    const sep = window.batchExportUrl.includes('?') ? '&' : '?';
+    window.location.href = window.batchExportUrl + sep + ids.map(id => 'ids=' + id).join('&');
 }
 
 function batchApprove() {

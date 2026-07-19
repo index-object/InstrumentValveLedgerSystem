@@ -44,6 +44,7 @@
         <input type="checkbox" class="form-check-input" id="selectAll" style="cursor:pointer">
       </div>
       <span style="font-size: 13px; white-space:nowrap;">已选 <span id="selectedCount">0</span> 项</span>
+      <span id="totalCount" class="d-none">{{ pagination.total }}</span>
       <a href="{{ url_with_params('devices.new', type_code=type_code, ledger_id=ledger.id if ledger else none) }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--sm">
         <i class="bi bi-plus-lg"></i> 新增
       </a>
