@@ -37,7 +37,12 @@ def allowed_file(filename):
 
 def photos(id):
     """照片管理"""
-    valve = get_valve_by_id(id)
+    device_type = request.args.get("device_type")
+    if device_type:
+        model = get_valve_model(device_type)
+        valve = model.query.get(id) if model else None
+    else:
+        valve = get_valve_by_id(id)
     if not valve:
         abort(404)
 
@@ -70,7 +75,12 @@ def photos(id):
 def maintenance(id):
     """维护记录"""
     from_param = get_from_param()
-    valve = get_valve_by_id(id)
+    device_type = request.args.get("device_type")
+    if device_type:
+        model = get_valve_model(device_type)
+        valve = model.query.get(id) if model else None
+    else:
+        valve = get_valve_by_id(id)
     if not valve:
         abort(404)
 
@@ -354,7 +364,12 @@ def maintenance_export():
 
 def attachments(id):
     """附件管理"""
-    valve = get_valve_by_id(id)
+    device_type = request.args.get("device_type")
+    if device_type:
+        model = get_valve_model(device_type)
+        valve = model.query.get(id) if model else None
+    else:
+        valve = get_valve_by_id(id)
     if not valve:
         abort(404)
 
@@ -371,7 +386,7 @@ def attachments(id):
         db.session.add(attachment)
         db.session.commit()
         flash("附件添加成功")
-        return redirect(url_for("valves.attachments", id=id))
+        return redirect(url_with_params("valves.attachments", id=id))
 
     attachments_list = ValveAttachment.query.filter_by(device_type=get_valve_ledger_type(valve), device_id=valve.id).all()
     return render_template(
