@@ -59,16 +59,9 @@ def can_delete_ledger(ledger):
 def can_view_ledger(ledger):
     """查看台账合集权限
 
-    员工可以查看自己的台账和已审批的台账
-    领导和管理员可以查看所有台账
+    所有登录用户均可查看任何台账合集
     """
-    if ledger.created_by == current_user.id:
-        return True
-    if current_user.role in ["leader", "admin"]:
-        return True
-    if ledger.approved_snapshot_status == "approved":
-        return True
-    return False
+    return True
 
 
 # ========== 阀门权限 ==========
@@ -119,16 +112,9 @@ def can_delete_valve(valve):
 def can_view_valve(valve):
     """查看阀门权限
 
-    员工可以查看自己的阀门和已审批的阀门
-    领导和管理员可以查看所有阀门
+    所有登录用户均可查看任何阀门
     """
-    if valve.created_by == current_user.id:
-        return True
-    if current_user.role in ["leader", "admin"]:
-        return True
-    if valve.status == "approved":
-        return True
-    return False
+    return True
 
 
 def can_submit_valve(valve):

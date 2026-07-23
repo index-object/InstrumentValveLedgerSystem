@@ -153,10 +153,6 @@ def detail(id):
         "admin",
     ]
 
-    if from_param != "mine" and not is_owner:
-        flash("无权访问")
-        return redirect(url_for("ledgers.list"))
-
     config = DeviceTypeRegistry.get(ledger.类型)
     if not config or not config.model_class:
         abort(404)
