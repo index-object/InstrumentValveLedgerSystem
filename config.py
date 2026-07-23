@@ -10,6 +10,6 @@ class Config:
     ) or "sqlite:///" + os.path.join(basedir, "valves.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.join(basedir, "uploads")
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+    MAX_CONTENT_LENGTH = 64 * 1024 * 1024
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
     TEMPLATES_FOLDER = os.path.join(basedir, "templates")

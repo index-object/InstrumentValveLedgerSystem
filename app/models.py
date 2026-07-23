@@ -125,6 +125,18 @@ class DevicePhotoMixin:
         ).all()
 
     @property
+    def documents(self):
+        from app.models import ValveDocument
+        from app.devices.valve_helper import get_valve_ledger_type
+        device_type = get_valve_ledger_type(self)
+        if not device_type:
+            return []
+        return ValveDocument.query.filter_by(
+            device_type=device_type,
+            device_id=self.id,
+        ).order_by(ValveDocument.uploaded_at.desc()).all()
+
+    @property
     def attachments_json(self):
         return [
             {
@@ -145,6 +157,22 @@ class ValvePhoto(db.Model):
     device_type = db.Column(db.String(20), nullable=False)
     device_id = db.Column(db.Integer, nullable=False)
     filename = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.String(200))
+    uploaded_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    uploader = db.relationship("User")
+
+
+class ValveDocument(db.Model):
+    __tablename__ = "valve_documents"
+    id = db.Column(db.Integer, primary_key=True)
+    device_type = db.Column(db.String(20), nullable=False)
+    device_id = db.Column(db.Integer, nullable=False)
+    filename = db.Column(db.String(200), nullable=False)
+    original_name = db.Column(db.String(200))
+    file_type = db.Column(db.String(10))
+    file_size = db.Column(db.Integer)
     description = db.Column(db.String(200))
     uploaded_by = db.Column(db.Integer, db.ForeignKey("users.id"))
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block page_title %}文档管理 - {{ valve.位号 }}{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_with_params('valves.detail', id=valve.id) }}" class="btn" style="background: #e2e8f0; color: #475569;"><i class="bi bi-arrow-left"></i> 返回</a>
+{% endblock %}
+
+{% block content %}
+<div class="cmp-card mb-4">
+    <div class="card-header-custom"><i class="bi bi-cloud-upload"></i> 上传新文档</div>
+    <div class="card-body-custom">
+        <form method="POST" enctype="multipart/form-data" onsubmit="return submitForm(this)">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="cmp-label" style="font-weight: 500;">选择文件</label>
+                    <input type="file" name="document" class="form-control cmp-input" accept=".pdf,.doc,.docx" required
+                           onchange="validateFileSize(this)">
+                    <small class="text-muted d-block mt-1">支持 PDF、Word 文档，单个文件最大 64MB</small>
+                    <div id="fileSizeError" class="text-danger mt-1" style="display:none;font-size:13px;">
+                        <i class="bi bi-exclamation-circle"></i> 文件大小超过 64MB 限制，请压缩后重试
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="cmp-label" style="font-weight: 500;">描述</label>
+                    <input type="text" name="description" class="form-control cmp-input" placeholder="可选描述">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="cmp-label" style="font-weight: 500;">&nbsp;</label>
+                    <button type="submit" class="btn cmp-btn cmp-btn--primary" id="uploadBtn"><i class="bi bi-upload"></i> 上传</button>
+                </div>
+            </div>
+        </form>
+        <script>
+        var MAX_FILE_SIZE = 64 * 1024 * 1024;
+        function validateFileSize(input) {
+            var errorEl = document.getElementById('fileSizeError');
+            var btn = document.getElementById('uploadBtn');
+            if (input.files && input.files[0] && input.files[0].size > MAX_FILE_SIZE) {
+                errorEl.style.display = 'block';
+                btn.disabled = true;
+            } else {
+                errorEl.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+        function submitForm(form) {
+            var fileInput = form.querySelector('input[name="document"]');
+            if (fileInput.files && fileInput.files[0] && fileInput.files[0].size > MAX_FILE_SIZE) {
+                showToast('文件大小超过 64MB 限制', 'error');
+                return false;
+            }
+            var btn = document.getElementById('uploadBtn');
+            btn.disabled = true;
+            btn.classList.add('btn-loading');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> 上传中...';
+            return true;
+        }
+        </script>
+    </div>
+</div>
+
+<div class="cmp-card">
+    <div class="card-header-custom"><i class="bi bi-file-earmark"></i> 已有文档 <span class="text-muted ms-2">({{ documents|length }})</span></div>
+    <div class="card-body-custom">
+        {% if documents %}
+        <div class="table-responsive">
+            <table class="cmp-table">
+                <thead>
+                    <tr>
+                        <th class="cmp-table__th">文件名</th>
+                        <th class="cmp-table__th">类型</th>
+                        <th class="cmp-table__th">大小</th>
+                        <th class="cmp-table__th">描述</th>
+                        <th class="cmp-table__th">上传人</th>
+                        <th class="cmp-table__th">上传时间</th>
+                        <th class="cmp-table__th" style="width:150px">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td class="cmp-table__td">
+                            <i class="bi {% if doc.file_type == 'pdf' %}bi-filetype-pdf text-danger{% else %}bi-filetype-docx text-primary{% endif %} me-2"></i>
+                            {{ doc.original_name or doc.filename }}
+                        </td>
+                        <td class="cmp-table__td">
+                            <span class="cmp-badge {% if doc.file_type == 'pdf' %}cmp-badge--rejected{% else %}cmp-badge--pending{% endif %}">
+                                {{ doc.file_type|upper }}
+                            </span>
+                        </td>
+                        <td class="cmp-table__td">
+                            {% if doc.file_size < 1024 %}{{ doc.file_size }} B{% elif doc.file_size < 1048576 %}{{ (doc.file_size / 1024)|round(1) }} KB{% else %}{{ (doc.file_size / 1048576)|round(1) }} MB{% endif %}
+                        </td>
+                        <td class="cmp-table__td">{{ doc.description or '-' }}</td>
+                        <td class="cmp-table__td">{{ doc.uploader.real_name or doc.uploader.username if doc.uploader else '-' }}</td>
+                        <td class="cmp-table__td">{{ doc.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td class="cmp-table__td">
+                            <button type="button" class="cmp-btn cmp-btn--link" style="background: #e0f2fe; color: #0369a1;"
+                                    onclick="previewDocument({{ doc.id }}, '{{ doc.file_type }}')">
+                                <i class="bi bi-eye"></i> 预览
+                            </button>
+                            <form method="POST" action="{{ url_for('valves.delete_document', valve_id=valve.id, doc_id=doc.id) }}"
+                                  style="display:inline" onsubmit="return confirm('确定删除「{{ doc.original_name or doc.filename }}」?')">
+                                <button type="submit" class="cmp-btn cmp-btn--link" style="background: #fee2e2; color: #991b1b;">
+                                    <i class="bi bi-trash"></i> 删除
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-file-earmark" style="font-size: 48px;"></i>
+            <p class="mt-2">暂无文档</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-eye"></i> 文档预览</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewBody" style="min-height: 70vh; padding: 0;">
+                <iframe id="previewIframe" src="" style="width:100%;height:80vh;border:none;"></iframe>
+                <div id="previewLoading" class="d-flex align-items-center justify-content-center" style="height: 70vh;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <p class="text-muted">正在加载文档...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewDocument(docId, fileType) {
+    var url = '{{ url_for("valves.preview_document", doc_id=0) }}'.replace('0', docId);
+
+    document.getElementById('previewIframe').style.display = 'none';
+    document.getElementById('previewIframe').src = '';
+    document.getElementById('previewLoading').style.display = 'flex';
+
+    var modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+
+    document.getElementById('previewIframe').src = url;
+    document.getElementById('previewIframe').style.display = 'block';
+    document.getElementById('previewLoading').style.display = 'none';
+
+    document.getElementById('previewModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('previewIframe').src = '';
+    }, { once: true });
+}
+</script>
+{% endblock %}

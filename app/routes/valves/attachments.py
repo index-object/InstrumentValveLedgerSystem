@@ -9,7 +9,7 @@ from flask import (
     abort,
 )
 from flask_login import login_required, current_user
-from app.models import db, ValveAttachment, ValvePhoto, MaintenanceRecord
+from app.models import db, ValveAttachment, ValvePhoto, ValveDocument, MaintenanceRecord
 from app.devices.valve_helper import (
     get_valve_model,
     get_valve_by_id,
@@ -27,8 +27,10 @@ from app.utils.navigation import get_from_param, url_with_params
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
+import urllib.parse
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+DOCUMENT_EXTENSIONS = {"pdf", "doc", "docx"}
 
 
 def allowed_file(filename):
@@ -496,6 +498,122 @@ def my_ledger_applications():
     return render_template("valves/my_ledger_applications.html", ledgers=result)
 
 
+def documents(id):
+    """文档管理"""
+    device_type = request.args.get("device_type")
+    if device_type:
+        model = get_valve_model(device_type)
+        valve = model.query.get(id) if model else None
+    else:
+        valve = get_valve_by_id(id)
+    if not valve:
+        abort(404)
+
+    if request.method == "POST":
+        if "document" not in request.files:
+            flash("请选择文件")
+            return redirect(request.url)
+
+        file = request.files["document"]
+        if file and file.filename:
+            ext = file.filename.rsplit(".", 1)[1].lower() if "." in file.filename else ""
+            if ext not in DOCUMENT_EXTENSIONS:
+                flash("仅支持 PDF / Word 文档")
+                return redirect(request.url)
+
+            saved_name = secure_filename(f"doc_{valve.位号}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+            file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], saved_name))
+
+            doc = ValveDocument(
+                device_type=get_valve_ledger_type(valve),
+                device_id=valve.id,
+                filename=saved_name,
+                original_name=file.filename,
+                file_type=ext,
+                file_size=os.path.getsize(os.path.join(current_app.config["UPLOAD_FOLDER"], saved_name)),
+                description=request.form.get("description", ""),
+                uploaded_by=current_user.id,
+            )
+            db.session.add(doc)
+            db.session.commit()
+            flash("上传成功")
+
+    docs = ValveDocument.query.filter_by(
+        device_type=get_valve_ledger_type(valve),
+        device_id=valve.id,
+    ).order_by(ValveDocument.uploaded_at.desc()).all()
+    return render_template("valves/documents.html", valve=valve, documents=docs)
+
+
+def delete_document(valve_id, doc_id):
+    """删除文档"""
+    doc = ValveDocument.query.get_or_404(doc_id)
+    _valve_model = get_valve_model(doc.device_type)
+    _valve = _valve_model.query.get(valve_id) if _valve_model else None
+    if doc.device_id != valve_id:
+        flash("文档不存在")
+        if _valve and _valve.ledger_id:
+            return redirect(url_with_params('ledgers.valve_detail', ledger_id=_valve.ledger_id, id=valve_id))
+        return redirect(url_with_params("valves.detail", id=valve_id))
+
+    valve = _valve_model.query.get(valve_id) if _valve_model else get_valve_by_id(valve_id)
+    if not valve or not can_edit_valve(valve):
+        flash("无权删除")
+        if valve and valve.ledger_id:
+            return redirect(url_with_params('ledgers.valve_detail', ledger_id=valve.ledger_id, id=valve_id))
+        return redirect(url_with_params("valves.detail", id=valve_id))
+
+    try:
+        os.remove(os.path.join(current_app.config["UPLOAD_FOLDER"], doc.filename))
+    except OSError:
+        pass
+    db.session.delete(doc)
+    db.session.commit()
+    flash("文档删除成功")
+    if valve and valve.ledger_id:
+        return redirect(url_with_params('ledgers.valve_detail', ledger_id=valve.ledger_id, id=valve_id))
+    return redirect(url_with_params("valves.detail", id=valve_id))
+
+
+def preview_document(doc_id):
+    """文档预览——PDF返回文件流，Word返回HTML"""
+    doc = ValveDocument.query.get_or_404(doc_id)
+    filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], doc.filename)
+    if not os.path.exists(filepath):
+        abort(404)
+
+    if doc.file_type in ("docx", "doc"):
+        try:
+            import mammoth
+            with open(filepath, "rb") as f:
+                result = mammoth.convert_to_html(f)
+            html = f"""<!DOCTYPE html><html lang='zh-CN'><head><meta charset='utf-8'>
+<style>body{{font-family:sans-serif;padding:24px;line-height:1.8;color:#333;max-width:960px;margin:auto}}
+table{{border-collapse:collapse;width:100%;margin:12px 0}}
+td,th{{border:1px solid #bbb;padding:6px 10px;text-align:left}}
+th{{background:#f5f5f5;font-weight:600}}img{{max-width:100%}}</style>
+</head><body>{result.value}</body></html>"""
+        except Exception:
+            html = "<p>文档解析失败</p>"
+        response = make_response(html)
+        response.headers["Content-Type"] = "text/html; charset=utf-8"
+        return response
+
+    with open(filepath, "rb") as f:
+        data = f.read()
+    response = make_response(data)
+    mime_map = {"pdf": "application/pdf", "doc": "application/msword"}
+    response.headers["Content-Type"] = mime_map.get(doc.file_type, "application/octet-stream")
+    ascii_name = doc.original_name or doc.filename
+    try:
+        ascii_name.encode("ascii")
+    except UnicodeEncodeError:
+        ascii_name = "document." + (doc.file_type or "bin")
+    encoded_name = urllib.parse.quote(doc.original_name or doc.filename)
+    response.headers["Content-Disposition"] = f'inline; filename="{ascii_name}"; filename*=UTF-8\'\'{encoded_name}'
+    return response
+
+
 def register_attachment_routes(bp):
     """注册附件相关路由到蓝图"""
     bp.route("/valve/<int:id>/photos", methods=["GET", "POST"])(login_required(photos))
@@ -517,3 +635,12 @@ def register_attachment_routes(bp):
     )
     bp.route("/my-ledgers")(login_required(my_ledgers))
     bp.route("/my-ledger-applications")(login_required(my_ledger_applications))
+    bp.route("/valve/<int:id>/documents", methods=["GET", "POST"])(
+        login_required(documents)
+    )
+    bp.route("/valve/<int:valve_id>/document/<int:doc_id>/delete", methods=["POST"])(
+        login_required(delete_document)
+    )
+    bp.route("/document/<int:doc_id>/preview")(
+        login_required(preview_document)
+    )

@@ -473,6 +473,47 @@
                 
                 <div class="media-section">
                     <div class="media-header">
+                        <h5><i class="bi bi-file-earmark"></i> 设备文档</h5>
+                        {% if valve.status == 'draft' %}
+                        <span class="badge bg-warning text-dark" style="font-size: 12px; padding: 6px 10px;">
+                            <i class="bi bi-exclamation-triangle"></i> 草稿状态，提交审批后方可管理
+                        </span>
+                        {% elif from_param == 'mine' and current_user.role == 'employee' and valve.created_by == current_user.id %}
+                        <a href="{{ url_with_params('valves.documents', id=valve.id, device_type=valve_type) }}" class="cmp-btn cmp-btn--secondary cmp-btn--sm">
+                            <i class="bi bi-pencil"></i> 管理
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div style="padding: 14px;">
+                        {% if valve.documents %}
+                        <div class="row">
+                            {% for doc in valve.documents %}
+                            <div class="col-4 mb-2">
+                                <div class="d-flex align-items-center gap-2 p-2" style="background: white; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <i class="bi {% if doc.file_type == 'pdf' %}bi-filetype-pdf text-danger{% else %}bi-filetype-docx text-primary{% endif %}" style="font-size: 24px;"></i>
+                                    <div class="flex-grow-1" style="min-width: 0;">
+                                        <div style="font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ doc.original_name or doc.filename }}</div>
+                                        <small class="text-muted">{{ doc.uploaded_at.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                    <button type="button" class="cmp-btn cmp-btn--link" style="padding: 2px 8px; font-size: 12px; background: #e0f2fe; color: #0369a1;"
+                                            onclick="previewDoc({{ doc.id }}, '{{ doc.file_type }}')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-media" style="padding: 20px;">
+                            <i class="bi bi-file-earmark"></i>
+                            <p>暂无文档</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="media-section">
+                    <div class="media-header">
                         <h5><i class="bi bi-wrench-adjustable"></i> 维护记录</h5>
                         {% if valve.status == 'draft' %}
                         <span class="badge bg-warning text-dark" style="font-size: 12px; padding: 6px 10px;">
@@ -829,4 +870,45 @@
     .attachments-grid { grid-template-columns: 1fr; }
 }
 </style>
+
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-eye"></i> 文档预览</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="min-height: 70vh; padding: 0;">
+                <iframe id="previewIframe" src="" style="width:100%;height:80vh;border:none;"></iframe>
+                <div id="previewLoading" class="d-flex align-items-center justify-content-center" style="height: 70vh;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <p class="text-muted">正在加载文档...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewDoc(docId, fileType) {
+    var url = '{{ url_for("valves.preview_document", doc_id=0) }}'.replace('0', docId);
+
+    document.getElementById('previewIframe').style.display = 'none';
+    document.getElementById('previewIframe').src = '';
+    document.getElementById('previewLoading').style.display = 'flex';
+
+    var modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+
+    document.getElementById('previewIframe').src = url;
+    document.getElementById('previewIframe').style.display = 'block';
+    document.getElementById('previewLoading').style.display = 'none';
+
+    document.getElementById('previewModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('previewIframe').src = '';
+    }, { once: true });
+}
+</script>
 {% endblock %}
