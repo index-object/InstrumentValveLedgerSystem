@@ -109,7 +109,14 @@ def new():
         valve_id = request.form.get("valve_id")
 
         if valve_id:
-            valve = get_valve_by_id(valve_id)
+            valve = None
+            ledger_id = request.form.get("ledger_id")
+            if ledger_id:
+                ledger_obj = Ledger.query.get(int(ledger_id))
+                model = get_valve_model(ledger_obj)
+                valve = model.query.get(int(valve_id)) if model else None
+            if not valve:
+                valve = get_valve_by_id(valve_id)
             if valve and can_edit_valve(valve):
                 populate_valve_from_form(valve, request.form)
                 db.session.commit()
@@ -200,7 +207,13 @@ def save_draft():
     ledger_id = data.get("ledger_id")
 
     if valve_id:
-        valve = get_valve_by_id(valve_id)
+        valve = None
+        if ledger_id:
+            ledger_obj = Ledger.query.get(ledger_id)
+            model = get_valve_model(ledger_obj)
+            valve = model.query.get(valve_id) if model else None
+        if not valve:
+            valve = get_valve_by_id(valve_id)
         if not valve:
             return jsonify({"success": False, "message": "台账不存在"})
         if not can_edit_valve(valve):

@@ -161,7 +161,17 @@ document.getElementById('valveForm').addEventListener('submit', function(e) {
         this.appendChild(valveIdInput);
     }
     valveIdInput.value = window.currentValveId;
-    
+
+    let ledgerIdInput = document.getElementById('ledger-id-input');
+    if (!ledgerIdInput) {
+        ledgerIdInput = document.createElement('input');
+        ledgerIdInput.type = 'hidden';
+        ledgerIdInput.name = 'ledger_id';
+        ledgerIdInput.id = 'ledger-id-input';
+        this.appendChild(ledgerIdInput);
+    }
+    ledgerIdInput.value = window.currentLedgerId;
+
     let attachmentsInput = document.getElementById('attachments-data');
     if (!attachmentsInput) {
         attachmentsInput = document.createElement('input');

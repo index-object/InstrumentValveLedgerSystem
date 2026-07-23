@@ -832,7 +832,10 @@ def valve_detail(ledger_id, id):
 def delete_valve(ledger_id, id):
     from_param = request.args.get("from", "all")
     ledger = Ledger.query.get_or_404(ledger_id)
-    valve = get_valve_by_id(id)
+    model = get_valve_model(ledger)
+    if not model:
+        abort(404)
+    valve = model.query.get(id)
     if not valve or valve.ledger_id != ledger_id:
         abort(404)
 

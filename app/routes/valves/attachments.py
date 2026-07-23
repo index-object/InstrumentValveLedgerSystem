@@ -398,18 +398,19 @@ def delete_attachment(valve_id, att_id):
     """删除附件"""
     from_param = get_from_param()
     attachment = ValveAttachment.query.get_or_404(att_id)
+    _valve_model = get_valve_model(attachment.device_type)
+    _valve = _valve_model.query.get(valve_id) if _valve_model else None
     if attachment.device_id != valve_id:
         flash("附件不存在")
-        valve = get_valve_by_id(valve_id)
-        if valve and valve.ledger_id:
+        if _valve and _valve.ledger_id:
             return redirect(url_with_params(
                 'ledgers.valve_detail',
-                ledger_id=valve.ledger_id,
+                ledger_id=_valve.ledger_id,
                 id=valve_id,
             ))
         return redirect(url_with_params("valves.detail", id=valve_id))
 
-    valve = get_valve_by_id(valve_id)
+    valve = _valve_model.query.get(valve_id) if _valve_model else get_valve_by_id(valve_id)
     if not valve or not can_edit_valve(valve):
         flash("无权删除")
         if valve and valve.ledger_id:
