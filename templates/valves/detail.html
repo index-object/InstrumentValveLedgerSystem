@@ -439,7 +439,7 @@
         
         <div class="tab-pane fade" id="media-panel" role="tabpanel">
             <div class="media-grid-layout">
-                <div class="media-section">
+                <div class="media-section" id="photos-section">
                     <div class="media-header">
                         <h5><i class="bi bi-camera"></i> 设备照片</h5>
                         {% if valve.status == 'draft' %}
@@ -471,7 +471,7 @@
                     </div>
                 </div>
                 
-                <div class="media-section">
+                <div class="media-section" id="documents-section">
                     <div class="media-header">
                         <h5><i class="bi bi-file-earmark"></i> 设备文档</h5>
                         {% if valve.status == 'draft' %}
@@ -512,7 +512,7 @@
                     </div>
                 </div>
 
-                <div class="media-section">
+                <div class="media-section" id="maintenance-section">
                     <div class="media-header">
                         <h5><i class="bi bi-wrench-adjustable"></i> 维护记录</h5>
                         {% if valve.status == 'draft' %}
@@ -892,6 +892,21 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    var hash = window.location.hash;
+    if (hash) {
+        var tab = document.querySelector('#media-tab');
+        if (tab) {
+            var tabInstance = new bootstrap.Tab(tab);
+            tabInstance.show();
+        }
+        setTimeout(function() {
+            var el = document.querySelector(hash);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+});
+
 function previewDoc(docId, fileType) {
     var url = '{{ url_for("valves.preview_document", doc_id=0) }}'.replace('0', docId);
 

@@ -3,7 +3,7 @@
 {% block page_title %}文档管理 - {{ valve.位号 }}{% endblock %}
 
 {% block back_btn %}
-<a href="{{ url_with_params('valves.detail', id=valve.id) }}" class="btn-back-header"><i class="bi bi-arrow-left"></i> 返回</a>
+<a href="{{ url_with_params('valves.detail', id=valve.id) }}#documents-section" class="btn-back-header"><i class="bi bi-arrow-left"></i> 返回</a>
 {% endblock %}
 
 {% block header_actions %}{% endblock %}
