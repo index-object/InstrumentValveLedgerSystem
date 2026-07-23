@@ -76,23 +76,29 @@ function batchDelete() {
         alert('请选择要删除的合集');
         return;
     }
-    
-    if (!confirm('确定要删除选中的 ' + selectedIds.length + ' 个合集吗？此操作不可恢复！')) {
-        return;
-    }
-    
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = getDeleteUrl();
-    
-    selectedIds.forEach(id => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'ledger_ids';
-        input.value = id;
-        form.appendChild(input);
+
+    document.getElementById('deleteCount').textContent = selectedIds.length;
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    modal.show();
+
+    const confirmBtn = document.getElementById('deleteConfirmBtn');
+    const newBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+    newBtn.addEventListener('click', function() {
+        modal.hide();
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = getDeleteUrl();
+
+        selectedIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'ledger_ids';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
     });
-    
-    document.body.appendChild(form);
-    form.submit();
 }
