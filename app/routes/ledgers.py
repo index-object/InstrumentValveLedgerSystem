@@ -132,7 +132,7 @@ def new():
         db.session.commit()
 
         flash("台账合集创建成功")
-        return redirect(url_for("ledgers.detail", id=ledger.id, from_param=from_param))
+        return redirect(url_for("ledgers.detail", id=ledger.id, **{"from": from_param}))
 
     return render_template("ledgers/create.html", all_types=all_types, from_param=from_param)
 
