@@ -302,7 +302,12 @@ def save_draft():
 @login_required
 def edit(id):
     from_param = get_from_param()
-    valve = get_valve_by_id(id)
+    device_type = request.args.get("device_type")
+    if device_type:
+        model = DeviceTypeRegistry.get(device_type).model_class
+        valve = model.query.get(id) if model else None
+    else:
+        valve = get_valve_by_id(id)
     if not valve:
         abort(404)
 
