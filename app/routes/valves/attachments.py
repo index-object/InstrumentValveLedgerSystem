@@ -9,7 +9,7 @@ from flask import (
     abort,
 )
 from flask_login import login_required, current_user
-from app.models import db, ValveAttachment, ValvePhoto, ValveDocument, MaintenanceRecord
+from app.models import db, ValveAttachment, ValvePhoto, ValveDocument, ValveFile, MaintenanceRecord
 from app.devices.valve_helper import (
     get_valve_model,
     get_valve_by_id,
@@ -27,6 +27,7 @@ from app.utils.navigation import get_from_param, url_with_params
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
+import hashlib
 import urllib.parse
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
@@ -521,22 +522,40 @@ def documents(id):
                 flash("仅支持 PDF / Word 文档")
                 return redirect(request.url)
 
-            saved_name = secure_filename(f"doc_{valve.位号}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
-            file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], saved_name))
+            file.seek(0)
+            file_hash = hashlib.sha256(file.read()).hexdigest()
+            file.seek(0)
+
+            existing = ValveFile.query.filter_by(file_hash=file_hash).first()
+            if existing:
+                saved_name = existing.filename
+                existing.ref_count += 1
+                flash("检测到重复文件，已关联到已有文件")
+            else:
+                saved_name = secure_filename(f"doc_{valve.位号}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+                file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], saved_name))
+                existing = ValveFile(
+                    file_hash=file_hash,
+                    filename=saved_name,
+                    file_size=os.path.getsize(os.path.join(current_app.config["UPLOAD_FOLDER"], saved_name)),
+                    ref_count=1,
+                )
+                db.session.add(existing)
+                db.session.flush()
 
             doc = ValveDocument(
+                file_id=existing.id,
                 device_type=get_valve_ledger_type(valve),
                 device_id=valve.id,
                 filename=saved_name,
                 original_name=file.filename,
                 file_type=ext,
-                file_size=os.path.getsize(os.path.join(current_app.config["UPLOAD_FOLDER"], saved_name)),
+                file_size=existing.file_size,
                 description=request.form.get("description", ""),
                 uploaded_by=current_user.id,
             )
             db.session.add(doc)
             db.session.commit()
-            flash("上传成功")
 
     docs = ValveDocument.query.filter_by(
         device_type=get_valve_ledger_type(valve),
@@ -548,31 +567,22 @@ def documents(id):
 def delete_document(valve_id, doc_id):
     """删除文档"""
     doc = ValveDocument.query.get_or_404(doc_id)
-    _valve_model = get_valve_model(doc.device_type)
-    _valve = _valve_model.query.get(valve_id) if _valve_model else None
-    if doc.device_id != valve_id:
-        flash("文档不存在")
-        if _valve and _valve.ledger_id:
-            return redirect(url_with_params('ledgers.valve_detail', ledger_id=_valve.ledger_id, id=valve_id))
-        return redirect(url_with_params("valves.detail", id=valve_id))
+    device_type = doc.device_type
 
-    valve = _valve_model.query.get(valve_id) if _valve_model else get_valve_by_id(valve_id)
-    if not valve or not can_edit_valve(valve):
-        flash("无权删除")
-        if valve and valve.ledger_id:
-            return redirect(url_with_params('ledgers.valve_detail', ledger_id=valve.ledger_id, id=valve_id))
-        return redirect(url_with_params("valves.detail", id=valve_id))
+    vf = doc.valve_file
+    if vf:
+        vf.ref_count -= 1
+        if vf.ref_count <= 0:
+            try:
+                os.remove(os.path.join(current_app.config["UPLOAD_FOLDER"], vf.filename))
+            except OSError:
+                pass
+            db.session.delete(vf)
 
-    try:
-        os.remove(os.path.join(current_app.config["UPLOAD_FOLDER"], doc.filename))
-    except OSError:
-        pass
     db.session.delete(doc)
     db.session.commit()
     flash("文档删除成功")
-    if valve and valve.ledger_id:
-        return redirect(url_with_params('ledgers.valve_detail', ledger_id=valve.ledger_id, id=valve_id))
-    return redirect(url_with_params("valves.detail", id=valve_id))
+    return redirect(url_with_params("valves.documents", id=valve_id, device_type=device_type))
 
 
 def preview_document(doc_id):

@@ -164,9 +164,20 @@ class ValvePhoto(db.Model):
     uploader = db.relationship("User")
 
 
+class ValveFile(db.Model):
+    __tablename__ = "valve_files"
+    id = db.Column(db.Integer, primary_key=True)
+    file_hash = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    filename = db.Column(db.String(200), nullable=False)
+    file_size = db.Column(db.Integer)
+    ref_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class ValveDocument(db.Model):
     __tablename__ = "valve_documents"
     id = db.Column(db.Integer, primary_key=True)
+    file_id = db.Column(db.Integer, db.ForeignKey("valve_files.id"), nullable=True)
     device_type = db.Column(db.String(20), nullable=False)
     device_id = db.Column(db.Integer, nullable=False)
     filename = db.Column(db.String(200), nullable=False)
@@ -178,6 +189,7 @@ class ValveDocument(db.Model):
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     uploader = db.relationship("User")
+    valve_file = db.relationship("ValveFile", backref="documents")
 
 
 class MaintenanceRecord(db.Model):
