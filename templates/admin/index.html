@@ -59,6 +59,15 @@
                     </div>
                 </a>
             </div>
+            <div class="col-md-6 mb-3">
+                <a href="{{ url_for('admin.import_cache') }}" class="quick-action-btn w-100" style="background: #f8fafc; color: var(--text-dark); border: 1px solid var(--border-color); justify-content: flex-start; padding: 20px;">
+                    <div class="primary" style="width: 48px; height: 48px; font-size: 20px; background: #e0f2fe; color: #0369a1; border-radius: 12px; display: flex; align-items: center; justify-content: center;"><i class="bi bi-archive"></i></div>
+                    <div>
+                        <div style="font-weight: 600;">导入缓存管理</div>
+                        <small class="text-muted">管理导入缓存文件 {% if cache_count > 0 %}({{ cache_count }} 个文件){% endif %}</small>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
 </div>

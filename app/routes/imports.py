@@ -1,10 +1,11 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, session, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from app.models import db, Ledger, ValveAttachment, SheetMapping
+from app.models import db, Ledger, ValveAttachment, SheetMapping, Setting
 from app.devices import DeviceTypeRegistry
 from app.import_engine import ImportEngine
 from app.utils.duplicate_check import check_duplicate
+from app.utils.import_cache import cleanup_import_cache
 from datetime import datetime
 import os
 import uuid
@@ -174,6 +175,10 @@ def upload():
     upload_folder = current_app.config.get("UPLOAD_FOLDER")
     saved_path = os.path.join(upload_folder, saved_name)
     file.save(saved_path)
+
+    retention = Setting.query.get("import_cache_retention")
+    max_keep = int(retention.value) if retention else 30
+    cleanup_import_cache(upload_folder, max_keep)
 
     engine = get_engine()
     try:

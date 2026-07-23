@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block page_title %}导入缓存管理{% endblock %}
+
+{% block back_btn %}
+<a href="{{ url_for('admin.index') }}" class="btn-back-header">
+    <i class="bi bi-arrow-left"></i> 返回
+</a>
+{% endblock %}
+
+{% block header_actions %}{% endblock %}
+
+{% block content %}
+<div class="cmp-card mb-4">
+    <div class="card-header-custom"><i class="bi bi-gear"></i> 缓存保留设置</div>
+    <div class="card-body-custom">
+        <form method="POST" class="row g-3 align-items-end">
+            <input type="hidden" name="action" value="update_retention">
+            <div class="col-auto">
+                <label class="cmp-label">保留最近几次导入缓存</label>
+                <input type="number" name="retention_count" class="form-control cmp-input" style="width:120px" value="{{ retention }}" min="1" required>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn cmp-btn cmp-btn--primary"><i class="bi bi-check-lg"></i> 保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="cmp-card mb-4">
+    <div class="card-header-custom"><i class="bi bi-trash"></i> 批量操作</div>
+    <div class="card-body-custom">
+        <form method="POST" style="display:inline" onsubmit="return confirm('确定立即清理超过保留次数的缓存?')">
+            <input type="hidden" name="action" value="cleanup_now">
+            <button type="submit" class="btn cmp-btn cmp-btn--primary"><i class="bi bi-broom"></i> 清理过期缓存</button>
+        </form>
+        <form method="POST" style="display:inline; margin-left:8px" onsubmit="return confirm('确定删除全部导入缓存文件?此操作不可撤销!')">
+            <input type="hidden" name="action" value="cleanup_all">
+            <button type="submit" class="btn cmp-btn" style="background: #fee2e2; color: #991b1b;"><i class="bi bi-x-lg"></i> 删除全部缓存</button>
+        </form>
+    </div>
+</div>
+
+<div class="cmp-card">
+    <div class="card-header-custom"><i class="bi bi-files"></i> 缓存文件列表 <span class="text-muted ms-2">(共 {{ files|length }} 个)</span></div>
+    <div class="card-body-custom">
+        {% if files %}
+        <div class="table-responsive">
+            <table class="cmp-table">
+                <thead>
+                    <tr>
+                        <th class="cmp-table__th">文件名</th>
+                        <th class="cmp-table__th">大小</th>
+                        <th class="cmp-table__th">上传时间</th>
+                        <th class="cmp-table__th" style="width:100px">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in files %}
+                    <tr>
+                        <td class="cmp-table__td"><code>{{ f.name }}</code></td>
+                        <td class="cmp-table__td">{% if f.size < 1024 %}{{ f.size }} B{% elif f.size < 1048576 %}{{ (f.size / 1024)|round(1) }} KB{% else %}{{ (f.size / 1048576)|round(1) }} MB{% endif %}</td>
+                        <td class="cmp-table__td">{{ f.mtime.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td class="cmp-table__td">
+                            <form method="POST" style="display:inline" onsubmit="return confirm('确定删除 {{ f.name }}?')">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="filename" value="{{ f.name }}">
+                                <button type="submit" class="cmp-btn cmp-btn--link" style="background: #fee2e2; color: #991b1b;"><i class="bi bi-trash"></i> 删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox" style="font-size: 48px;"></i>
+            <p class="mt-2">暂无导入缓存文件</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

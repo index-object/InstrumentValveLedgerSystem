@@ -9,9 +9,10 @@ from flask import (
 from flask_login import login_required, current_user
 from openpyxl import load_workbook
 
-from app.models import db, MaintenanceRecord
+from app.models import db, MaintenanceRecord, Setting
 from app.utils.device_lookup import resolve_device
 from app.devices import DeviceTypeRegistry
+from app.utils.import_cache import cleanup_import_cache
 
 maintenance_import = Blueprint("maintenance_import", __name__,
                                template_folder="../../templates")
@@ -73,6 +74,10 @@ def upload():
     upload_folder = current_app.config.get("UPLOAD_FOLDER")
     saved_path = os.path.join(upload_folder, saved_name)
     file.save(saved_path)
+
+    retention = Setting.query.get("import_cache_retention")
+    max_keep = int(retention.value) if retention else 30
+    cleanup_import_cache(upload_folder, max_keep)
 
     try:
         raw_records = _parse_xlsx(saved_path)

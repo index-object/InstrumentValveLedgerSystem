@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from app.models import db, User, Setting, SheetMapping
+from app.utils.import_cache import get_import_cache_files, cleanup_import_cache
 from functools import wraps
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
@@ -23,10 +24,13 @@ def require_admin(f):
 def index():
     user_count = User.query.filter_by(status="active").count()
     mappings_count = SheetMapping.query.count()
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+    cache_files = get_import_cache_files(upload_folder)
     return render_template(
         "admin/index.html",
         user_count=user_count,
         mappings_count=mappings_count,
+        cache_count=len(cache_files),
     )
 
 
@@ -162,3 +166,63 @@ def delete_sheet_mapping(id):
     db.session.commit()
     flash(f"已删除映射: {mapping.sheet_name} → {mapping.type_code}")
     return redirect(url_for("admin.sheet_mappings"))
+
+
+@admin.route("/import-cache", methods=["GET", "POST"])
+@login_required
+@require_admin
+def import_cache():
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "update_retention":
+            val = request.form.get("retention_count", "30")
+            if val.isdigit() and int(val) > 0:
+                setting = Setting.query.get("import_cache_retention")
+                if setting:
+                    setting.value = val
+                else:
+                    setting = Setting(key="import_cache_retention", value=val)
+                    db.session.add(setting)
+                db.session.commit()
+                flash(f"导入缓存保留次数已更新为 {val}")
+            else:
+                flash("请输入有效的正整数", "error")
+
+        elif action == "delete":
+            filename = request.form.get("filename")
+            if filename:
+                import os
+                path = os.path.join(upload_folder, filename)
+                try:
+                    os.remove(path)
+                    flash(f"已删除: {filename}")
+                except OSError:
+                    flash(f"删除失败: {filename}", "error")
+
+        elif action == "cleanup_now":
+            retention = Setting.query.get("import_cache_retention")
+            max_keep = int(retention.value) if retention else 30
+            deleted = cleanup_import_cache(upload_folder, max_keep)
+            flash(f"已清理 {deleted} 个过期缓存文件")
+
+        elif action == "cleanup_all":
+            import os
+            files = get_import_cache_files(upload_folder)
+            count = 0
+            for f in files:
+                try:
+                    os.remove(f["path"])
+                    count += 1
+                except OSError:
+                    pass
+            flash(f"已删除全部 {count} 个缓存文件")
+
+        return redirect(url_for("admin.import_cache"))
+
+    cur = Setting.query.get("import_cache_retention")
+    retention = int(cur.value) if cur else 30
+    files = get_import_cache_files(upload_folder)
+    return render_template("admin/import_cache.html", files=files, retention=retention)
