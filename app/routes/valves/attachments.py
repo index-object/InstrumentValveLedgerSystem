@@ -567,7 +567,6 @@ def documents(id):
 def delete_document(valve_id, doc_id):
     """删除文档"""
     doc = ValveDocument.query.get_or_404(doc_id)
-    device_type = doc.device_type
 
     vf = doc.valve_file
     if vf:
@@ -582,7 +581,7 @@ def delete_document(valve_id, doc_id):
     db.session.delete(doc)
     db.session.commit()
     flash("文档删除成功")
-    return redirect(url_with_params("valves.documents", id=valve_id, device_type=device_type))
+    return redirect(request.referrer or url_with_params("valves.documents", id=valve_id))
 
 
 def preview_document(doc_id):
