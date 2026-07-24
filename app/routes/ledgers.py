@@ -30,7 +30,7 @@ from app.utils.navigation import (
     redirect_to_list,
     url_with_params,
 )
-from sqlalchemy import or_
+from sqlalchemy import or_, inspect
 from datetime import datetime
 import json
 
@@ -285,18 +285,11 @@ def detail(id):
     search = request.args.get("search")
     if search:
         search_conditions = []
-        for column in model.__table__.columns:
-            if column.name not in [
-                "id",
-                "ledger_id",
-                "created_by",
-                "approved_by",
-                "approved_at",
-                "created_at",
-                "updated_at",
-                "status",
-            ]:
-                col = getattr(model, column.name)
+        mapper = inspect(model)
+        excluded = {"id", "ledger_id", "created_by", "approved_by", "approved_at", "created_at", "updated_at", "status"}
+        for key in mapper.columns.keys():
+            if key not in excluded:
+                col = getattr(model, key)
                 search_conditions.append(col.contains(search))
         if search_conditions:
             query = query.filter(or_(*search_conditions))
