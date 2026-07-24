@@ -139,7 +139,7 @@ def settings():
     settings.setdefault("auto_approval", "true")
     settings.setdefault("default_password", "123456")
     settings.setdefault("page_size", "20")
-    settings.setdefault("system_name", "仪表阀门台账系统")
+    settings.setdefault("system_name", "仪表阀门智能管理系统")
 
     return render_template("admin/settings.html", **settings)
 

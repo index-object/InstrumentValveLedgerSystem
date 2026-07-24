@@ -151,7 +151,7 @@ def init_seed_data():
         db.session.add(setting)
 
     if not Setting.query.get("system_name"):
-        setting = Setting(key="system_name", value="仪表阀门台账系统")
+        setting = Setting(key="system_name", value="仪表阀门智能管理系统")
         db.session.add(setting)
 
     db.session.commit()
