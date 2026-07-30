@@ -3,6 +3,11 @@
 {% block back_btn %}
 <a href="{{ url_for('plans.index') }}" class="btn-back-header"><i class="bi bi-arrow-left"></i> 返回</a>
 {% endblock %}
+{% set plan_completed = items|selectattr('status', 'equalto', 'completed')|list|length %}
+{% set plan_total = items|length %}
+{% set pct = (plan_completed / plan_total * 100) if plan_total > 0 else 0 %}
+{% set plan_overdue = items|selectattr('_overdue', 'equalto', true)|list|length %}
+{% set plan_pending = plan_total - plan_completed %}
 {% block header_actions %}
 <span class="cmp-badge {% if plan.status == 'published' %}cmp-badge--approved{% elif plan.status == 'draft' %}cmp-badge--draft{% else %}cmp-badge--draft{% endif %}">
   {% if plan.status == 'draft' %}<i class="bi bi-pencil"></i> 草稿
@@ -38,12 +43,11 @@
     </div>
   </div>
 
+  {% set completed = plan_completed %}
+  {% set total = plan_total %}
+  {% set overdue = plan_overdue %}
+  {% set pending = plan_pending %}
   {% if plan.status == 'published' %}
-  {% set completed = items|selectattr('status', 'equalto', 'completed')|list|length %}
-  {% set total = items|length %}
-  {% set pct = (completed / total * 100) if total > 0 else 0 %}
-  {% set overdue = items|selectattr('_overdue', 'equalto', true)|list|length %}
-  {% set pending = total - completed %}
   {% if current_user.role == 'employee' and pending > 0 %}
   <div class="alert alert-warning d-flex align-items-center gap-3 py-3 px-4 mb-4" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;">
     <i class="bi bi-exclamation-triangle-fill" style="font-size: 24px; color: #d97706;"></i>
