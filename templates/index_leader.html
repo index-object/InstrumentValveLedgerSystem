@@ -60,6 +60,18 @@
             </div>
         </div>
         
+        <a href="{{ url_for('plans.index') }}" class="cmp-stat" style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #bbf7d0;">
+            <div class="stat-icon" style="background: #dcfce7; color: #16a34a;">
+                <i class="bi bi-calendar-check-fill"></i>
+            </div>
+            <div class="stat-content">
+                <h3>年度检修计划</h3>
+                <p><span class="stat-value">{{ active_plans }}</span> 个进行中 · <span class="stat-value">{{ plan_items_pending }}</span> 项待办</p>
+                {% if plan_items_overdue > 0 %}
+                <p style="color: #dc2626; font-size: 12px; margin: 0;"><i class="bi bi-exclamation-triangle-fill"></i> {{ plan_items_overdue }} 项已逾期</p>
+                {% endif %}
+            </div>
+        </a>
         <a href="{{ url_for('valves.maintenance_list') }}" class="cmp-stat warning">
             <div class="stat-icon warning">
                 <i class="bi bi-tools"></i>

@@ -1,6 +1,7 @@
+from datetime import date
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
-from app.models import MaintenanceRecord, User, Ledger
+from app.models import MaintenanceRecord, User, Ledger, MaintenancePlan, MaintenancePlanItem
 from app.devices.valve_helper import get_all_valve_models, count_valves_by_status
 
 bp = Blueprint("main", __name__)
@@ -73,6 +74,31 @@ def index():
                 {"username": user.real_name or user.username, "count": count}
             )
 
+    today = date.today()
+    active_plans = MaintenancePlan.query.filter_by(status="published").count()
+    plan_items_pending = 0
+    plan_items_overdue = 0
+    if current_user.role in ("employee", "admin"):
+        plan_items_pending = MaintenancePlanItem.query.join(MaintenancePlanItem.plan).filter(
+            MaintenancePlan.status == "published",
+            MaintenancePlanItem.status == "pending",
+        ).count()
+        plan_items_overdue = MaintenancePlanItem.query.join(MaintenancePlanItem.plan).filter(
+            MaintenancePlan.status == "published",
+            MaintenancePlanItem.status == "pending",
+            MaintenancePlanItem.planned_date_end < today,
+        ).count()
+    elif current_user.role == "leader":
+        plan_items_pending = MaintenancePlanItem.query.join(MaintenancePlanItem.plan).filter(
+            MaintenancePlan.status == "published",
+            MaintenancePlanItem.status == "pending",
+        ).count()
+        plan_items_overdue = MaintenancePlanItem.query.join(MaintenancePlanItem.plan).filter(
+            MaintenancePlan.status == "published",
+            MaintenancePlanItem.status == "pending",
+            MaintenancePlanItem.planned_date_end < today,
+        ).count()
+
     return render_template(
         f"index_{current_user.role}.html",
         total_ledgers=total_ledgers,
@@ -83,6 +109,9 @@ def index():
         pending=pending_valves,
         maintenance_count=maintenance_count,
         user_stats=user_stats,
+        active_plans=active_plans,
+        plan_items_pending=plan_items_pending,
+        plan_items_overdue=plan_items_overdue,
     )
 
 

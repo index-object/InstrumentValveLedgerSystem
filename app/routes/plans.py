@@ -11,30 +11,6 @@ from sqlalchemy import or_
 plans_bp = Blueprint("plans", __name__, url_prefix="")
 
 
-@plans_bp.context_processor
-def inject_plan_nav():
-    if current_user.is_authenticated:
-        now = date.today()
-        warning_count = 0
-        if current_user.role in ("employee", "admin"):
-            published_plan_ids = db.session.query(MaintenancePlan.id).filter(
-                MaintenancePlan.status == "published"
-            ).subquery()
-            seven_days_later = now + timedelta(days=7)
-            warning_count = MaintenancePlanItem.query.filter(
-                MaintenancePlanItem.plan_id.in_(published_plan_ids),
-                MaintenancePlanItem.status == "pending",
-                MaintenancePlanItem.planned_date_end >= now.isoformat(),
-                MaintenancePlanItem.planned_date_end <= seven_days_later.isoformat(),
-            ).count() + MaintenancePlanItem.query.filter(
-                MaintenancePlanItem.plan_id.in_(published_plan_ids),
-                MaintenancePlanItem.status == "pending",
-                MaintenancePlanItem.planned_date_end < now.isoformat(),
-            ).count()
-        return dict(plan_warning_count=warning_count)
-    return dict(plan_warning_count=0)
-
-
 @plans_bp.route("/plans")
 @login_required
 def index():
@@ -202,6 +178,19 @@ def archive(id):
         flash("只能归档已发布的计划")
         return redirect(url_for("plans.detail", id=id))
     plan.status = "archived"
+
+    recipients = User.query.filter(User.role.in_(["employee", "admin"]), User.status == "active").all()
+    for user in recipients:
+        notification = Notification(
+            user_id=user.id,
+            type="plan_archived",
+            title=f"检修计划已归档：{plan.title}",
+            content=f"计划已归档，共完成 {plan.completed_items}/{plan.total_items} 项检修任务。",
+            ref_type="plan",
+            ref_id=plan.id,
+        )
+        db.session.add(notification)
+
     db.session.commit()
     flash("计划已归档")
     return redirect(url_for("plans.detail", id=id))

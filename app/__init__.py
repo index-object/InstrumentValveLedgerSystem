@@ -50,8 +50,35 @@ def create_app(config_class=Config):
                 pending_count = 0
         except:
             pending_count = 0
+
+        try:
+            if current_user.is_authenticated:
+                from datetime import date, timedelta
+                from app.models import MaintenancePlan, MaintenancePlanItem
+                now = date.today()
+                plan_warning_count = 0
+                if current_user.role in ("employee", "admin"):
+                    published_plan_ids = db.session.query(MaintenancePlan.id).filter(
+                        MaintenancePlan.status == "published"
+                    ).subquery()
+                    seven_days_later = now + timedelta(days=7)
+                    plan_warning_count = MaintenancePlanItem.query.filter(
+                        MaintenancePlanItem.plan_id.in_(published_plan_ids),
+                        MaintenancePlanItem.status == "pending",
+                        MaintenancePlanItem.planned_date_end >= now.isoformat(),
+                        MaintenancePlanItem.planned_date_end <= seven_days_later.isoformat(),
+                    ).count() + MaintenancePlanItem.query.filter(
+                        MaintenancePlanItem.plan_id.in_(published_plan_ids),
+                        MaintenancePlanItem.status == "pending",
+                        MaintenancePlanItem.planned_date_end < now.isoformat(),
+                    ).count()
+            else:
+                plan_warning_count = 0
+        except:
+            plan_warning_count = 0
+
         from app.devices.valve_helper import VALVE_TYPES
-        return dict(pending_count=pending_count, VALVE_TYPES=VALVE_TYPES)
+        return dict(pending_count=pending_count, VALVE_TYPES=VALVE_TYPES, plan_warning_count=plan_warning_count)
 
     # 注册导航上下文处理器
     from app.utils.navigation import inject_navigation
