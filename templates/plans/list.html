@@ -65,7 +65,7 @@
     </div>
     {% endif %}
     <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-      <a href="{{ url_for('plans.detail', id=plan.id) }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary"><i class="bi bi-pencil"></i> 编辑</a>
+      <a href="{{ url_for('plans.detail', id=plan.id) }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary"><i class="bi {% if current_user.role == 'employee' %}bi-eye{% else %}bi-pencil{% endif %}"></i> {% if current_user.role == 'employee' %}查看{% else %}编辑{% endif %}</a>
       {% if plan.status == 'draft' and current_user.role in ['leader', 'admin'] %}
       <form method="POST" action="{{ url_for('plans.publish', id=plan.id) }}" style="display:inline;" onsubmit="return confirm('发布后所有员工将收到通知，确认发布？')">
         <button class="cmp-toolbar-btn cmp-toolbar-btn--success"><i class="bi bi-send"></i> 发布</button>
