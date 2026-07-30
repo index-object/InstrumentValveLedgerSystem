@@ -257,3 +257,59 @@ class SheetMapping(db.Model):
                            onupdate=datetime.utcnow)
 
     creator = db.relationship("User", foreign_keys=[created_by])
+
+
+class MaintenancePlan(db.Model):
+    __tablename__ = "maintenance_plans"
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    status = db.Column(db.String(20), nullable=False, default="draft")
+    total_items = db.Column(db.Integer, default=0)
+    completed_items = db.Column(db.Integer, default=0)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    published_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    published_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    creator = db.relationship("User", foreign_keys=[created_by])
+    publisher = db.relationship("User", foreign_keys=[published_by])
+    items = db.relationship("MaintenancePlanItem", backref="plan", lazy="dynamic",
+                            cascade="all, delete-orphan",
+                            order_by="MaintenancePlanItem.planned_date_start")
+
+
+class MaintenancePlanItem(db.Model):
+    __tablename__ = "maintenance_plan_items"
+    id = db.Column(db.Integer, primary_key=True)
+    plan_id = db.Column(db.Integer, db.ForeignKey("maintenance_plans.id"), nullable=False)
+    device_type = db.Column(db.String(20), nullable=False)
+    device_id = db.Column(db.Integer, nullable=False)
+    tag = db.Column(db.String(50), nullable=False)
+    device_name = db.Column(db.String(100))
+    planned_date_start = db.Column(db.Date, nullable=False)
+    planned_date_end = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="pending")
+    maintenance_id = db.Column(db.Integer, db.ForeignKey("maintenance_records.id"))
+    completed_at = db.Column(db.DateTime)
+    completed_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    maintenance_record = db.relationship("MaintenanceRecord")
+    completer = db.relationship("User", foreign_keys=[completed_by])
+
+
+class Notification(db.Model):
+    __tablename__ = "notifications"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    type = db.Column(db.String(20), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text)
+    ref_type = db.Column(db.String(20))
+    ref_id = db.Column(db.Integer)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User", backref="notifications")
