@@ -41,6 +41,13 @@
                     <input type="text" name="检修人员" class="form-control cmp-input" required placeholder="请输入检修人员">
                 </div>
             </div>
+            <div class="mb-3" id="planItemSection" style="display:none;">
+                    <label class="cmp-label" style="font-weight: 500;">归属年度计划</label>
+                    <select name="plan_item_id" id="planItemSelect" class="form-control cmp-input">
+                        <option value="">— 不关联计划 —</option>
+                    </select>
+                    <small class="text-muted">该设备有待完成的年度保养计划项，可选关联</small>
+            </div>
             <div class="mb-3">
                     <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修内容</label>
                     <textarea name="检修内容" class="form-control cmp-input" rows="4" required placeholder="请输入检修内容"></textarea>
@@ -117,6 +124,7 @@
 {% block extra_js %}
 <script>
 const valvesData = {{ valves_data|tojson }};
+const planItemsData = {{ plan_items_data|tojson }};
 
 let selectedValveId = null;
 let selectedValveTag = null;
@@ -165,6 +173,17 @@ function renderValves() {
             document.getElementById('valve_type').value = selectedValveType;
             document.getElementById('valveSelectorBtn').innerHTML = '<i class="bi bi-check-circle text-success me-1"></i> ' + selectedValveTag + ' - ' + selectedValveName + ' <span class="text-muted">(' + selectedValveUnit + ')</span>';
             document.getElementById('valveSelectorBtn').classList.remove('text-start');
+
+            const items = planItemsData.filter(p => p.device_type === selectedValveType && p.device_id === selectedValveId);
+            const select = document.getElementById('planItemSelect');
+            select.innerHTML = '<option value="">— 不关联计划 —</option>';
+            items.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.plan_title + ' (' + p.planned_date_start + ' ~ ' + p.planned_date_end + ')';
+                select.appendChild(opt);
+            });
+            document.getElementById('planItemSection').style.display = items.length ? '' : 'none';
         }
     });
 

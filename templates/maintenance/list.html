@@ -72,6 +72,7 @@
                     <th class="cmp-table__th">检修时间</th>
                     <th class="cmp-table__th">检修人员</th>
                     <th class="cmp-table__th">类型</th>
+                    <th class="cmp-table__th">所属计划</th>
                     <th class="cmp-table__th">检修内容</th>
                     <th style="width: 100px;" class="cmp-table__th">操作</th>
                 </tr>
@@ -98,6 +99,14 @@
                     <td class="cmp-table__td">{{ record.检修时间.strftime('%Y-%m-%d') if record.检修时间 else '-' }}</td>
                     <td class="cmp-table__td">{{ record.检修人员 or '-' }}</td>
                     <td class="cmp-table__td">{{ record.类型 or '-' }}</td>
+                    <td class="cmp-table__td">
+                        {% set plan_title = plan_lookup.get(record.id) %}
+                        {% if plan_title %}
+                        <span style="font-size: 12px; color: var(--primary-color);">{{ plan_title }}</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
                     <td class="cmp-table__td">{{ record.检修内容[:15] if record.检修内容 else '-' }}{% if record.检修内容 and record.检修内容|length > 15 %}...{% endif %}</td>
                     <td class="cmp-table__td">
                         {# 编辑按钮：仅管理员和创建者可见 #}
@@ -110,7 +119,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="9" class="cmp-table__td">
+                    <td colspan="10" class="cmp-table__td">
                         <div class="cmp-empty">
                             <i class="bi bi-wrench"></i>
                             <p>暂无维护记录</p>

@@ -18,6 +18,11 @@
 <div class="cmp-card">
     <div class="card-header-custom"><i class="bi bi-pencil-square"></i> 编辑维护记录</div>
     <div class="card-body-custom">
+        {% if plan_info %}
+        <div class="alert alert-info py-2 mb-3" style="font-size: 14px; background: #eef2ff; border: 1px solid #c7d2fe; color: #4338ca;">
+            <i class="bi bi-calendar-check me-1"></i> 该记录关联计划：<strong>{{ plan_info.title }}</strong>
+        </div>
+        {% endif %}
         <form method="POST">
             <div class="row">
                 <div class="col-md-6 mb-3">

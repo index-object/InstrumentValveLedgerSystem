@@ -9,7 +9,7 @@ from flask import (
     abort,
 )
 from flask_login import login_required, current_user
-from app.models import db, ValveAttachment, ValvePhoto, ValveDocument, ValveFile, MaintenanceRecord
+from app.models import db, ValveAttachment, ValvePhoto, ValveDocument, ValveFile, MaintenanceRecord, MaintenancePlanItem
 from app.devices.valve_helper import (
     get_valve_model,
     get_valve_by_id,
@@ -173,8 +173,17 @@ def maintenance_list():
         page=page, per_page=per_page, error_out=False
     )
 
+    record_ids = [r.id for r in pagination.items]
+    plan_lookup = {}
+    if record_ids:
+        linked_items = MaintenancePlanItem.query.filter(
+            MaintenancePlanItem.maintenance_id.in_(record_ids)
+        ).all()
+        plan_lookup = {item.maintenance_id: item.plan.title if item.plan else "未知计划" for item in linked_items}
+
     return render_template(
-        "maintenance/list.html", records=pagination.items, pagination=pagination
+        "maintenance/list.html", records=pagination.items, pagination=pagination,
+        plan_lookup=plan_lookup
     )
 
 
@@ -228,6 +237,17 @@ def maintenance_create():
             created_by=current_user.id,
         )
         db.session.add(record)
+        db.session.flush()
+
+        plan_item_id = request.form.get("plan_item_id", type=int)
+        if plan_item_id:
+            plan_item = MaintenancePlanItem.query.get(plan_item_id)
+            if plan_item and plan_item.status == "pending":
+                plan_item.status = "completed"
+                plan_item.maintenance_id = record.id
+                plan_item.completed_at = datetime.utcnow()
+                plan_item.completed_by = current_user.id
+
         db.session.commit()
         flash("添加成功")
         return redirect(url_for("valves.maintenance_list"))
@@ -236,7 +256,30 @@ def maintenance_create():
         {"id": v.id, "tag": v.位号, "name": v.名称 or "", "device_unit": v.装置名称 or "", "type": get_valve_ledger_type(v)}
         for v in valves
     ]
-    return render_template("maintenance/create.html", valves=valves, valves_data=valves_data)
+
+    plan_items_data = []
+    if current_user.role != "leader":
+        from app.models import MaintenancePlan
+        pending_items = MaintenancePlanItem.query.join(MaintenancePlanItem.plan).filter(
+            MaintenancePlanItem.status == "pending",
+            MaintenancePlan.status == "published",
+        ).all()
+        plan_items_data = [
+            {
+                "id": item.id,
+                "plan_id": item.plan_id,
+                "plan_title": item.plan.title if item.plan else "",
+                "device_type": item.device_type,
+                "device_id": item.device_id,
+                "tag": item.tag,
+                "device_name": item.device_name or "",
+                "planned_date_start": item.planned_date_start.strftime("%Y-%m-%d") if item.planned_date_start else "",
+                "planned_date_end": item.planned_date_end.strftime("%Y-%m-%d") if item.planned_date_end else "",
+            }
+            for item in pending_items
+        ]
+
+    return render_template("maintenance/create.html", valves=valves, valves_data=valves_data, plan_items_data=plan_items_data)
 
 
 def maintenance_edit(id):
@@ -301,11 +344,16 @@ def maintenance_edit(id):
         flash("保存成功")
         return redirect(url_for("valves.maintenance_list"))
 
+    plan_item = MaintenancePlanItem.query.filter_by(maintenance_id=record.id).first()
+    plan_info = None
+    if plan_item and plan_item.plan:
+        plan_info = {"title": plan_item.plan.title, "id": plan_item.plan_id}
+
     valves_data = [
         {"id": v.id, "tag": v.位号, "name": v.名称 or "", "device_unit": v.装置名称 or "", "type": get_valve_ledger_type(v)}
         for v in valves
     ]
-    return render_template("maintenance/edit.html", record=record, valves=valves, valves_data=valves_data)
+    return render_template("maintenance/edit.html", record=record, valves=valves, valves_data=valves_data, plan_info=plan_info)
 
 
 def maintenance_batch_delete():
