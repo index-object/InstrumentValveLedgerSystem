@@ -66,6 +66,7 @@ def create_app(config_class=Config):
     from app.routes.imports import imports
     from app.routes.maintenance_import import maintenance_import
     from app.routes.statistics import statistics
+    from app.routes.plans import plans_bp
 
     app.register_blueprint(bp)
     app.register_blueprint(auth)
@@ -76,6 +77,7 @@ def create_app(config_class=Config):
     app.register_blueprint(imports)
     app.register_blueprint(maintenance_import)
     app.register_blueprint(statistics)
+    app.register_blueprint(plans_bp)
 
     from app.devices.types import register_all
     register_all()
