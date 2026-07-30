@@ -197,7 +197,7 @@
                 <thead><tr><th style="width: 40px;" class="cmp-table__th"><input type="checkbox" class="form-check-input" id="selectAllModal"></th><th class="cmp-table__th">位号</th><th class="cmp-table__th">设备名称</th><th class="cmp-table__th">装置名称</th></tr></thead>
                 <tbody id="deviceTableBody">
                   {% for dev in approved_devices %}
-                  <tr class="device-row" data-tag="{{ dev.tag }}" data-name="{{ dev.name }}" data-unit="{{ dev.unit }}" data-type="{{ dev.type }}" data-id="{{ dev.id }}">
+                  <tr class="device-row" data-tag="{{ dev.tag }}" data-name="{{ dev.name }}" data-unit="{{ dev.unit }}" data-type="{{ dev.type }}" data-id="{{ dev.id }}" style="cursor: pointer;">
                     <td class="cmp-table__td"><input type="checkbox" class="form-check-input device-checkbox"></td>
                     <td class="cmp-table__td" style="font-weight: 500; color: var(--color-primary);">{{ dev.tag }}</td>
                     <td class="cmp-table__td">{{ dev.name }}</td>
