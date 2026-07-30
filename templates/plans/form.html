@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block page_title %}{{ '编辑计划' if plan else '新建计划' }}{% endblock %}
+{% block header_actions %}
+<a href="{{ url_for('plans.index') }}" class="cmp-btn cmp-btn--secondary"><i class="bi bi-arrow-left"></i> 返回</a>
+{% endblock %}
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  <div class="cmp-form-section">
+    <div class="cmp-form-section__header"><i class="bi bi-info-circle"></i><h5>基本信息</h5></div>
+    <div class="cmp-form-section__body">
+      <form method="POST">
+        <div class="cmp-field-row">
+          <div class="cmp-field">
+            <label class="cmp-label"><span class="required">*</span> 计划标题</label>
+            <input type="text" name="title" class="cmp-input" value="{{ plan.title if plan else '' }}" placeholder="例如：2026年度大检修计划" required>
+          </div>
+        </div>
+        <div class="cmp-field-row">
+          <div class="cmp-field">
+            <label class="cmp-label">计划描述</label>
+            <textarea name="description" class="cmp-input" rows="4" placeholder="描述本次检修的范围、目的等">{{ plan.description if plan else '' }}</textarea>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="cmp-btn cmp-btn--primary"><i class="bi bi-save"></i> {{ '保存' if plan else '保存为草稿' }}</button>
+          <a href="{{ url_for('plans.index') }}" class="cmp-btn cmp-btn--secondary">取消</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
