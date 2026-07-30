@@ -18,11 +18,6 @@
 <div class="cmp-card">
     <div class="card-header-custom"><i class="bi bi-pencil-square"></i> 编辑维护记录</div>
     <div class="card-body-custom">
-        {% if plan_info %}
-        <div class="alert alert-info py-2 mb-3" style="font-size: 14px; background: #eef2ff; border: 1px solid #c7d2fe; color: #4338ca;">
-            <i class="bi bi-calendar-check me-1"></i> 该记录关联计划：<strong>{{ plan_info.title }}</strong>
-        </div>
-        {% endif %}
         <form method="POST">
             <div class="row">
                 <div class="col-md-6 mb-3">
@@ -54,6 +49,15 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
+                    <label class="cmp-label" style="font-weight: 500;">关联计划</label>
+                    <select name="plan_id" class="form-control cmp-input">
+                        <option value="">无关联</option>
+                        {% for p in plans %}
+                        <option value="{{ p.id }}" {% if selected_plan_id == p.id %}selected{% endif %}>{{ p.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
                     <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修时间</label>
                     <input type="date" name="检修时间" class="form-control cmp-input" required value="{{ record.检修时间.strftime('%Y-%m-%d') if record.检修时间 else '' }}">
                 </div>
@@ -63,6 +67,7 @@
                     <label class="cmp-label" style="font-weight: 500;">检修人员</label>
                     <input type="text" name="检修人员" class="form-control cmp-input" value="{{ record.检修人员 or '' }}" placeholder="请输入检修人员">
                 </div>
+                <div class="col-md-6 mb-3"><!-- filler for balance --></div>
             </div>
             <div class="mb-3">
                 <label class="cmp-label" style="font-weight: 500;">检修内容</label>

@@ -278,6 +278,8 @@ class MaintenancePlan(db.Model):
     items = db.relationship("MaintenancePlanItem", backref="plan", lazy="dynamic",
                             cascade="all, delete-orphan",
                             order_by="MaintenancePlanItem.planned_date_start")
+    recipients = db.relationship("User", secondary="plan_recipients",
+                                 backref=db.backref("assigned_plans", lazy="dynamic"))
 
 
 class MaintenancePlanItem(db.Model):
@@ -298,6 +300,13 @@ class MaintenancePlanItem(db.Model):
 
     maintenance_record = db.relationship("MaintenanceRecord")
     completer = db.relationship("User", foreign_keys=[completed_by])
+
+
+class PlanRecipient(db.Model):
+    __tablename__ = "plan_recipients"
+    id = db.Column(db.Integer, primary_key=True)
+    plan_id = db.Column(db.Integer, db.ForeignKey("maintenance_plans.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
 
 class Notification(db.Model):

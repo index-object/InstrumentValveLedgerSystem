@@ -16,7 +16,10 @@ plans_bp = Blueprint("plans", __name__, url_prefix="")
 def index():
     query = MaintenancePlan.query
     if current_user.role == "employee":
-        query = query.filter(MaintenancePlan.status.in_(["published", "archived"]))
+        query = query.filter(
+            MaintenancePlan.status.in_(["published", "archived"]),
+            MaintenancePlan.recipients.any(id=current_user.id)
+        )
     search = request.args.get("search")
     status_filter = request.args.get("status")
     if search:
@@ -40,7 +43,8 @@ def index():
         "published": sum(1 for p in plans if p.status == "published"),
         "archived": sum(1 for p in plans if p.status == "archived"),
     }
-    return render_template("plans/list.html", plans=plans, stats=stats)
+    employees = User.query.filter(User.role == "employee", User.status == "active").order_by(User.real_name).all() if current_user.role in ("leader", "admin") else []
+    return render_template("plans/list.html", plans=plans, stats=stats, employees=employees)
 
 
 @plans_bp.route("/plan/new", methods=["GET", "POST"])
@@ -72,9 +76,10 @@ def create():
 @login_required
 def detail(id):
     plan = MaintenancePlan.query.get_or_404(id)
-    if current_user.role == "employee" and plan.status not in ("published", "archived"):
-        flash("无权查看此计划")
-        return redirect(url_for("plans.index"))
+    if current_user.role == "employee":
+        if plan.status not in ("published", "archived") or current_user not in plan.recipients:
+            flash("无权查看此计划")
+            return redirect(url_for("plans.index"))
 
     now = date.today()
     items = MaintenancePlanItem.query.filter_by(plan_id=plan.id).order_by(
@@ -97,18 +102,8 @@ def detail(id):
                 "name": v.名称 or "",
                 "unit": v.装置名称 or "",
             })
-    for config in DeviceTypeRegistry.all():
-        if config.model_class and config.code not in ("control_valve", "onoff_valve", "electric_valve"):
-            for d in config.model_class.query.filter(config.model_class.status == "approved").order_by(config.model_class.位号).all():
-                approved_devices.append({
-                    "id": d.id,
-                    "type": config.code,
-                    "tag": d.位号,
-                    "name": getattr(d, '设备名称', '') or getattr(d, '名称', '') or '',
-                    "unit": getattr(d, '装置名称', '') or '',
-                })
-
-    return render_template("plans/detail.html", plan=plan, items=items, approved_devices=approved_devices)
+    employees = User.query.filter(User.role == "employee", User.status == "active").order_by(User.real_name).all()
+    return render_template("plans/detail.html", plan=plan, items=items, approved_devices=approved_devices, employees=employees)
 
 
 @plans_bp.route("/plan/<int:id>/edit", methods=["GET", "POST"])
@@ -150,20 +145,25 @@ def publish(id):
     plan.published_by = current_user.id
     plan.published_at = datetime.utcnow()
 
-    recipients = User.query.filter(User.role.in_(["employee", "admin"]), User.status == "active").all()
-    for user in recipients:
-        notification = Notification(
-            user_id=user.id,
-            type="plan_published",
-            title=f"新检修计划发布：{plan.title}",
-            content=plan.description or f"计划包含 {plan.total_items} 项检修任务，请及时查看并执行。",
-            ref_type="plan",
-            ref_id=plan.id,
-        )
-        db.session.add(notification)
-
-    db.session.commit()
-    flash(f"计划已发布，已通知 {len(recipients)} 位用户")
+    recipient_ids = request.form.getlist("recipient_ids")
+    if recipient_ids:
+        selected = User.query.filter(User.id.in_(recipient_ids)).all()
+        for user in selected:
+            plan.recipients.append(user)
+            notification = Notification(
+                user_id=user.id,
+                type="plan_published",
+                title=f"新检修计划发布：{plan.title}",
+                content=plan.description or f"计划包含 {plan.total_items} 项检修任务，请及时查看并执行。",
+                ref_type="plan",
+                ref_id=plan.id,
+            )
+            db.session.add(notification)
+        db.session.commit()
+        flash(f"计划已发布，已通知 {len(selected)} 位用户")
+    else:
+        db.session.commit()
+        flash("计划已发布（未选择通知对象）")
     return redirect(url_for("plans.detail", id=id))
 
 
@@ -172,27 +172,26 @@ def publish(id):
 def archive(id):
     plan = MaintenancePlan.query.get_or_404(id)
     if current_user.role not in ("leader", "admin"):
-        flash("无权归档")
+        flash("无权标记完成")
         return redirect(url_for("plans.detail", id=id))
     if plan.status != "published":
-        flash("只能归档已发布的计划")
+        flash("只能标记已发布的计划为已完成")
         return redirect(url_for("plans.detail", id=id))
     plan.status = "archived"
 
-    recipients = User.query.filter(User.role.in_(["employee", "admin"]), User.status == "active").all()
-    for user in recipients:
+    for user in plan.recipients:
         notification = Notification(
             user_id=user.id,
             type="plan_archived",
-            title=f"检修计划已归档：{plan.title}",
-            content=f"计划已归档，共完成 {plan.completed_items}/{plan.total_items} 项检修任务。",
+            title=f"检修计划已完成：{plan.title}",
+            content=f"计划已完成，共完成 {plan.completed_items}/{plan.total_items} 项检修任务。",
             ref_type="plan",
             ref_id=plan.id,
         )
         db.session.add(notification)
 
     db.session.commit()
-    flash("计划已归档")
+    flash("计划已标记为完成")
     return redirect(url_for("plans.detail", id=id))
 
 
@@ -203,8 +202,8 @@ def delete(id):
     if current_user.role not in ("leader", "admin"):
         flash("无权删除")
         return redirect(url_for("plans.detail", id=id))
-    if plan.status != "draft":
-        flash("只能删除草稿状态的计划")
+    if plan.status not in ("draft", "archived"):
+        flash("只能删除草稿或已完成的计划")
         return redirect(url_for("plans.detail", id=id))
     db.session.delete(plan)
     db.session.commit()

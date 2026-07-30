@@ -12,15 +12,16 @@
 <span class="cmp-badge {% if plan.status == 'published' %}cmp-badge--approved{% elif plan.status == 'draft' %}cmp-badge--draft{% else %}cmp-badge--draft{% endif %}">
   {% if plan.status == 'draft' %}<i class="bi bi-pencil"></i> 草稿
   {% elif plan.status == 'published' %}<i class="bi bi-check-circle-fill"></i> 已发布
-  {% else %}<i class="bi bi-archive-fill"></i> 已归档{% endif %}
+  {% else %}<i class="bi bi-check-circle-fill"></i> 已完成{% endif %}
 </span>
+{% if plan.recipients %}
+{% for r in plan.recipients %}<span class="cmp-badge" style="background:#e0f2fe;color:#0369a1;font-size:12px;">{{ r.real_name or r.username }}</span>{% endfor %}
+{% endif %}
 {% if current_user.role in ['leader', 'admin'] and plan.status == 'draft' %}
-<form method="POST" action="{{ url_for('plans.publish', id=plan.id) }}" style="display:inline;" onsubmit="return confirm('发布后所有员工将收到通知，确认发布？')">
-  <button class="cmp-btn cmp-btn--primary cmp-btn--sm"><i class="bi bi-send"></i> 发布</button>
-</form>
+<button class="cmp-btn cmp-btn--primary cmp-btn--sm" data-bs-toggle="modal" data-bs-target="#publishModal"><i class="bi bi-send"></i> 发布</button>
 {% elif current_user.role in ['leader', 'admin'] and plan.status == 'published' %}
 <form method="POST" action="{{ url_for('plans.archive', id=plan.id) }}" style="display:inline;">
-  <button class="cmp-btn cmp-btn--secondary cmp-btn--sm"><i class="bi bi-archive"></i> 归档</button>
+  <button class="cmp-btn cmp-btn--secondary cmp-btn--sm"><i class="bi bi-check-circle"></i> 已完成</button>
 </form>
 {% endif %}
 {% endblock %}
@@ -57,7 +58,7 @@
         <span style="font-size: 13px; color: var(--color-text-muted);">描述</span>
         <span style="font-size: 14px;">{{ plan.description or '—' }}</span>
       </div>
-      <div class="col-md-6 d-flex align-items-center justify-content-end gap-3">
+      <div class="col-auto d-flex align-items-center gap-3">
         <span style="font-size: 13px; color: var(--color-text-muted);">创建人</span>
         <span class="cmp-creator cmp-creator--0"><span class="cmp-creator__avatar">{{ plan.creator.real_name[0] }}</span>{{ plan.creator.real_name or plan.creator.username }}</span>
         <span style="font-size: 13px; color: var(--color-text-muted);">创建时间</span>
@@ -70,9 +71,10 @@
     </div>
     {% endif %}
   </div>
+</div>
 
-  {% set completed = plan_completed %}
-  {% set total = plan_total %}
+{% set completed = plan_completed %}
+{% set total = plan_total %}
   {% set overdue = plan_overdue %}
   {% set pending = plan_pending %}
   {% if plan.status == 'published' %}
@@ -97,7 +99,7 @@
       </div>
     </div>
     <div class="cmp-card" style="padding: 16px;">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
         <div style="text-align: center; padding: 12px 8px; background: #f0fdf4; border-radius: 8px;">
           <i class="bi bi-check-circle-fill" style="font-size: 24px; color: #10b981;"></i>
           <div style="font-size: 26px; font-weight: 700; color: #065f46; margin: 4px 0 2px;">{{ completed }}</div>
@@ -108,13 +110,11 @@
           <div style="font-size: 26px; font-weight: 700; color: #92400e; margin: 4px 0 2px;">{{ total - completed - overdue }}</div>
           <div style="font-size: 13px; color: #92400e;">待办</div>
         </div>
-        {% if overdue > 0 %}
-        <div style="text-align: center; padding: 8px; background: #fef2f2; border-radius: 8px; grid-column: 1 / -1;">
-          <i class="bi bi-exclamation-triangle-fill" style="font-size: 20px; color: #ef4444;"></i>
-          <div style="font-size: 20px; font-weight: 700; color: #991b1b; margin: 2px 0 0;">{{ overdue }}</div>
-          <div style="font-size: 12px; color: #991b1b;">已逾期</div>
+        <div style="text-align: center; padding: 12px 8px; background: #fef2f2; border-radius: 8px;">
+          <i class="bi bi-exclamation-triangle-fill" style="font-size: 24px; color: #ef4444;"></i>
+          <div style="font-size: 26px; font-weight: 700; {% if overdue > 0 %}color: #991b1b{% else %}color: #999{% endif %}; margin: 4px 0 2px;">{{ overdue }}</div>
+          <div style="font-size: 13px; {% if overdue > 0 %}color: #991b1b{% else %}color: #999{% endif %};">已逾期</div>
         </div>
-        {% endif %}
       </div>
     </div>
   </div>
@@ -233,9 +233,51 @@
   </div>
 </div>
 {% endif %}
+
+{% if current_user.role in ['leader', 'admin'] and plan.status == 'draft' %}
+<!-- Publish Modal -->
+<div class="modal fade" id="publishModal" tabindex="-1" data-bs-backdrop="static">
+  <form method="POST" action="{{ url_for('plans.publish', id=plan.id) }}" style="max-width:480px;margin:auto;" class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">选择通知对象</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body" style="max-height:360px;overflow-y:auto;">
+        <div class="d-flex align-items-center gap-2 mb-2 pb-2" style="border-bottom:1px solid var(--bd);">
+          <input type="checkbox" id="selectAll" checked>
+          <label for="selectAll" class="small m-0">全选</label>
+          <span class="text-muted small" id="empCount"></span>
+        </div>
+        {% for emp in employees %}
+        <div class="d-flex align-items-center gap-2 py-1">
+          <input type="checkbox" name="recipient_ids" value="{{ emp.id }}" checked>
+          <span>{{ emp.real_name or emp.username }}{% if emp.dept %} <span class="text-muted small">({{ emp.dept }})</span>{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="cmp-btn cmp-btn--primary"><i class="bi bi-send"></i> 发布并通知</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
+{% if current_user.role in ['leader', 'admin'] and plan.status == 'draft' %}
+<script>
+(function(){
+  var modal=document.getElementById('publishModal');
+  if(!modal)return;
+  var cb=modal.querySelectorAll('input[name="recipient_ids"]');
+  var selAll=modal.querySelector('#selectAll');
+  var cnt=modal.querySelector('#empCount');
+  function update(){cnt.textContent='('+modal.querySelectorAll('input[name="recipient_ids"]:checked').length+'/'+cb.length+')';}
+  selAll.addEventListener('change',function(){cb.forEach(function(c){c.checked=selAll.checked;});update();});
+  cb.forEach(function(c){c.addEventListener('change',function(){selAll.checked=modal.querySelectorAll('input[name="recipient_ids"]:checked').length===cb.length;update();});});
+  update();
+})();
+</script>
+{% endif %}
 <script>
 {% if plan.status == 'published' %}
 (function(){
@@ -325,7 +367,7 @@ if(confirmBtn)confirmBtn.addEventListener('click',function(){
   fetch('{{ url_for("plans.add_items", id=plan.id) }}',{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({devices:devices,planned_date_start:ds,planned_date_end:de})
-  }).then(function(r){return r.json();}).then(function(){location.reload();});
+  }).then(function(r){return r.json();}).then(function(d){if(d.error){alert(d.error)}else if(d.added===0){alert('所选设备已在计划中，无需重复添加')}else{location.reload(true)}}).catch(function(e){alert('请求失败:'+e.message);});
 });
 </script>
 {% endblock %}

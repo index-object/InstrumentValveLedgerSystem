@@ -31,11 +31,18 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
+                    <label class="cmp-label" style="font-weight: 500;">关联计划</label>
+                    <select name="plan_id" class="form-control cmp-input">
+                        <option value="">无关联</option>
+                        {% for p in plans %}
+                        <option value="{{ p.id }}">{{ p.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
                     <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修时间</label>
                     <input type="date" name="检修时间" class="form-control cmp-input" required>
                 </div>
-            </div>
-            <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修人员</label>
                     <input type="text" name="检修人员" class="form-control cmp-input" required placeholder="请输入检修人员">
