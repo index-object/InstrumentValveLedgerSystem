@@ -15,7 +15,6 @@
   {% else %}<i class="bi bi-archive-fill"></i> 已归档{% endif %}
 </span>
 {% if current_user.role in ['leader', 'admin'] and plan.status == 'draft' %}
-<a href="{{ url_for('plans.edit', id=plan.id) }}" class="cmp-btn cmp-btn--secondary cmp-btn--sm"><i class="bi bi-pencil"></i> 编辑</a>
 <form method="POST" action="{{ url_for('plans.publish', id=plan.id) }}" style="display:inline;" onsubmit="return confirm('发布后所有员工将收到通知，确认发布？')">
   <button class="cmp-btn cmp-btn--primary cmp-btn--sm"><i class="bi bi-send"></i> 发布</button>
 </form>
@@ -30,6 +29,21 @@
 <div style="max-width: 1200px; margin: 0 auto;">
 
   <div class="cmp-card" style="padding: 24px; margin-bottom: 24px;">
+    {% if plan.status == 'draft' and current_user.role in ['leader', 'admin'] %}
+    <form method="POST" action="{{ url_for('plans.edit', id=plan.id) }}">
+      <div style="display: grid; grid-template-columns: auto 1fr; gap: 12px 40px; font-size: 14px;">
+        <span style="color: var(--color-text-muted);">标题</span>
+        <input type="text" name="title" value="{{ plan.title }}" required class="form-control form-control-sm" style="font-size: 14px; font-weight: 600;">
+        <span style="color: var(--color-text-muted);">描述</span>
+        <textarea name="description" rows="2" class="form-control form-control-sm" style="font-size: 14px;">{{ plan.description or '' }}</textarea>
+        <span style="color: var(--color-text-muted);">创建人</span>
+        <span><span class="cmp-creator cmp-creator--0"><span class="cmp-creator__avatar">{{ plan.creator.real_name[0] }}</span>{{ plan.creator.real_name or plan.creator.username }}</span></span>
+        <span style="color: var(--color-text-muted);">创建时间</span><span>{{ plan.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        <span></span>
+        <div><button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--success btn-sm"><i class="bi bi-check-lg"></i> 保存</button></div>
+      </div>
+    </form>
+    {% else %}
     <div style="display: grid; grid-template-columns: auto 1fr; gap: 12px 40px; font-size: 14px;">
       {% if plan.description %}
       <span style="color: var(--color-text-muted);">描述</span><span>{{ plan.description }}</span>
@@ -41,6 +55,7 @@
       <span style="color: var(--color-text-muted);">发布时间</span><span>{{ plan.published_at.strftime('%Y-%m-%d %H:%M') }}（{{ plan.publisher.real_name or plan.publisher.username }}）</span>
       {% endif %}
     </div>
+    {% endif %}
   </div>
 
   {% set completed = plan_completed %}
