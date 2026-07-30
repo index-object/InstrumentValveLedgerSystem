@@ -276,6 +276,11 @@ function updateCount(){
   if(el)el.textContent=document.querySelectorAll('.device-checkbox:checked').length;
 }
 document.querySelectorAll('.device-checkbox').forEach(function(cb){cb.addEventListener('change',updateCount);});
+document.querySelectorAll('.device-row').forEach(function(row){
+  row.addEventListener('click',function(e){
+    if(e.target.type!=='checkbox'){var cb=this.querySelector('.device-checkbox');cb.checked=!cb.checked;updateCount();}
+  });
+});
 
 var searchModal=document.getElementById('deviceSearchInModal');
 var unitFilter=document.getElementById('deviceUnitFilter');
@@ -295,9 +300,17 @@ function filterModal(){
 function applyBatchDates(){
   var start=document.getElementById('batchDateStart').value;
   var end=document.getElementById('batchDateEnd').value;
-  document.querySelectorAll('.device-checkbox:checked').forEach(function(cb){
+  var checked=document.querySelectorAll('.device-checkbox:checked');
+  if(checked.length===0){alert('请先勾选设备');return;}
+  if(!start||!end){alert('请选择起止日期');return;}
+  checked.forEach(function(cb){
     cb.dataset.start=start; cb.dataset.end=end;
   });
+  var btn=event.target;
+  var txt=btn.innerHTML;
+  btn.innerHTML='<i class="bi bi-check-lg"></i> 已应用 '+checked.length+' 项';
+  btn.style.background='#16a34a';
+  setTimeout(function(){btn.innerHTML=txt;btn.style.background='';},2000);
 }
 
 var confirmBtn=document.getElementById('confirmAddDevices');
