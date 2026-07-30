@@ -7,12 +7,14 @@
 {% endblock %}
 
 {% block content %}
+{% if current_user.role in ['leader', 'admin'] %}
 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
   <div class="cmp-stat info"><div class="stat-icon info"><i class="bi bi-calendar-check"></i></div><div class="stat-content"><h3>全部计划</h3><p><span class="stat-value">{{ stats.total }}</span> 个</p></div></div>
   <div class="cmp-stat primary"><div class="stat-icon primary"><i class="bi bi-pencil-square"></i></div><div class="stat-content"><h3>草稿</h3><p><span class="stat-value">{{ stats.draft }}</span> 个</p></div></div>
   <div class="cmp-stat success"><div class="stat-icon success"><i class="bi bi-check-circle"></i></div><div class="stat-content"><h3>已发布</h3><p><span class="stat-value">{{ stats.published }}</span> 个</p></div></div>
   <div class="cmp-stat"><div class="stat-icon" style="background: #f1f5f9; color: #475569;"><i class="bi bi-archive"></i></div><div class="stat-content"><h3>已归档</h3><p><span class="stat-value">{{ stats.archived }}</span> 个</p></div></div>
 </div>
+{% endif %}
 
 <div class="cmp-toolbar cmp-toolbar--card" style="margin-bottom: 16px;">
   <div class="cmp-toolbar__left">
