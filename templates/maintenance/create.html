@@ -178,7 +178,7 @@ function renderValves() {
             items.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p.id;
-                opt.textContent = p.plan_title + ' (' + p.planned_date_start + ' ~ ' + p.planned_date_end + ')';
+                opt.textContent = p.plan_title + ' (截止 ' + p.planned_date_end + ')';
                 select.appendChild(opt);
             });
             document.getElementById('planItemSection').style.display = items.length ? '' : 'none';
