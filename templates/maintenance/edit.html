@@ -49,25 +49,20 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="cmp-label" style="font-weight: 500;">关联计划</label>
-                    <select name="plan_id" class="form-control cmp-input">
-                        <option value="">无关联</option>
-                        {% for p in plans %}
-                        <option value="{{ p.id }}" {% if selected_plan_id == p.id %}selected{% endif %}>{{ p.title }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-6 mb-3">
                     <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修时间</label>
                     <input type="date" name="检修时间" class="form-control cmp-input" required value="{{ record.检修时间.strftime('%Y-%m-%d') if record.检修时间 else '' }}">
                 </div>
-            </div>
-            <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="cmp-label" style="font-weight: 500;">检修人员</label>
                     <input type="text" name="检修人员" class="form-control cmp-input" value="{{ record.检修人员 or '' }}" placeholder="请输入检修人员">
                 </div>
-                <div class="col-md-6 mb-3"><!-- filler for balance --></div>
+            </div>
+            <div class="mb-3" id="planItemSection" style="display:none;">
+                <label class="cmp-label" style="font-weight: 500;">归属年度计划</label>
+                <select name="plan_item_id" id="planItemSelect" class="form-control cmp-input">
+                    <option value="">— 不关联计划 —</option>
+                </select>
+                <small class="text-muted">该设备有待完成的年度保养计划项，可选关联</small>
             </div>
             <div class="mb-3">
                 <label class="cmp-label" style="font-weight: 500;">检修内容</label>
@@ -148,6 +143,8 @@
 {% block extra_js %}
 <script>
 const valvesData = {{ valves_data|tojson }};
+const planItemsData = {{ plan_items_data|tojson }};
+const selectedPlanItemId = {{ selected_plan_item_id|tojson }};
 
 let selectedValveId = null;
 let selectedValveTag = null;
@@ -167,9 +164,26 @@ let selectedValveType = '';
     document.getElementById('valve_type').value = '{{ v.type }}';
     document.getElementById('valveSelectorBtn').innerHTML = '<i class="bi bi-check-circle text-success me-1"></i> ' + selectedValveTag + ' - ' + selectedValveName + ' <span class="text-muted">(' + selectedValveUnit + ')</span>';
     document.getElementById('valveSelectorBtn').classList.remove('text-start');
+    renderPlanItems();
 })();
 {% endif %}
 {% endfor %}
+
+function renderPlanItems() {
+    const items = planItemsData.filter(p => p.device_type === selectedValveType && p.device_id === selectedValveId);
+    const select = document.getElementById('planItemSelect');
+    select.innerHTML = '<option value="">— 不关联计划 —</option>';
+    items.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.plan_title + ' (' + p.planned_date_start + ' ~ ' + p.planned_date_end + ')';
+        select.appendChild(opt);
+    });
+    if (selectedPlanItemId && items.some(p => p.id === selectedPlanItemId)) {
+        select.value = selectedPlanItemId;
+    }
+    document.getElementById('planItemSection').style.display = items.length ? '' : 'none';
+}
 
 function renderValves() {
     const keyword = document.getElementById('valveSearch').value.toLowerCase().trim();
@@ -212,6 +226,7 @@ document.getElementById('valveSelectConfirm').addEventListener('click', function
         document.getElementById('valve_type').value = selectedValveType;
         document.getElementById('valveSelectorBtn').innerHTML = '<i class="bi bi-check-circle text-success me-1"></i> ' + selectedValveTag + ' - ' + selectedValveName + ' <span class="text-muted">(' + selectedValveUnit + ')</span>';
         document.getElementById('valveSelectorBtn').classList.remove('text-start');
+        renderPlanItems();
     }
 });
 
