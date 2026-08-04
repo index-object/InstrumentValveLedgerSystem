@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设计原型导航</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../static/css/base.css">
+  <link rel="stylesheet" href="../static/css/components.css">
+</head>
+<body>
+  <div class="main-content" style="margin: 0; min-height: 100vh;">
+    <div class="main-header">
+      <div class="header-title-group">
+        <h1 class="page-title">年度阀门检修计划 — 设计原型</h1>
+      </div>
+    </div>
+    <div class="main-body" style="padding: 40px;">
+      <div style="max-width: 800px; margin: 0 auto;">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+
+          <div class="cmp-card" style="padding: 24px;">
+            <h5 style="font-size: 16px; font-weight: 600; margin: 0 0 16px; display: flex; align-items: center; gap: 8px;">
+              <i class="bi bi-person-badge" style="color: #f59e0b;"></i> 领导端页面
+            </h5>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <a href="plans-leader-list.html" class="btn cmp-btn cmp-btn--primary cmp-btn--sm" style="width: 100%; justify-content: center;">📋 计划列表（领导端）</a>
+              <a href="plans-create.html" class="btn cmp-btn cmp-btn--primary cmp-btn--sm" style="width: 100%; justify-content: center;">➕ 新建计划</a>
+              <a href="plans-detail.html" class="btn cmp-btn cmp-btn--primary cmp-btn--sm" style="width: 100%; justify-content: center;">📄 计划详情（含进度看板）</a>
+            </div>
+          </div>
+
+          <div class="cmp-card" style="padding: 24px;">
+            <h5 style="font-size: 16px; font-weight: 600; margin: 0 0 16px; display: flex; align-items: center; gap: 8px;">
+              <i class="bi bi-person" style="color: #3b82f6;"></i> 员工端页面
+            </h5>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <a href="plans-employee-list.html" class="btn cmp-btn cmp-btn--primary cmp-btn--sm" style="width: 100%; justify-content: center;">📋 计划列表（员工端）</a>
+              <a href="plans-employee-early-warning.html" class="btn" style="width: 100%; justify-content: center; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; display: flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 13px; border-radius: 6px; text-decoration: none;">⚠️ 检修预警看板</a>
+              <a href="maintenance-create-with-plan.html" class="btn cmp-btn cmp-btn--primary cmp-btn--sm" style="width: 100%; justify-content: center;">🔧 创建维护记录（关联计划）</a>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="cmp-card" style="padding: 24px; margin-top: 24px;">
+          <h5 style="font-size: 16px; font-weight: 600; margin: 0 0 8px;">💡 功能流程说明</h5>
+          <div style="font-size: 14px; color: var(--color-text-muted); line-height: 1.8;">
+            <p><strong>领导端流程：</strong></p>
+            <ol style="margin-bottom: 16px;">
+              <li>在<strong>计划列表</strong>中看到所有计划（草稿/已发布/已归档）</li>
+              <li>点击「新建计划」填写基本信息 → 从已审批台账选择阀门 → 设置计划日期 → 保存为草稿</li>
+              <li>草稿完成后点击「发布计划」，系统自动通知全体员工</li>
+              <li>在<strong>计划详情</strong>查看进度看板，跟踪完成情况</li>
+            </ol>
+            <p><strong>员工端流程：</strong></p>
+            <ol>
+              <li>首页/导航栏看到<strong>检修预警</strong>入口，红色数字提示逾期/到期数量</li>
+              <li><strong>预警看板</strong>按紧急度列出所有需处理的计划项，直接点击「创建维护记录」</li>
+              <li>维护记录表单自动关联计划项，保存后计划进度自动推进</li>
+              <li>在<strong>计划列表</strong>中浏览已发布计划及完成情况</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

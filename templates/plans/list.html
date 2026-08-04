@@ -7,8 +7,8 @@
 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
   <div class="cmp-stat info"><div class="stat-icon info"><i class="bi bi-calendar-check"></i></div><div class="stat-content"><h3>全部计划</h3><p><span class="stat-value">{{ stats.total }}</span> 个</p></div></div>
   <div class="cmp-stat primary"><div class="stat-icon primary"><i class="bi bi-pencil-square"></i></div><div class="stat-content"><h3>草稿</h3><p><span class="stat-value">{{ stats.draft }}</span> 个</p></div></div>
-  <div class="cmp-stat success"><div class="stat-icon success"><i class="bi bi-check-circle"></i></div><div class="stat-content"><h3>已发布</h3><p><span class="stat-value">{{ stats.published }}</span> 个</p></div></div>
-  <div class="cmp-stat"><div class="stat-icon" style="background: #f0fdf4; color: #059669;"><i class="bi bi-check-circle"></i></div><div class="stat-content"><h3>已完成</h3><p><span class="stat-value">{{ stats.archived }}</span> 个</p></div></div>
+  <div class="cmp-stat warning"><div class="stat-icon warning"><i class="bi bi-clock-history"></i></div><div class="stat-content"><h3>已发布</h3><p><span class="stat-value">{{ stats.published }}</span> 个</p></div></div>
+  <div class="cmp-stat success"><div class="stat-icon success"><i class="bi bi-check-circle-fill"></i></div><div class="stat-content"><h3>已完成</h3><p><span class="stat-value">{{ stats.archived }}</span> 个</p></div></div>
 </div>
 {% endif %}
 
@@ -32,12 +32,12 @@
 
 <div style="display: flex; flex-direction: column; gap: 16px;">
 {% for plan in plans %}
-<div class="cmp-card" style="padding: 0; overflow: hidden;{% if plan.status == 'archived' %} opacity: 0.7;{% endif %}">
+<div class="cmp-card" style="padding: 0; overflow: hidden;">
   <div style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
     <div style="flex: 1; min-width: 0;">
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
         {% if plan.status == 'draft' %}<span class="cmp-badge cmp-badge--draft"><i class="bi bi-pencil"></i> 草稿</span>
-        {% elif plan.status == 'published' %}<span class="cmp-badge cmp-badge--approved"><i class="bi bi-check-circle-fill"></i> 已发布</span>
+        {% elif plan.status == 'published' %}<span class="cmp-badge cmp-badge--pending"><i class="bi bi-clock-history"></i> 已发布</span>
         {% elif plan.status == 'archived' %}<span class="cmp-badge cmp-badge--approved"><i class="bi bi-check-circle-fill"></i> 已完成</span>{% endif %}
         <span style="font-size: 16px; font-weight: 600;">{{ plan.title }}</span>
       </div>
@@ -66,20 +66,21 @@
     </div>
     {% endif %}
     <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-      <a href="{{ url_for('plans.detail', id=plan.id) }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary"><i class="bi {% if current_user.role == 'employee' %}bi-eye{% else %}bi-pencil{% endif %}"></i> {% if current_user.role == 'employee' %}查看{% else %}编辑{% endif %}</a>
       {% if plan.status == 'draft' and current_user.role in ['leader', 'admin'] %}
+      <a href="{{ url_for('plans.edit', id=plan.id) }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary"><i class="bi bi-pencil"></i> 编辑</a>
       <button class="cmp-toolbar-btn cmp-toolbar-btn--success" data-bs-toggle="modal" data-bs-target="#publishModal-{{ plan.id }}"><i class="bi bi-send"></i> 发布</button>
-      <form method="POST" action="{{ url_for('plans.delete', id=plan.id) }}" style="display:inline;" onsubmit="return confirm('确认删除？')">
-        <button class="cmp-toolbar-btn cmp-toolbar-btn--danger"><i class="bi bi-trash"></i> 删除</button>
-      </form>
       {% elif plan.status == 'published' and current_user.role in ['leader', 'admin'] %}
+      <a href="{{ url_for('plans.detail', id=plan.id) }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary"><i class="bi bi-eye"></i> 查看</a>
       <form method="POST" action="{{ url_for('plans.archive', id=plan.id) }}" style="display:inline;">
         <button class="cmp-toolbar-btn cmp-toolbar-btn--secondary"><i class="bi bi-check-circle"></i> 已完成</button>
       </form>
       {% elif plan.status == 'archived' and current_user.role in ['leader', 'admin'] %}
+      <a href="{{ url_for('plans.detail', id=plan.id) }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary"><i class="bi bi-eye"></i> 查看</a>
       <form method="POST" action="{{ url_for('plans.delete', id=plan.id) }}" style="display:inline;" onsubmit="return confirm('确认删除已完成的计划？')">
         <button class="cmp-toolbar-btn cmp-toolbar-btn--danger"><i class="bi bi-trash"></i> 删除</button>
       </form>
+      {% else %}
+      <a href="{{ url_for('plans.detail', id=plan.id) }}" class="cmp-toolbar-btn cmp-toolbar-btn--primary"><i class="bi bi-eye"></i> 查看</a>
       {% endif %}
     </div>
   </div>

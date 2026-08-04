@@ -277,7 +277,7 @@ class MaintenancePlan(db.Model):
     publisher = db.relationship("User", foreign_keys=[published_by])
     items = db.relationship("MaintenancePlanItem", backref="plan", lazy="dynamic",
                             cascade="all, delete-orphan",
-                            order_by="MaintenancePlanItem.planned_date_start")
+                            order_by="MaintenancePlanItem.planned_date_end")
     recipients = db.relationship("User", secondary="plan_recipients",
                                  backref=db.backref("assigned_plans", lazy="dynamic"))
 
@@ -292,6 +292,14 @@ class MaintenancePlanItem(db.Model):
     device_name = db.Column(db.String(100))
     planned_date_start = db.Column(db.Date, nullable=False)
     planned_date_end = db.Column(db.Date, nullable=False)
+    maintenance_project = db.Column(db.Text)
+    maintenance_scheme = db.Column(db.Text)
+    safety_measures = db.Column(db.Text)
+    project_leader = db.Column(db.String(50))
+    maintenance_leader = db.Column(db.String(50))
+    quality_acceptance = db.Column(db.Text)
+    remark = db.Column(db.Text)
+    group_id = db.Column(db.Integer)
     status = db.Column(db.String(20), nullable=False, default="pending")
     maintenance_id = db.Column(db.Integer, db.ForeignKey("maintenance_records.id"))
     completed_at = db.Column(db.DateTime)

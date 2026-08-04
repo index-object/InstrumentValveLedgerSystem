@@ -1,32 +1,356 @@
 {% extends "base.html" %}
 {% block page_title %}{{ '编辑计划' if plan else '新建计划' }}{% endblock %}
+{% block extra_css %}
+<style>
+:root {
+  --mode-color: #10b981;
+  --mode-color-light: #34d399;
+  --mode-color-dark: #059669;
+  --mode-bg-subtle: #ecfdf5;
+  --mode-border: #a7f3d0;
+}
+#planTable tbody tr { border-bottom: 1px solid var(--color-border); }
+#planTable tbody tr:last-child { border-bottom: none; }
+#planTable textarea.form-control {
+  min-height: 5em;
+  resize: vertical;
+  font-size: 13px;
+  line-height: 1.5;
+}
+#planTable textarea.form-control::placeholder {
+  text-align: center;
+  line-height: 6.5em;
+}
+#planTable textarea.form-control:focus { border-color: var(--mode-color); box-shadow: 0 0 0 3px var(--mode-bg-subtle); }
+#planTable .add-device-btn { border-color: var(--mode-border); color: var(--mode-color); }
+#planTable .add-device-btn:hover { background: var(--mode-bg-subtle); }
+</style>
+{% endblock %}
 {% block header_actions %}
 <a href="{{ url_for('plans.index') }}" class="cmp-btn cmp-btn--secondary"><i class="bi bi-arrow-left"></i> 返回</a>
 {% endblock %}
 {% block content %}
-<div style="max-width: 800px; margin: 0 auto;">
-  <div class="cmp-form-section">
-    <div class="cmp-form-section__header"><i class="bi bi-info-circle"></i><h5>基本信息</h5></div>
-    <div class="cmp-form-section__body">
-      <form method="POST">
-        <div class="cmp-field-row">
-          <div class="cmp-field">
-            <label class="cmp-label"><span class="required">*</span> 计划标题</label>
-            <input type="text" name="title" class="cmp-input" value="{{ plan.title if plan else '' }}" placeholder="例如：2026年度大检修计划" required>
-          </div>
+<div style="max-width: 1400px; margin: 0 auto;">
+  <form method="POST" id="planForm">
+    <div class="cmp-card" style="padding: 20px 24px; margin-bottom: 20px;">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="cmp-label"><span class="required">*</span> 计划标题</label>
+          <input type="text" name="title" class="cmp-input" value="{{ plan.title if plan else '' }}" placeholder="例如：2026年度大检修计划" required>
         </div>
-        <div class="cmp-field-row">
-          <div class="cmp-field">
-            <label class="cmp-label">计划描述</label>
-            <textarea name="description" class="cmp-input" rows="4" placeholder="描述本次检修的范围、目的等">{{ plan.description if plan else '' }}</textarea>
-          </div>
+        <div class="col-md-5">
+          <label class="cmp-label">计划描述</label>
+          <input type="text" name="description" class="cmp-input" value="{{ plan.description if plan else '' }}" placeholder="描述本次检修的范围、目的等">
         </div>
-        <div class="d-flex gap-2">
-          <button type="submit" class="cmp-btn cmp-btn--primary"><i class="bi bi-save"></i> {{ '保存' if plan else '保存为草稿' }}</button>
+        <div class="col-md-2 d-flex gap-2 justify-content-end">
           <a href="{{ url_for('plans.index') }}" class="cmp-btn cmp-btn--secondary">取消</a>
+          <button type="submit" class="cmp-btn cmp-btn--primary"><i class="bi bi-save"></i> {{ '保存' if plan else '保存为草稿' }}</button>
         </div>
-      </form>
+      </div>
+    </div>
+
+    <div class="cmp-card" style="padding: 0; overflow: hidden;">
+      <div style="padding: 14px 20px; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h5 style="margin: 0; font-size: 16px; font-weight: 600;">计划明细</h5>
+          <span class="cmp-badge" style="background:#f1f5f9;color:#475569;font-size:12px;" id="rowCount"></span>
+        </div>
+        <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--primary" id="addRowBtn"><i class="bi bi-plus-lg"></i> 新增一行</button>
+      </div>
+      <div class="table-responsive">
+        <table class="cmp-table" id="planTable" style="min-width: 1200px;">
+          <thead><tr>
+            <th class="cmp-table__th" style="width:40px;">序号</th>
+            <th class="cmp-table__th" style="min-width:190px;">设备名称</th>
+            <th class="cmp-table__th" style="width:150px;">检修项目</th>
+            <th class="cmp-table__th" style="width:140px;">检修时间</th>
+            <th class="cmp-table__th">检修方案</th>
+            <th class="cmp-table__th">主要安全管控措施</th>
+            <th class="cmp-table__th" style="width:110px;">项目负责人</th>
+            <th class="cmp-table__th" style="width:110px;">检修负责人</th>
+            <th class="cmp-table__th" style="width:110px;">质量验收</th>
+            <th class="cmp-table__th" style="width:110px;">备注</th>
+            <th class="cmp-table__th" style="width:50px;"></th>
+          </tr></thead>
+          <tbody id="planTbody"></tbody>
+        </table>
+        <div style="padding: 10px 20px; font-size: 12px; color: var(--color-text-muted);">
+          提示：点击「添加」弹出位号选择器，可多选，同一设备可出现在多行（对应不同检修项目）；行按检修时间自动升序排列。
+        </div>
+      </div>
+    </div>
+
+    <input type="hidden" name="rows_json" id="rowsJson">
+  </form>
+</div>
+
+<!-- 位号选择器弹窗 -->
+<div class="modal fade" id="devicePickerModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
+      <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 20px 24px;">
+        <h5 class="modal-title" style="font-size: 18px; font-weight: 600;"><i class="bi bi-pin-angle me-2" style="color: var(--mode-color);"></i>选择位号</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding: 20px 24px;">
+        <div class="row g-2 mb-2">
+          <div class="col-md-7">
+            <div class="input-group">
+              <span class="input-group-text" style="background: #f8fafc; border-right: none;"><i class="bi bi-search text-muted"></i></span>
+              <input type="text" id="pickerSearch" class="form-control" placeholder="搜索位号 / 设备名称..." style="border-left: none;">
+            </div>
+          </div>
+          <div class="col-md-5">
+            <select id="pickerUnit" class="cmp-select" style="height: 38px; width: 100%;">
+              <option value="">全部装置</option>
+              {% for unit in approved_devices|map(attribute='unit')|unique|sort %}{% if unit %}<option value="{{ unit }}">{{ unit }}</option>{% endif %}{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div style="max-height: 300px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-sm);">
+          <table class="cmp-table" style="margin: 0;">
+            <thead><tr>
+              <th style="width: 40px;" class="cmp-table__th"><input type="checkbox" class="form-check-input" id="pickerSelectAll"></th>
+              <th class="cmp-table__th">位号</th><th class="cmp-table__th">设备名称</th><th class="cmp-table__th">装置名称</th>
+            </tr></thead>
+            <tbody id="pickerBody">
+              {% for dev in approved_devices %}
+              <tr class="picker-row" data-type="{{ dev.type }}" data-id="{{ dev.id }}" data-tag="{{ dev.tag }}" data-name="{{ dev.name }}" data-unit="{{ dev.unit }}" style="cursor: pointer;">
+                <td class="cmp-table__td"><input type="checkbox" class="form-check-input picker-checkbox"></td>
+                <td class="cmp-table__td" style="font-weight: 500; color: var(--color-primary);">{{ dev.tag }}</td>
+                <td class="cmp-table__td">{{ dev.name }}</td>
+                <td class="cmp-table__td">{{ dev.unit }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top: 10px; font-size: 13px; color: var(--color-text-muted);">已选 <strong id="pickerCount">0</strong> 个位号</div>
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 24px;">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="background: #f1f5f9; border: none; color: #475569; padding: 10px 20px; border-radius: 8px;">取消</button>
+        <button type="button" class="btn cmp-btn cmp-btn--primary" id="pickerConfirm" style="padding: 10px 20px; border-radius: 8px;"><i class="bi bi-check-lg"></i> 确认添加</button>
+      </div>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+  var tbody = document.getElementById('planTbody');
+  var rowCountEl = document.getElementById('rowCount');
+  var modal = document.getElementById('devicePickerModal');
+  var activeRow = null;
+
+  var approvedDevices = {{ approved_devices|tojson }};
+  // 预填充数据（编辑模式）
+  var initGroups = {{ groups|tojson if groups else '[]' }};
+
+  function badgeHtml(dev){
+    return '<span class="tag-badge" data-type="'+dev.type+'" data-id="'+dev.id+'" data-tag="'+dev.tag+'" data-name="'+dev.name+'">'+dev.tag+'<i class="bi bi-x tag-badge-x" onclick="removeBadge(this)"></i></span>';
+  }
+
+  function emptyRow(){
+    return '' +
+      '<td><div class="row-num"></div></td>' +
+      '<td><div class="tag-cell" data-type="" data-id="" data-tag="" data-name=""></div>' +
+      '  <button type="button" class="btn btn-sm btn-outline-primary add-device-btn" style="margin-top:6px;font-size:12px;padding:2px 10px;"><i class="bi bi-plus-lg"></i> 添加</button></td>' +
+      '<td><textarea class="form-control form-control-sm proj-input" rows="5" placeholder="检修项目"></textarea></td>' +
+      '<td><input type="date" class="form-control form-control-sm date-input"></td>' +
+      '<td><textarea class="form-control form-control-sm scheme-input" rows="5" placeholder="检修方案"></textarea></td>' +
+      '<td><textarea class="form-control form-control-sm safety-input" rows="5" placeholder="主要安全管控措施"></textarea></td>' +
+      '<td><textarea class="form-control form-control-sm pj-input" rows="5" placeholder="姓名"></textarea></td>' +
+      '<td><textarea class="form-control form-control-sm ml-input" rows="5" placeholder="姓名"></textarea></td>' +
+      '<td><textarea class="form-control form-control-sm qa-input" rows="5" placeholder="验收"></textarea></td>' +
+      '<td><textarea class="form-control form-control-sm remark-input" rows="5" placeholder="备注"></textarea></td>' +
+      '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-row-btn" title="删除此行"><i class="bi bi-x-lg"></i></button></td>';
+  }
+
+  function addRow(devs, fields){
+    var tr = document.createElement('tr');
+    tr.innerHTML = emptyRow();
+    tbody.appendChild(tr);
+    setRowDevices(tr, devs || []);
+    if (fields){
+      tr.querySelector('.proj-input').value = fields.maintenance_project || '';
+      tr.querySelector('.scheme-input').value = fields.maintenance_scheme || '';
+      tr.querySelector('.safety-input').value = fields.safety_measures || '';
+      tr.querySelector('.pj-input').value = fields.project_leader || '';
+      tr.querySelector('.ml-input').value = fields.maintenance_leader || '';
+      tr.querySelector('.qa-input').value = fields.quality_acceptance || '';
+      tr.querySelector('.remark-input').value = fields.remark || '';
+      if (fields.planned_date_end) tr.querySelector('.date-input').value = fields.planned_date_end;
+    }
+    return tr;
+  }
+
+  function setRowDevices(tr, devs){
+    var cell = tr.querySelector('.tag-cell');
+    cell.innerHTML = devs.map(badgeHtml).join('');
+    var d = devs[0] || {};
+    cell.dataset.type = d.type || '';
+    cell.dataset.id = d.id || '';
+    cell.dataset.tag = d.tag || '';
+    cell.dataset.name = d.name || '';
+    cell._devs = devs;
+  }
+
+  function addBadgeToRow(tr, devs){
+    var existing = tr.querySelector('.tag-cell')._devs || [];
+    var seen = {};
+    existing.forEach(function(d){ seen[d.type + ':' + d.id] = true; });
+    var merged = existing.slice();
+    devs.forEach(function(d){
+      var key = d.type + ':' + d.id;
+      if (!seen[key]) { seen[key] = true; merged.push(d); }
+    });
+    setRowDevices(tr, merged);
+  }
+
+  window.removeBadge = function(icon){
+    var badge = icon.closest('.tag-badge');
+    var tr = badge.closest('tr');
+    var cell = tr.querySelector('.tag-cell');
+    var key = badge.dataset.type + ':' + badge.dataset.id;
+    var remaining = (cell._devs || []).filter(function(d){ return d.type + ':' + d.id !== key; });
+    setRowDevices(tr, remaining);
+  };
+
+  function renumber(){
+    [].slice.call(tbody.querySelectorAll('.row-num')).forEach(function(n, i){ n.textContent = i + 1; });
+    rowCountEl.textContent = '共 ' + tbody.querySelectorAll('tr').length + ' 行';
+  }
+
+  function dateVal(tr){
+    var v = tr.querySelector('.date-input').value;
+    return v || '';
+  }
+
+  function sortByDate(){
+    var rows = [].slice.call(tbody.querySelectorAll('tr'));
+    rows.sort(function(a, b){
+      var da = dateVal(a), db = dateVal(b);
+      if (da === db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da < db ? -1 : 1;
+    });
+    rows.forEach(function(r){ tbody.appendChild(r); });
+    renumber();
+  }
+
+  // 事件委托
+  tbody.addEventListener('click', function(e){
+    var addBtn = e.target.closest('.add-device-btn');
+    if (addBtn){ activeRow = addBtn.closest('tr'); modal && bootstrap.Modal.getOrCreateInstance(modal).show(); return; }
+    var rmBtn = e.target.closest('.remove-row-btn');
+    if (rmBtn){ rmBtn.closest('tr').remove(); renumber(); return; }
+  });
+  tbody.addEventListener('change', function(e){
+    if (e.target.classList.contains('date-input')) sortByDate();
+  });
+
+  // 弹窗内搜索/筛选/全选
+  var pickerSearch = document.getElementById('pickerSearch');
+  var pickerUnit = document.getElementById('pickerUnit');
+  if (pickerSearch) pickerSearch.addEventListener('input', filterPicker);
+  if (pickerUnit) pickerUnit.addEventListener('change', filterPicker);
+  function filterPicker(){
+    var kw = (pickerSearch ? pickerSearch.value : '').toLowerCase();
+    var uf = pickerUnit ? pickerUnit.value : '';
+    document.querySelectorAll('.picker-row').forEach(function(r){
+      var tag = (r.dataset.tag || '').toLowerCase();
+      var name = (r.dataset.name || '').toLowerCase();
+      var unit = r.dataset.unit || '';
+      r.style.display = (!kw || tag.includes(kw) || name.includes(kw)) && (!uf || unit === uf) ? '' : 'none';
+    });
+    updatePickerCount();
+  }
+  var selAll = document.getElementById('pickerSelectAll');
+  if (selAll) selAll.addEventListener('change', function(){
+    document.querySelectorAll('.picker-row:not([style*="display:none"]) .picker-checkbox').forEach(function(cb){ cb.checked = selAll.checked; });
+    updatePickerCount();
+  });
+  function updatePickerCount(){
+    var el = document.getElementById('pickerCount');
+    if (el) el.textContent = document.querySelectorAll('.picker-checkbox:checked').length;
+  }
+  document.querySelectorAll('.picker-checkbox').forEach(function(cb){ cb.addEventListener('change', updatePickerCount); });
+  document.querySelectorAll('.picker-row').forEach(function(row){
+    row.addEventListener('click', function(e){
+      if (e.target.type !== 'checkbox'){ var cb = this.querySelector('.picker-checkbox'); cb.checked = !cb.checked; updatePickerCount(); }
+    });
+  });
+
+  var confirmBtn = document.getElementById('pickerConfirm');
+  if (confirmBtn) confirmBtn.addEventListener('click', function(){
+    if (!activeRow){ return; }
+    var devs = [];
+    document.querySelectorAll('.picker-checkbox:checked').forEach(function(cb){
+      var r = cb.closest('.picker-row');
+      devs.push({type: r.dataset.type, id: r.dataset.id, tag: r.dataset.tag, name: r.dataset.name});
+    });
+    if (devs.length){ addBadgeToRow(activeRow, devs); }
+    activeRow = null;
+    [].slice.call(document.querySelectorAll('.picker-checkbox:checked')).forEach(function(cb){ cb.checked = false; });
+    updatePickerCount();
+    bootstrap.Modal.getOrCreateInstance(modal).hide();
+  });
+
+  // 初始渲染
+  if (initGroups.length){
+    initGroups.forEach(function(g){
+      var devs = g.devices.map(function(d){ return {type: d.type, id: d.id, tag: d.tag, name: d.name}; });
+      addRow(devs, g);
+    });
+  } else {
+    addRow([]);
+  }
+  sortByDate();
+
+  document.getElementById('addRowBtn').addEventListener('click', function(){ addRow([]); sortByDate(); });
+
+  // 提交：序列化
+  document.getElementById('planForm').addEventListener('submit', function(e){
+    var rows = [];
+    [].slice.call(tbody.querySelectorAll('tr')).forEach(function(tr){
+      var cell = tr.querySelector('.tag-cell');
+      var devs = cell._devs || [];
+      if (!devs.length) return;
+      rows.push({
+        devices: devs.map(function(d){ return {type: d.type, id: d.id, tag: d.tag, name: d.name}; }),
+        planned_date_end: dateVal(tr),
+        maintenance_project: tr.querySelector('.proj-input').value,
+        maintenance_scheme: tr.querySelector('.scheme-input').value,
+        safety_measures: tr.querySelector('.safety-input').value,
+        project_leader: tr.querySelector('.pj-input').value,
+        maintenance_leader: tr.querySelector('.ml-input').value,
+        quality_acceptance: tr.querySelector('.qa-input').value,
+        remark: tr.querySelector('.remark-input').value,
+      });
+    });
+    if (!rows.length){ e.preventDefault(); alert('请至少添加一行，且每行至少选择一个位号'); return; }
+    document.getElementById('rowsJson').value = JSON.stringify(rows);
+  });
+})();
+</script>
+<style>
+.tag-cell {
+  min-height: 32px;
+  max-height: 105px;
+  overflow-y: auto;
+}
+.tag-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #eff6ff; color: #1e3a5f; border: 1px solid #bfdbfe;
+  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin: 2px;
+}
+.tag-badge-x { cursor: pointer; font-style: normal; opacity: .6; }
+.tag-badge-x:hover { opacity: 1; color: #ef4444; }
+.row-num { text-align: center; color: var(--color-text-muted); padding-top: 8px; }
+.add-device-btn { border-color: var(--color-border); color: var(--mode-color); }
+#planTbody textarea { min-width: 180px; }
+</style>
 {% endblock %}

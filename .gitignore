@@ -12,6 +12,7 @@ wheels/
 # Flask
 instance/
 *.db
+*.db.*
 *.sqlite
 *.sqlite3
 uploads/

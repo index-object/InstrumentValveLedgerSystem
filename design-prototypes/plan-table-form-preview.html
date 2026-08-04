@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新建检修计划 · 表格编辑器预览</title>
+<style>
+:root {
+  --blue-900: #152a45; --blue-800: #1e3a5f; --blue-600: #2c5282;
+  --teal-500: #38b2ac; --teal-400: #4fd1c5;
+  --gray-50: #f8fafc; --gray-100: #f1f5f9; --gray-200: #e2e8f0;
+  --gray-400: #94a3b8; --gray-500: #64748b; --gray-600: #475569; --gray-800: #1e293b;
+  --red-500: #ef4444; --green-500: #10b981; --amber-500: #f59e0b;
+  --color-primary: var(--blue-800); --color-primary-light: var(--blue-600); --color-primary-dark: var(--blue-900);
+  --color-bg: var(--gray-50); --color-text: var(--gray-800); --color-text-muted: var(--gray-500);
+  --color-border: var(--gray-200); --color-success: var(--green-500); --color-danger: var(--red-500);
+  --mode-color: #3b82f6; --mode-color-light: #60a5fa; --mode-color-dark: #2563eb;
+  --mode-bg-subtle: #eff6ff; --mode-border: #bfdbfe;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08); --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+}
+[data-mode="editable"] {
+  --mode-color: #10b981; --mode-color-light: #34d399; --mode-color-dark: #059669;
+  --mode-bg-subtle: #ecfdf5; --mode-border: #a7f3d0;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--color-bg); color: var(--color-text); margin: 0; padding: 24px;
+}
+.wrap { max-width: 1400px; margin: 0 auto; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.page-header h2 { font-size: 18px; font-weight: 600; margin: 0; }
+.back-link { color: var(--mode-color); font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 4px; }
+
+.card { background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+.card__header { padding: 14px 20px; border-bottom: 1px solid var(--color-border); display: flex; align-items: center; gap: 8px; }
+.card__header i { color: var(--mode-color); }
+.card__header h5 { margin: 0; font-size: 15px; font-weight: 600; }
+.card__body { padding: 20px; }
+
+.field-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.field { flex: 1; min-width: 260px; }
+.field label { font-size: 13px; color: var(--color-text-muted); margin-bottom: 6px; display: block; }
+.field label .required { color: var(--color-danger); }
+input[type="text"], select, textarea {
+  width: 100%; padding: 8px 12px; font-size: 14px; color: var(--color-text);
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--gray-50); transition: all 0.2s; font-family: inherit;
+}
+input:hover, select:hover, textarea:hover { border-color: var(--mode-color); }
+input:focus, select:focus, textarea:focus { border-color: var(--mode-color); box-shadow: 0 0 0 3px var(--mode-bg-subtle); outline: none; background: #fff; }
+
+.table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--color-border); }
+.table-toolbar .info { display: flex; align-items: center; gap: 10px; }
+.table-toolbar .count { background: var(--gray-100); color: var(--gray-600); font-size: 12px; padding: 2px 8px; border-radius: 999px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; font-size: 14px; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+.btn--primary { background: var(--mode-color); color: #fff; }
+.btn--primary:hover { background: var(--mode-color-light); }
+.btn--green { background: #059669; color: #fff; }
+.btn--green:hover { background: #10b981; }
+.btn--ghost { background: transparent; color: var(--color-text-muted); }
+.btn--ghost:hover { background: var(--gray-100); }
+.btn--sm { padding: 5px 10px; font-size: 13px; }
+.btn--outline { background: #fff; color: var(--mode-color); border: 1px solid var(--mode-border); }
+.btn--outline:hover { background: var(--mode-bg-subtle); }
+.btn--danger-ghost { background: transparent; color: var(--red-500); }
+.btn--danger-ghost:hover { background: #fef2f2; }
+
+.table-wrap { overflow-x: auto; padding: 4px 20px 20px; }
+table { width: 100%; border-collapse: collapse; min-width: 1250px; }
+th, td { border: 1px solid var(--color-border); padding: 8px 6px; vertical-align: top; }
+th { background: var(--gray-100); font-size: 12px; font-weight: 600; color: var(--color-text-muted); white-space: nowrap; text-align: center; }
+td { font-size: 13px; }
+td input, td select, td textarea { border: none; background: transparent; padding: 4px 6px; font-size: 13px; width: 100%; }
+td input:focus, td select:focus, td textarea:focus { box-shadow: none; background: #fff; border: 1px solid var(--mode-color); }
+td textarea { resize: vertical; min-height: 34px; }
+td .num { text-align: center; color: var(--gray-500); padding-top: 8px; display: block; }
+td .remove-btn { display: flex; justify-content: center; }
+
+.tag-cell { min-height: 32px; }
+.tag-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--mode-bg-subtle); color: var(--mode-color-dark);
+  border: 1px solid var(--mode-border);
+  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin: 2px;
+}
+.tag-badge-x { cursor: pointer; font-style: normal; opacity: .6; }
+.tag-badge-x:hover { opacity: 1; color: var(--red-500); }
+.add-device-btn { margin-top: 6px; font-size: 12px; padding: 2px 10px; }
+
+.footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--color-border); }
+.hint { font-size: 12px; color: var(--color-text-muted); margin-top: 8px; }
+.sort-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--color-text-muted); }
+</style>
+</head>
+<body data-mode="editable">
+<div class="wrap">
+  <div class="page-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <a href="#" class="back-link"><span>←</span> 返回</a>
+      <h2>新建检修计划</h2>
+    </div>
+    <span style="font-size:12px;color:var(--color-text-muted);">草稿模式 · 未发布</span>
+  </div>
+
+  <!-- 基本信息 -->
+  <div class="card">
+    <div class="card__header"><i>ℹ</i><h5>基本信息</h5></div>
+    <div class="card__body">
+      <div class="field-row">
+        <div class="field">
+          <label><span class="required">*</span> 计划标题</label>
+          <input type="text" value="2026年度大检修计划" placeholder="例如：2026年度大检修计划">
+        </div>
+        <div class="field">
+          <label>计划描述</label>
+          <input type="text" placeholder="描述本次检修的范围、目的等（可选）">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 计划明细表格 -->
+  <div class="card">
+    <div class="table-toolbar">
+      <div class="info"><span style="font-size:14px;font-weight:600;">计划明细</span><span class="count" id="rowCount">2 行</span></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn--primary btn--sm" type="button" id="addRowBtn">＋ 新增一行</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>序号</th>
+            <th>设备名称</th>
+            <th>检修项目</th>
+            <th>检修时间 <span class="sort-badge">⇅ 自动排序</span></th>
+            <th>检修方案</th>
+            <th>主要安全管控措施</th>
+            <th>项目负责人</th>
+            <th>检修负责人</th>
+            <th>质量验收</th>
+            <th>备注</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="planTbody"></tbody>
+      </table>
+      <div class="hint">提示：点击「添加」弹出位号选择器，可多选，只显示位号；同一设备可出现在多行（对应不同检修项目）；行按检修时间升序自动重排。</div>
+    </div>
+    <div class="footer">
+      <button class="btn btn--ghost">取消</button>
+      <button class="btn btn--primary">保存为草稿</button>
+      <button class="btn btn--green">保存并发布</button>
+    </div>
+  </div>
+</div>
+
+<!-- 位号选择器弹窗 -->
+<div id="pickerModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:12px; width:720px; max-width:94vw; box-shadow:0 20px 60px rgba(0,0,0,.2); overflow:hidden;">
+    <div style="padding:18px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
+      <h5 style="margin:0; font-size:18px; font-weight:600;"><span style="color:var(--mode-color);">◎</span> 选择位号</h5>
+      <button class="btn btn--ghost btn--sm" onclick="closePicker()">✕</button>
+    </div>
+    <div style="padding:18px 24px;">
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
+        <input type="text" id="pickerSearch" placeholder="搜索位号 / 设备名称..." style="flex:1;">
+        <select id="pickerUnit" style="width:180px;"><option value="">全部装置</option><option>催化装置</option><option>常减压装置</option></select>
+      </div>
+      <div style="max-height:280px; overflow-y:auto; border:1px solid var(--color-border); border-radius:6px;">
+        <table style="min-width:0; margin:0;">
+          <thead><tr>
+            <th style="width:40px;"><input type="checkbox" id="pickerSelectAll"></th>
+            <th>位号</th><th>设备名称</th><th>装置名称</th>
+          </tr></thead>
+          <tbody id="pickerBody">
+            <tr class="picker-row" data-type="control_valve" data-id="1" data-tag="FV-101" data-name="锅炉给水调节阀" data-unit="催化装置" style="cursor:pointer;">
+              <td style="text-align:center;"><input type="checkbox" class="picker-checkbox"></td><td style="font-weight:600;color:var(--color-primary);">FV-101</td><td>锅炉给水调节阀</td><td>催化装置</td>
+            </tr>
+            <tr class="picker-row" data-type="control_valve" data-id="2" data-tag="FV-102" data-name="蒸汽调节阀" data-unit="常减压装置" style="cursor:pointer;">
+              <td style="text-align:center;"><input type="checkbox" class="picker-checkbox"></td><td style="font-weight:600;color:var(--color-primary);">FV-102</td><td>蒸汽调节阀</td><td>常减压装置</td>
+            </tr>
+            <tr class="picker-row" data-type="onoff_valve" data-id="3" data-tag="XV-201" data-name="进料切断阀" data-unit="催化装置" style="cursor:pointer;">
+              <td style="text-align:center;"><input type="checkbox" class="picker-checkbox"></td><td style="font-weight:600;color:var(--color-primary);">XV-201</td><td>进料切断阀</td><td>催化装置</td>
+            </tr>
+            <tr class="picker-row" data-type="onoff_valve" data-id="4" data-tag="XV-202" data-name="放空阀" data-unit="常减压装置" style="cursor:pointer;">
+              <td style="text-align:center;"><input type="checkbox" class="picker-checkbox"></td><td style="font-weight:600;color:var(--color-primary);">XV-202</td><td>放空阀</td><td>常减压装置</td>
+            </tr>
+            <tr class="picker-row" data-type="pressure_transmitter" data-id="5" data-tag="PI-301" data-name="塔顶压力表" data-unit="催化装置" style="cursor:pointer;">
+              <td style="text-align:center;"><input type="checkbox" class="picker-checkbox"></td><td style="font-weight:600;color:var(--color-primary);">PI-301</td><td>塔顶压力表</td><td>催化装置</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px; font-size:13px; color:var(--color-text-muted);">已选 <strong id="pickerCount">0</strong> 个位号</div>
+    </div>
+    <div style="padding:14px 24px; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn btn--ghost" onclick="closePicker()">取消</button>
+      <button class="btn btn--primary" id="pickerConfirm">✓ 确认添加</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var tbody = document.getElementById('planTbody');
+  var rowCountEl = document.getElementById('rowCount');
+  var modal = document.getElementById('pickerModal');
+  var activeRow = null;
+
+  // 初始数据：行1 已选2个位号，行2 空
+  var init = [
+    {devs:[
+      {type:'control_valve',id:1,tag:'FV-101',name:'锅炉给水调节阀'},
+      {type:'onoff_valve',id:3,tag:'XV-201',name:'进料切断阀'}
+    ], date:'2026-08-12', proj:'阀体检修、填料更换', scheme:'解体检查阀内件，更换填料及密封垫片，重新打压试验。', safety:'办理检修作业票，切断工艺介质，泄压置换合格后作业，全程监护。', pj:'张伟', ml:'李强', qa:'', remark:''},
+    {devs:[], date:'', proj:'', scheme:'', safety:'', pj:'', ml:'', qa:'', remark:''}
+  ];
+
+  function badgeHtml(d){
+    return '<span class="tag-badge" data-type="'+d.type+'" data-id="'+d.id+'" data-tag="'+d.tag+'" data-name="'+d.name+'">'+d.tag+'<i class="tag-badge-x" onclick="window._removeBadge(this)">✕</i></span>';
+  }
+
+  function emptyRow(){
+    return '<tr>' +
+      '<td><span class="num"></span></td>' +
+      '<td><div class="tag-cell" data-type="" data-id="" data-tag="" data-name=""></div>' +
+      '  <button type="button" class="btn btn--outline btn--sm add-device-btn">＋ 添加</button></td>' +
+      '<td><input type="text" class="proj-input" placeholder="检修项目"></td>' +
+      '<td style="white-space:nowrap;"><input type="date" class="date-input" style="width:130px;"></td>' +
+      '<td><textarea class="scheme-input" rows="1" placeholder="检修方案"></textarea></td>' +
+      '<td><textarea class="safety-input" rows="1" placeholder="主要安全管控措施"></textarea></td>' +
+      '<td><input type="text" class="pj-input" placeholder="姓名" style="width:90px;"></td>' +
+      '<td><input type="text" class="ml-input" placeholder="姓名" style="width:90px;"></td>' +
+      '<td><input type="text" class="qa-input" placeholder="验收" style="width:90px;"></td>' +
+      '<td><input type="text" class="remark-input" placeholder="备注" style="width:90px;"></td>' +
+      '<td><span class="remove-btn"><button type="button" class="btn btn--danger-ghost btn--sm remove-row-btn">✕</button></span></td>' +
+      '</tr>';
+  }
+
+  function setRowDevices(tr, devs){
+    var cell = tr.querySelector('.tag-cell');
+    cell.innerHTML = devs.map(badgeHtml).join('');
+    cell._devs = devs;
+  }
+
+  function addRow(devs, fields){
+    var tr = document.createElement('tr');
+    tr.innerHTML = emptyRow();
+    tbody.appendChild(tr);
+    setRowDevices(tr, devs || []);
+    if (fields){
+      tr.querySelector('.proj-input').value = fields.proj || '';
+      tr.querySelector('.scheme-input').value = fields.scheme || '';
+      tr.querySelector('.safety-input').value = fields.safety || '';
+      tr.querySelector('.pj-input').value = fields.pj || '';
+      tr.querySelector('.ml-input').value = fields.ml || '';
+      tr.querySelector('.qa-input').value = fields.qa || '';
+      tr.querySelector('.remark-input').value = fields.remark || '';
+      if (fields.date) tr.querySelector('.date-input').value = fields.date;
+    }
+    return tr;
+  }
+
+  window._removeBadge = function(icon){
+    var badge = icon.closest('.tag-badge');
+    var tr = badge.closest('tr');
+    var cell = tr.querySelector('.tag-cell');
+    var key = badge.dataset.type + ':' + badge.dataset.id;
+    cell._devs = (cell._devs || []).filter(function(d){ return d.type + ':' + d.id !== key; });
+    cell.innerHTML = cell._devs.map(badgeHtml).join('');
+  };
+
+  function renumber(){
+    [].slice.call(tbody.querySelectorAll('.num')).forEach(function(n,i){ n.textContent = i + 1; });
+    rowCountEl.textContent = tbody.querySelectorAll('tr').length + ' 行';
+  }
+  function dateVal(tr){ return tr.querySelector('.date-input').value || ''; }
+
+  function sortByDate(){
+    var rows = [].slice.call(tbody.querySelectorAll('tr'));
+    rows.sort(function(a,b){
+      var da = dateVal(a), db = dateVal(b);
+      if (da === db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da < db ? -1 : 1;
+    });
+    rows.forEach(function(r){ tbody.appendChild(r); });
+    renumber();
+  }
+
+  // 事件
+  tbody.addEventListener('click', function(e){
+    var add = e.target.closest('.add-device-btn');
+    if (add){ activeRow = add.closest('tr'); modal.style.display = 'flex'; return; }
+    var rm = e.target.closest('.remove-row-btn');
+    if (rm){ rm.closest('tr').remove(); renumber(); }
+  });
+  tbody.addEventListener('change', function(e){
+    if (e.target.classList.contains('date-input')) sortByDate();
+  });
+
+  // 弹窗
+  window.closePicker = function(){
+    modal.style.display = 'none';
+    activeRow = null;
+    document.querySelectorAll('.picker-checkbox:checked').forEach(function(c){ c.checked = false; });
+    updatePickerCount();
+  };
+  document.getElementById('pickerConfirm').addEventListener('click', function(){
+    if (!activeRow) return;
+    var devs = [];
+    document.querySelectorAll('.picker-checkbox:checked').forEach(function(cb){
+      var r = cb.closest('.picker-row');
+      devs.push({type:r.dataset.type, id:r.dataset.id, tag:r.dataset.tag, name:r.dataset.name});
+    });
+    if (devs.length){
+      var cell = activeRow.querySelector('.tag-cell');
+      var seen = {};
+      (cell._devs || []).forEach(function(d){ seen[d.type+':'+d.id] = 1; });
+      devs.forEach(function(d){ if(!seen[d.type+':'+d.id]){ seen[d.type+':'+d.id]=1; cell._devs.push(d); } });
+      cell.innerHTML = cell._devs.map(badgeHtml).join('');
+    }
+    window.closePicker();
+  });
+
+  var ps = document.getElementById('pickerSearch');
+  var pu = document.getElementById('pickerUnit');
+  ps.addEventListener('input', filterPicker);
+  pu.addEventListener('change', filterPicker);
+  function filterPicker(){
+    var kw = ps.value.toLowerCase(), uf = pu.value;
+    document.querySelectorAll('.picker-row').forEach(function(r){
+      var tag = (r.dataset.tag||'').toLowerCase(), name=(r.dataset.name||'').toLowerCase(), unit=r.dataset.unit||'';
+      r.style.display = (!kw || tag.includes(kw) || name.includes(kw)) && (!uf || unit===uf) ? '' : 'none';
+    });
+    updatePickerCount();
+  }
+  document.getElementById('pickerSelectAll').addEventListener('change', function(){
+    document.querySelectorAll('.picker-row:not([style*="display:none"]) .picker-checkbox').forEach(function(c){ c.checked = this.checked; }.bind(this));
+    updatePickerCount();
+  });
+  document.querySelectorAll('.picker-checkbox').forEach(function(c){ c.addEventListener('change', updatePickerCount); });
+  document.querySelectorAll('.picker-row').forEach(function(r){
+    r.addEventListener('click', function(e){
+      if (e.target.type !== 'checkbox'){ var cb = this.querySelector('.picker-checkbox'); cb.checked = !cb.checked; updatePickerCount(); }
+    });
+  });
+  function updatePickerCount(){
+    document.getElementById('pickerCount').textContent = document.querySelectorAll('.picker-checkbox:checked').length;
+  }
+
+  document.getElementById('addRowBtn').addEventListener('click', function(){ addRow([]); sortByDate(); });
+
+  // 初始渲染
+  init.forEach(function(g){ addRow(g.devs, g); });
+  sortByDate();
+})();
+</script>
+</body>
+</html>

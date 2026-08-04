@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>检修预警 - 仪表阀门智能管理系统</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../static/css/base.css">
+  <link rel="stylesheet" href="../static/css/components.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-brand"><i class="bi bi-gear-fill"></i><span>仪表阀门台账</span></div>
+    <div class="sidebar-menu">
+      <a href="#" class="sidebar-menu-item"><i class="bi bi-house-door"></i><span>首页</span></a>
+      <a href="#" class="sidebar-menu-item"><i class="bi bi-journal-text"></i><span>我的台账</span></a>
+      <a href="#" class="sidebar-menu-item"><i class="bi bi-collection"></i><span>全部台账</span></a>
+      <a href="plans-employee-list.html" class="sidebar-menu-item"><i class="bi bi-calendar-check"></i><span>检修计划</span></a>
+      <a href="plans-employee-early-warning.html" class="sidebar-menu-item active"><i class="bi bi-exclamation-triangle"></i><span>检修预警</span><span class="badge bg-danger ms-auto">5</span></a>
+      <a href="#" class="sidebar-menu-item"><i class="bi bi-wrench"></i><span>维护记录</span></a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">王</div>
+        <div class="user-details">
+          <p class="user-name">王工</p>
+          <p class="user-role">员工</p>
+        </div>
+      </div>
+      <a href="#" class="logout-btn"><i class="bi bi-box-arrow-right"></i> 退出登录</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="main-header">
+      <div class="header-title-group">
+        <h1 class="page-title">
+          检修预警
+          <span style="font-size: 14px; font-weight: 400; color: var(--color-text-muted); margin-left: 12px;">
+            <i class="bi bi-info-circle"></i> 展示您班组需要关注的即将到期和已逾期计划项
+          </span>
+        </h1>
+      </div>
+    </div>
+
+    <div class="main-body" style="padding: 24px 3px;">
+      <div style="max-width: 1100px; margin: 0 auto;">
+
+        <!-- 预警统计 -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+          <div class="cmp-stat danger" style="border-left-color: #ef4444;">
+            <div class="stat-icon danger"><i class="bi bi-exclamation-triangle-fill"></i></div>
+            <div class="stat-content">
+              <h3>已逾期</h3>
+              <p><span class="stat-value" style="color: #dc2626;">2</span> 项超过计划截止日期</p>
+            </div>
+          </div>
+          <div class="cmp-stat warning" style="border-left-color: #f59e0b;">
+            <div class="stat-icon warning"><i class="bi bi-clock-fill"></i></div>
+            <div class="stat-content">
+              <h3>即将到期</h3>
+              <p><span class="stat-value" style="color: #d97706;">3</span> 项<strong>7 天内</strong>截止</p>
+            </div>
+          </div>
+          <div class="cmp-stat info" style="border-left-color: #3b82f6;">
+            <div class="stat-icon info"><i class="bi bi-calendar-week"></i></div>
+            <div class="stat-content">
+              <h3>本月待办</h3>
+              <p><span class="stat-value" style="color: #2563eb;">8</span> 项本月内到期</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 筛选 -->
+        <div class="cmp-toolbar cmp-toolbar--card" style="margin-bottom: 16px;">
+          <div class="cmp-toolbar__left">
+            <select class="cmp-toolbar-filter cmp-select" style="width: auto; min-width: 130px;">
+              <option value="">全部状态</option>
+              <option value="overdue">已逾期</option>
+              <option value="7days">7天内到期</option>
+              <option value="30days">30天内到期</option>
+            </select>
+            <select class="cmp-toolbar-filter cmp-select" style="width: auto; min-width: 130px;">
+              <option value="">全部计划</option>
+              <option>2026年度大检修计划</option>
+              <option>2026年第二季度仪表校验</option>
+            </select>
+            <div class="cmp-toolbar-search">
+              <i class="bi bi-search"></i>
+              <input type="text" placeholder="搜索位号..." style="padding-left: 32px; height: 36px; width: 180px; font-size: 13px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--gray-50);">
+            </div>
+          </div>
+          <div class="cmp-toolbar__right">
+            <span style="font-size: 12px; color: var(--color-text-muted);">按截止日期升序</span>
+          </div>
+        </div>
+
+        <!-- 预警列表 -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+
+          <!-- 逾期项 (红色) -->
+          <div class="cmp-card" style="padding: 0; overflow: hidden; border-left: 4px solid #ef4444;">
+            <div style="display: flex; align-items: center; padding: 16px 20px; gap: 16px;">
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: #fef2f2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 20px; color: #ef4444;"></i>
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span style="font-size: 16px; font-weight: 600; color: var(--color-text);">XV-301</span>
+                  <span style="font-size: 13px; color: var(--color-text-muted);">紧急切断阀</span>
+                  <span class="cmp-badge" style="background: #fef2f2; color: #dc2626; border-color: #fecaca; font-size: 12px; padding: 2px 10px;"><i class="bi bi-exclamation-triangle-fill"></i> 已逾期 17 天</span>
+                </div>
+                <div style="display: flex; gap: 20px; font-size: 13px; color: var(--color-text-muted);">
+                  <span><i class="bi bi-calendar-range"></i> 计划：2026-05-01 ~ 2026-05-15</span>
+                  <span><i class="bi bi-folder"></i> 2026年度大检修计划</span>
+                  <span><i class="bi bi-building"></i> 重整装置</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                <a href="maintenance-create-with-plan.html" class="cmp-btn cmp-btn--primary cmp-btn--sm"><i class="bi bi-tools"></i> 创建维护记录</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="cmp-card" style="padding: 0; overflow: hidden; border-left: 4px solid #ef4444;">
+            <div style="display: flex; align-items: center; padding: 16px 20px; gap: 16px;">
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: #fef2f2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 20px; color: #ef4444;"></i>
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span style="font-size: 16px; font-weight: 600; color: var(--color-text);">PV-104</span>
+                  <span style="font-size: 13px; color: var(--color-text-muted);">压力调节阀</span>
+                  <span class="cmp-badge" style="background: #fef2f2; color: #dc2626; border-color: #fecaca; font-size: 12px; padding: 2px 10px;"><i class="bi bi-exclamation-triangle-fill"></i> 已逾期 3 天</span>
+                </div>
+                <div style="display: flex; gap: 20px; font-size: 13px; color: var(--color-text-muted);">
+                  <span><i class="bi bi-calendar-range"></i> 计划：2026-07-01 ~ 2026-07-15</span>
+                  <span><i class="bi bi-folder"></i> 2026年度大检修计划</span>
+                  <span><i class="bi bi-building"></i> 常减压装置</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                <a href="maintenance-create-with-plan.html" class="cmp-btn cmp-btn--primary cmp-btn--sm"><i class="bi bi-tools"></i> 创建维护记录</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 即将到期 (橙色) -->
+          <div class="cmp-card" style="padding: 0; overflow: hidden; border-left: 4px solid #f59e0b;">
+            <div style="display: flex; align-items: center; padding: 16px 20px; gap: 16px;">
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: #fffbeb; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="bi bi-clock-fill" style="font-size: 20px; color: #f59e0b;"></i>
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span style="font-size: 16px; font-weight: 600; color: var(--color-text);">FV-105</span>
+                  <span style="font-size: 13px; color: var(--color-text-muted);">进料调节阀</span>
+                  <span class="cmp-badge" style="background: #fffbeb; color: #d97706; border-color: #fde68a; font-size: 12px; padding: 2px 10px;"><i class="bi bi-clock"></i> 还剩 2 天</span>
+                </div>
+                <div style="display: flex; gap: 20px; font-size: 13px; color: var(--color-text-muted);">
+                  <span><i class="bi bi-calendar-range"></i> 计划：2026-07-20 ~ 2026-08-01</span>
+                  <span><i class="bi bi-folder"></i> 2026年度大检修计划</span>
+                  <span><i class="bi bi-building"></i> 常减压装置</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                <a href="maintenance-create-with-plan.html" class="cmp-btn cmp-btn--primary cmp-btn--sm"><i class="bi bi-tools"></i> 创建维护记录</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="cmp-card" style="padding: 0; overflow: hidden; border-left: 4px solid #f59e0b;">
+            <div style="display: flex; align-items: center; padding: 16px 20px; gap: 16px;">
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: #fffbeb; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="bi bi-clock-fill" style="font-size: 20px; color: #f59e0b;"></i>
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span style="font-size: 16px; font-weight: 600; color: var(--color-text);">LV-202</span>
+                  <span style="font-size: 13px; color: var(--color-text-muted);">液位调节阀</span>
+                  <span class="cmp-badge" style="background: #fffbeb; color: #d97706; border-color: #fde68a; font-size: 12px; padding: 2px 10px;"><i class="bi bi-clock"></i> 还剩 4 天</span>
+                </div>
+                <div style="display: flex; gap: 20px; font-size: 13px; color: var(--color-text-muted);">
+                  <span><i class="bi bi-calendar-range"></i> 计划：2026-07-22 ~ 2026-08-05</span>
+                  <span><i class="bi bi-folder"></i> 2026年第二季度仪表校验</span>
+                  <span><i class="bi bi-building"></i> 催化裂化装置</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                <a href="maintenance-create-with-plan.html" class="cmp-btn cmp-btn--primary cmp-btn--sm"><i class="bi bi-tools"></i> 创建维护记录</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="cmp-card" style="padding: 0; overflow: hidden; border-left: 4px solid #f59e0b;">
+            <div style="display: flex; align-items: center; padding: 16px 20px; gap: 16px;">
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: #fffbeb; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="bi bi-clock-fill" style="font-size: 20px; color: #f59e0b;"></i>
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span style="font-size: 16px; font-weight: 600; color: var(--color-text);">TV-301</span>
+                  <span style="font-size: 13px; color: var(--color-text-muted);">温度调节阀</span>
+                  <span class="cmp-badge" style="background: #fffbeb; color: #d97706; border-color: #fde68a; font-size: 12px; padding: 2px 10px;"><i class="bi bi-clock"></i> 还剩 6 天</span>
+                </div>
+                <div style="display: flex; gap: 20px; font-size: 13px; color: var(--color-text-muted);">
+                  <span><i class="bi bi-calendar-range"></i> 计划：2026-07-25 ~ 2026-08-06</span>
+                  <span><i class="bi bi-folder"></i> 2026年度大检修计划</span>
+                  <span><i class="bi bi-building"></i> 重整装置</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                <a href="maintenance-create-with-plan.html" class="cmp-btn cmp-btn--primary cmp-btn--sm"><i class="bi bi-tools"></i> 创建维护记录</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

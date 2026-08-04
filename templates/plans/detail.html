@@ -27,38 +27,20 @@
 {% endblock %}
 
 {% block content %}
-<div style="max-width: 1200px; margin: 0 auto;">
+<div style="max-width: 1400px; margin: 0 auto;">
 
+  <!-- 基本信息 -->
   <div class="cmp-card" style="padding: 24px; margin-bottom: 24px;">
-    {% if plan.status == 'draft' and current_user.role in ['leader', 'admin'] %}
-    <form method="POST" action="{{ url_for('plans.edit', id=plan.id) }}">
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label style="font-size: 13px; color: var(--color-text-muted); margin-bottom: 4px; display: block;">标题</label>
-          <input type="text" name="title" value="{{ plan.title }}" required class="form-control form-control-sm">
-        </div>
-        <div class="col-md-6">
-          <label style="font-size: 13px; color: var(--color-text-muted); margin-bottom: 4px; display: block;">描述</label>
-          <input type="text" name="description" value="{{ plan.description or '' }}" class="form-control form-control-sm" placeholder="计划描述">
-        </div>
-        <div class="col-md-6 d-flex align-items-center gap-3">
-          <span style="font-size: 13px; color: var(--color-text-muted);">创建人</span>
-          <span class="cmp-creator cmp-creator--0"><span class="cmp-creator__avatar">{{ plan.creator.real_name[0] }}</span>{{ plan.creator.real_name or plan.creator.username }}</span>
-          <span style="font-size: 13px; color: var(--color-text-muted); margin-left: 8px;">创建时间</span>
-          <span style="font-size: 13px;">{{ plan.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
-        </div>
-        <div class="col-md-6 d-flex align-items-center justify-content-end gap-2">
-          <button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--success btn-sm"><i class="bi bi-check-lg"></i> 保存</button>
-        </div>
-      </div>
-    </form>
-    {% else %}
     <div class="row g-2">
-      <div class="col-md-6 d-flex align-items-center gap-2">
+      <div class="col-md-4 d-flex align-items-center gap-2">
+        <span style="font-size: 13px; color: var(--color-text-muted);">标题</span>
+        <span style="font-size: 15px; font-weight: 600;">{{ plan.title }}</span>
+      </div>
+      <div class="col-md-4 d-flex align-items-center gap-2">
         <span style="font-size: 13px; color: var(--color-text-muted);">描述</span>
         <span style="font-size: 14px;">{{ plan.description or '—' }}</span>
       </div>
-      <div class="col-auto d-flex align-items-center gap-3">
+      <div class="col-md-4 d-flex align-items-center gap-3">
         <span style="font-size: 13px; color: var(--color-text-muted);">创建人</span>
         <span class="cmp-creator cmp-creator--0"><span class="cmp-creator__avatar">{{ plan.creator.real_name[0] }}</span>{{ plan.creator.real_name or plan.creator.username }}</span>
         <span style="font-size: 13px; color: var(--color-text-muted);">创建时间</span>
@@ -69,12 +51,10 @@
         {% endif %}
       </div>
     </div>
-    {% endif %}
   </div>
-</div>
 
-{% set completed = plan_completed %}
-{% set total = plan_total %}
+  {% set completed = plan_completed %}
+  {% set total = plan_total %}
   {% set overdue = plan_overdue %}
   {% set pending = plan_pending %}
   {% if plan.status == 'published' %}
@@ -120,119 +100,69 @@
   </div>
   {% endif %}
 
+  <!-- 计划明细（只读表格） -->
   <div class="cmp-card" style="padding: 0; overflow: hidden;">
     <div style="padding: 16px 24px; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center;">
       <div style="display: flex; align-items: center; gap: 12px;">
-        <h5 style="margin: 0; font-size: 16px; font-weight: 600;">计划项</h5>
-        <span class="cmp-badge" style="background: #f1f5f9; color: #475569; font-size: 12px;">共 {{ items|length }} 项</span>
+        <h5 style="margin: 0; font-size: 16px; font-weight: 600;">计划明细</h5>
+        <span class="cmp-badge" style="background: #f1f5f9; color: #475569; font-size: 12px;">共 {{ groups|length }} 行 · {{ plan_total }} 台设备</span>
       </div>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <div class="cmp-toolbar-search"><i class="bi bi-search"></i><input type="text" id="itemSearch" placeholder="搜索位号..." style="padding-left: 32px; height: 36px; width: 180px; font-size: 13px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--gray-50);"></div>
-        <select id="itemStatusFilter" class="cmp-select" style="width: auto; min-width: 100px; height: 36px; font-size: 13px;">
-          <option value="">全部</option><option value="pending">待办</option><option value="completed">已完成</option><option value="overdue">已逾期</option>
-        </select>
-        {% if current_user.role in ['leader', 'admin'] and plan.status != 'archived' %}
-        <button class="cmp-toolbar-btn cmp-toolbar-btn--primary" data-bs-toggle="modal" data-bs-target="#addValveModal"><i class="bi bi-plus-lg"></i> 添加阀门</button>
-        {% endif %}
       </div>
     </div>
     <div class="table-responsive">
-      <table class="cmp-table" id="itemTable">
+      <table class="cmp-table" id="itemTable" style="min-width: 1200px;">
         <thead><tr>
-          <th class="cmp-table__th">位号</th><th class="cmp-table__th">设备名称</th><th class="cmp-table__th">计划开始</th><th class="cmp-table__th">计划截止</th><th class="cmp-table__th">状态</th><th class="cmp-table__th">关联维护</th>
-          {% if current_user.role in ['leader', 'admin'] and plan.status != 'archived' %}<th class="cmp-table__th" style="width: 60px;">操作</th>{% endif %}
+          <th class="cmp-table__th" style="width:40px;">序号</th>
+          <th class="cmp-table__th" style="width:190px;">设备名称</th>
+          <th class="cmp-table__th">检修项目</th>
+          <th class="cmp-table__th" style="width:110px;">检修时间</th>
+          <th class="cmp-table__th">检修方案</th>
+          <th class="cmp-table__th">主要安全管控措施</th>
+          <th class="cmp-table__th" style="width:100px;">项目负责人</th>
+          <th class="cmp-table__th" style="width:100px;">检修负责人</th>
+          <th class="cmp-table__th" style="width:100px;">质量验收</th>
+          <th class="cmp-table__th" style="width:100px;">备注</th>
+          <th class="cmp-table__th" style="width:90px;">状态</th>
         </tr></thead>
         <tbody>
-          {% for item in items %}
-          <tr class="item-row" data-status="{{ 'overdue' if item._overdue else item.status }}">
-            <td class="cmp-table__td"><span class="cmp-table__td-link">{{ item.tag }}</span></td>
-            <td class="cmp-table__td">{{ item.device_name or '-' }}</td>
-            <td class="cmp-table__td">{{ item.planned_date_start }}</td>
-            <td class="cmp-table__td">{{ item.planned_date_end }}</td>
+          {% for g in groups %}
+          <tr class="item-row" data-tags="{{ g.devices|map(attribute='tag')|join(' ') }}">
+            <td class="cmp-table__td" style="text-align:center; color: var(--color-text-muted);">{{ loop.index }}</td>
             <td class="cmp-table__td">
-              {% if item._overdue %}<span class="cmp-badge cmp-badge--pending" style="font-size: 12px;"><i class="bi bi-exclamation-triangle-fill"></i> 已逾期</span>
-              {% elif item.status == 'completed' %}<span class="cmp-badge cmp-badge--approved" style="font-size: 12px;"><i class="bi bi-check-circle-fill"></i> 已完成</span>
-              {% else %}<span class="cmp-badge" style="background: #f1f5f9; color: #475569; font-size: 12px;"><i class="bi bi-hourglass"></i> 待办</span>{% endif %}
+              {% for d in g.devices %}
+              <span class="tag-badge tag-badge--{% if d.status == 'completed' %}ok{% elif d._overdue %}overdue{% else %}pending{% endif %}"
+                    {% if d.maintenance_record %}title="已完成检修：{{ d.maintenance_record.检修时间.strftime('%Y-%m-%d') if d.maintenance_record.检修时间 else '' }}"{% endif %}>
+                {% if d.maintenance_record %}<a href="{{ url_for('valves.maintenance_edit', id=d.maintenance_id) }}" style="color:inherit; text-decoration:none;">{{ d.tag }}</a>
+                {% else %}{{ d.tag }}{% endif %}
+                {% if d._overdue %}<i class="bi bi-exclamation-triangle-fill" style="font-size:10px;"></i>{% endif %}
+              </span>
+              {% endfor %}
             </td>
+            <td class="cmp-table__td">{{ g.maintenance_project or '-' }}</td>
+            <td class="cmp-table__td">{{ g.planned_date_end }}</td>
+            <td class="cmp-table__td">{{ g.maintenance_scheme or '-' }}</td>
+            <td class="cmp-table__td">{{ g.safety_measures or '-' }}</td>
+            <td class="cmp-table__td">{{ g.project_leader or '-' }}</td>
+            <td class="cmp-table__td">{{ g.maintenance_leader or '-' }}</td>
+            <td class="cmp-table__td">{{ g.quality_acceptance or '-' }}</td>
+            <td class="cmp-table__td">{{ g.remark or '-' }}</td>
             <td class="cmp-table__td">
-              {% if item.maintenance_record %}<a href="{{ url_for('valves.maintenance_edit', id=item.maintenance_id) }}" style="font-size: 13px; color: var(--mode-color);">{{ item.maintenance_record.检修时间.strftime('%Y-%m-%d') if item.maintenance_record.检修时间 else '' }} 检修</a>
-              {% else %}<span style="color: var(--color-text-muted); font-size: 13px;">—</span>{% endif %}
+              {% if g.overdue > 0 %}<span class="cmp-badge cmp-badge--pending" style="font-size:12px;"><i class="bi bi-exclamation-triangle-fill"></i> {{ g.overdue }} 逾期</span>
+              {% elif g.completed == g.devices|length %}<span class="cmp-badge cmp-badge--approved" style="font-size:12px;"><i class="bi bi-check-circle-fill"></i> 已完成</span>
+              {% elif g.completed > 0 %}<span class="cmp-badge" style="background:#ecfdf5;color:#047857;font-size:12px;">{{ g.completed }}/{{ g.devices|length }} 完成</span>
+              {% else %}<span class="cmp-badge" style="background:#f1f5f9;color:#475569;font-size:12px;"><i class="bi bi-hourglass"></i> 待办</span>{% endif %}
             </td>
-            {% if current_user.role in ['leader', 'admin'] and plan.status != 'archived' %}
-            <td class="cmp-table__td">
-              {% if item.status != 'completed' %}
-              <form method="POST" action="{{ url_for('plans.remove_item', plan_id=plan.id, item_id=item.id) }}" style="display:inline;" onsubmit="return confirm('确认移除此项？')">
-                <button class="cmp-toolbar-btn cmp-toolbar-btn--sm cmp-toolbar-btn--secondary" style="padding: 4px 8px;" title="移除"><i class="bi bi-x-lg"></i></button>
-              </form>
-              {% endif %}
-            </td>
-            {% endif %}
           </tr>
           {% else %}
-          <tr><td colspan="7"><div class="cmp-empty"><i class="bi bi-inbox"></i><p>尚未添加阀门</p></div></td></tr>
+          <tr><td colspan="11"><div class="cmp-empty"><i class="bi bi-inbox"></i><p>尚未添加计划项</p></div></td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
 </div>
-
-{% if current_user.role in ['leader', 'admin'] and plan.status != 'archived' %}
-<div class="modal fade" id="addValveModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
-      <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 20px 24px;">
-        <h5 class="modal-title" style="font-size: 18px; font-weight: 600;"><i class="bi bi-plus-circle me-2" style="color: var(--mode-color);"></i>从台账中选择阀门</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" style="padding: 20px 24px;">
-        <div class="row g-3">
-          <div class="col-md-7">
-            <div class="row g-2 mb-2">
-              <div class="col-md-7"><div class="input-group"><span class="input-group-text" style="background: #f8fafc; border-right: none;"><i class="bi bi-search text-muted"></i></span><input type="text" id="deviceSearchInModal" class="form-control" placeholder="搜索位号..." style="border-left: none;"></div></div>
-              <div class="col-md-5"><select id="deviceUnitFilter" class="cmp-select" style="height: 38px; width: 100%;"><option value="">全部装置</option>{% for unit in approved_devices|map(attribute='unit')|unique|sort %}{% if unit %}<option value="{{ unit }}">{{ unit }}</option>{% endif %}{% endfor %}</select></div>
-            </div>
-            <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-sm);">
-              <table class="cmp-table" style="margin: 0;">
-                <thead><tr><th style="width: 40px;" class="cmp-table__th"><input type="checkbox" class="form-check-input" id="selectAllModal"></th><th class="cmp-table__th">位号</th><th class="cmp-table__th">设备名称</th><th class="cmp-table__th">装置名称</th></tr></thead>
-                <tbody id="deviceTableBody">
-                  {% for dev in approved_devices %}
-                  <tr class="device-row" data-tag="{{ dev.tag }}" data-name="{{ dev.name }}" data-unit="{{ dev.unit }}" data-type="{{ dev.type }}" data-id="{{ dev.id }}" style="cursor: pointer;">
-                    <td class="cmp-table__td"><input type="checkbox" class="form-check-input device-checkbox"></td>
-                    <td class="cmp-table__td" style="font-weight: 500; color: var(--color-primary);">{{ dev.tag }}</td>
-                    <td class="cmp-table__td">{{ dev.name }}</td>
-                    <td class="cmp-table__td">{{ dev.unit }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="col-md-5">
-            <div style="border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 16px; background: #fafbfc; height: 100%;">
-              <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;"><i class="bi bi-calendar-range"></i> 批量设置计划日期</div>
-              <div class="mb-3">
-                <label style="font-size: 12px; color: var(--color-text-muted); display: block; margin-bottom: 4px;">开始日期</label>
-                <input type="date" id="batchDateStart" class="form-control form-control-sm">
-              </div>
-              <div class="mb-3">
-                <label style="font-size: 12px; color: var(--color-text-muted); display: block; margin-bottom: 4px;">截止日期</label>
-                <input type="date" id="batchDateEnd" class="form-control form-control-sm">
-              </div>
-              <div style="font-size: 12px; color: var(--color-text-muted); margin-bottom: 12px;">已选 <strong id="selectedCount">0</strong> 项</div>
-              <button class="cmp-toolbar-btn cmp-toolbar-btn--primary btn-sm w-100" onclick="applyBatchDates()"><i class="bi bi-arrow-right"></i> 应用到已选项</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 24px;">
-        <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="background: #f1f5f9; border: none; color: #475569; padding: 10px 20px; border-radius: 8px;">取消</button>
-        <button type="button" class="btn cmp-btn cmp-btn--primary" id="confirmAddDevices" style="padding: 10px 20px; border-radius: 8px;"><i class="bi bi-check-lg"></i> 确认添加</button>
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
 
 {% if current_user.role in ['leader', 'admin'] and plan.status == 'draft' %}
 <!-- Publish Modal -->
@@ -263,6 +193,16 @@
 {% endblock %}
 
 {% block extra_js %}
+<style>
+.tag-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; margin: 2px;
+  border: 1px solid transparent;
+}
+.tag-badge--ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+.tag-badge--pending { background: #eff6ff; color: #1e3a5f; border-color: #bfdbfe; }
+.tag-badge--overdue { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+</style>
 {% if current_user.role in ['leader', 'admin'] and plan.status == 'draft' %}
 <script>
 (function(){
@@ -294,80 +234,13 @@
 
 (function(){
   var searchInput=document.getElementById('itemSearch');
-  var filterSelect=document.getElementById('itemStatusFilter');
-  if(searchInput)searchInput.addEventListener('input', filterItems);
-  if(filterSelect)filterSelect.addEventListener('change', filterItems);
-  function filterItems(){
-    var kw=(searchInput?searchInput.value:'').toLowerCase();
-    var sf=filterSelect?filterSelect.value:'';
+  if(searchInput)searchInput.addEventListener('input', function(){
+    var kw=this.value.toLowerCase();
     document.querySelectorAll('.item-row').forEach(function(r){
-      var tag=(r.cells[0]?r.cells[0].textContent:'').toLowerCase();
-      var st=r.dataset.status||'';
-      r.style.display=(!kw||tag.includes(kw))&&(!sf||st===sf)?'':'none';
+      var tags=(r.dataset.tags||'').toLowerCase();
+      r.style.display=(!kw||tags.includes(kw))?'':'none';
     });
-  }
+  });
 })();
-
-var selectAll=document.getElementById('selectAllModal');
-if(selectAll)selectAll.addEventListener('change',function(){
-  document.querySelectorAll('.device-row:not([style*=\"display:none\"]) .device-checkbox').forEach(function(cb){cb.checked=this.checked;}.bind(this));
-  updateCount();
-});
-function updateCount(){
-  var el=document.getElementById('selectedCount');
-  if(el)el.textContent=document.querySelectorAll('.device-checkbox:checked').length;
-}
-document.querySelectorAll('.device-checkbox').forEach(function(cb){cb.addEventListener('change',updateCount);});
-document.querySelectorAll('.device-row').forEach(function(row){
-  row.addEventListener('click',function(e){
-    if(e.target.type!=='checkbox'){var cb=this.querySelector('.device-checkbox');cb.checked=!cb.checked;updateCount();}
-  });
-});
-
-var searchModal=document.getElementById('deviceSearchInModal');
-var unitFilter=document.getElementById('deviceUnitFilter');
-if(searchModal)searchModal.addEventListener('input',filterModal);
-if(unitFilter)unitFilter.addEventListener('change',filterModal);
-function filterModal(){
-  var kw=(searchModal?searchModal.value:'').toLowerCase();
-  var uf=unitFilter?unitFilter.value:'';
-  document.querySelectorAll('.device-row').forEach(function(r){
-    var tag=(r.dataset.tag||'').toLowerCase();
-    var name=(r.dataset.name||'').toLowerCase();
-    var unit=r.dataset.unit||'';
-    r.style.display=(!kw||tag.includes(kw)||name.includes(kw))&&(!uf||unit===uf)?'':'none';
-  });
-}
-
-function applyBatchDates(){
-  var start=document.getElementById('batchDateStart').value;
-  var end=document.getElementById('batchDateEnd').value;
-  var checked=document.querySelectorAll('.device-checkbox:checked');
-  if(checked.length===0){alert('请先勾选设备');return;}
-  if(!start||!end){alert('请选择起止日期');return;}
-  checked.forEach(function(cb){
-    cb.dataset.start=start; cb.dataset.end=end;
-  });
-  var btn=event.target;
-  var txt=btn.innerHTML;
-  btn.innerHTML='<i class="bi bi-check-lg"></i> 已应用 '+checked.length+' 项';
-  btn.style.background='#16a34a';
-  setTimeout(function(){btn.innerHTML=txt;btn.style.background='';},2000);
-}
-
-var confirmBtn=document.getElementById('confirmAddDevices');
-if(confirmBtn)confirmBtn.addEventListener('click',function(){
-  var checked=document.querySelectorAll('.device-checkbox:checked');
-  if(checked.length===0){alert('请至少选择一项');return;}
-  var devices=[], ds=document.getElementById('batchDateStart').value, de=document.getElementById('batchDateEnd').value;
-  checked.forEach(function(cb){
-    var row=cb.closest('.device-row');
-    devices.push({id:row.dataset.id,type:row.dataset.type,tag:row.dataset.tag,name:row.dataset.name});
-  });
-  fetch('{{ url_for("plans.add_items", id=plan.id) }}',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({devices:devices,planned_date_start:ds,planned_date_end:de})
-  }).then(function(r){return r.json();}).then(function(d){if(d.error){alert(d.error)}else if(d.added===0){alert('所选设备已在计划中，无需重复添加')}else{location.reload(true)}}).catch(function(e){alert('请求失败:'+e.message);});
-});
 </script>
 {% endblock %}

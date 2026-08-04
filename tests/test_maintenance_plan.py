@@ -254,3 +254,36 @@ def test_maintenance_edit_unlinks_plan_item(client, init_database):
     assert item.maintenance_id is None
     assert item.status == "pending"
 
+
+def test_completed_maintenance_after_deadline_shows_overdue(client, init_database):
+    db = init_database
+    valve_id = _create_approved_valve(db)
+    _login(client, "admin", "admin123")
+    rows = [{
+        "devices": [{"type": "control_valve", "id": valve_id, "tag": "FV-001", "name": "测试调节阀"}],
+        "planned_date_end": "2026-07-31",
+        "maintenance_project": "年度检修",
+        "maintenance_scheme": "",
+        "safety_measures": "",
+        "project_leader": "",
+        "maintenance_leader": "",
+        "quality_acceptance": "",
+        "remark": "",
+    }]
+    _create_plan(client, "Overdue Plan", rows)
+    client.post("/plan/1/publish", follow_redirects=True)
+
+    _login(client, "user1", "user123")
+    _create_maintenance(client, valve_id, plan_item_id="1")
+
+    from app.models import MaintenancePlanItem
+    item = MaintenancePlanItem.query.get(1)
+    assert item.status == "completed"
+    assert item.maintenance_record.检修时间.date() > item.planned_date_end
+
+    _login(client, "admin", "admin123")
+    resp = client.get("/plan/1")
+    text = resp.data.decode("utf-8")
+    assert "已逾期" in text
+    assert "1 逾期" in text
+

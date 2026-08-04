@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>计划详情 - 仪表阀门智能管理系统</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../static/css/base.css">
+  <link rel="stylesheet" href="../static/css/components.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-brand"><i class="bi bi-gear-fill"></i><span>仪表阀门台账</span></div>
+    <div class="sidebar-menu">
+      <a href="#" class="sidebar-menu-item"><i class="bi bi-house-door"></i><span>首页</span></a>
+      <a href="#" class="sidebar-menu-item"><i class="bi bi-collection"></i><span>全部台账</span></a>
+      <a href="plans-leader-list.html" class="sidebar-menu-item active"><i class="bi bi-calendar-check"></i><span>检修计划</span></a>
+      <a href="#" class="sidebar-menu-item"><i class="bi bi-check-circle"></i><span>审批中心</span><span class="badge bg-danger ms-auto">3</span></a>
+      <a href="#" class="sidebar-menu-item"><i class="bi bi-bar-chart-fill"></i><span>数据统计</span></a>
+      <a href="#" class="sidebar-menu-item"><i class="bi bi-wrench"></i><span>维护记录</span></a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">L</div>
+        <div class="user-details">
+          <p class="user-name">张领导</p>
+          <p class="user-role">领导</p>
+        </div>
+      </div>
+      <a href="#" class="logout-btn"><i class="bi bi-box-arrow-right"></i> 退出登录</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="main-header">
+      <div class="header-title-group">
+        <a href="plans-leader-list.html" class="btn-back-header"><i class="bi bi-arrow-left"></i> 返回</a>
+        <h1 class="page-title">2026年度大检修计划</h1>
+      </div>
+      <div class="header-actions">
+        <span class="cmp-badge cmp-badge--approved"><i class="bi bi-check-circle-fill"></i> 已发布</span>
+        <button class="cmp-btn cmp-btn--secondary cmp-btn--sm"><i class="bi bi-pencil"></i> 编辑</button>
+        <button class="cmp-btn cmp-btn--secondary cmp-btn--sm"><i class="bi bi-archive"></i> 归档</button>
+      </div>
+    </div>
+
+    <div class="main-body" style="padding: 24px 3px;">
+      <div style="max-width: 1200px; margin: 0 auto;">
+
+        <!-- 基本信息 -->
+        <div class="cmp-card" style="padding: 24px; margin-bottom: 24px;">
+          <div style="display: grid; grid-template-columns: auto 1fr; gap: 16px 40px;">
+            <span style="font-size: 13px; color: var(--color-text-muted); font-weight: 500;">描述</span>
+            <span style="font-size: 14px;">涵盖全厂所有调节阀、开关阀的年度大检修，包括工艺装置区和公用工程区域</span>
+            <span style="font-size: 13px; color: var(--color-text-muted); font-weight: 500;">创建时间</span>
+            <span style="font-size: 14px;">2026-01-15 14:30</span>
+            <span style="font-size: 13px; color: var(--color-text-muted); font-weight: 500;">创建人</span>
+            <span style="font-size: 14px;"><span class="cmp-creator cmp-creator--0"><span class="cmp-creator__avatar">张</span>张领导</span></span>
+            <span style="font-size: 13px; color: var(--color-text-muted); font-weight: 500;">发布时间</span>
+            <span style="font-size: 14px;">2026-01-16 09:00</span>
+          </div>
+        </div>
+
+        <!-- 进度概览 -->
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 24px;">
+          <div class="cmp-card" style="padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="position: relative; width: 140px; height: 140px;">
+              <canvas id="progressChart" width="140" height="140"></canvas>
+              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                <span style="font-size: 28px; font-weight: 700; color: #059669;">65%</span>
+                <div style="font-size: 12px; color: var(--color-text-muted);">完成率</div>
+              </div>
+            </div>
+          </div>
+          <div class="cmp-card" style="padding: 24px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <div style="text-align: center; padding: 16px; background: #f0fdf4; border-radius: 12px; border: 1px solid #bbf7d0;">
+                <i class="bi bi-check-circle-fill" style="font-size: 28px; color: #10b981;"></i>
+                <div style="font-size: 28px; font-weight: 700; color: #065f46; margin: 8px 0 4px;">31</div>
+                <div style="font-size: 13px; color: #065f46;">已完成</div>
+              </div>
+              <div style="text-align: center; padding: 16px; background: #fffbeb; border-radius: 12px; border: 1px solid #fde68a;">
+                <i class="bi bi-clock" style="font-size: 28px; color: #f59e0b;"></i>
+                <div style="font-size: 28px; font-weight: 700; color: #92400e; margin: 8px 0 4px;">15</div>
+                <div style="font-size: 13px; color: #92400e;">待办</div>
+              </div>
+              <div style="text-align: center; padding: 16px; background: #fef2f2; border-radius: 12px; border: 1px solid #fecaca; grid-column: 1 / -1;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                  <i class="bi bi-exclamation-triangle-fill" style="font-size: 22px; color: #ef4444;"></i>
+                  <div>
+                    <div style="font-size: 22px; font-weight: 700; color: #991b1b; margin: 0;">2</div>
+                    <div style="font-size: 13px; color: #991b1b;">已逾期</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 计划项列表 -->
+        <div class="cmp-card" style="padding: 0; overflow: hidden;">
+          <div style="padding: 16px 24px; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <h5 style="margin: 0; font-size: 16px; font-weight: 600;">计划项列表</h5>
+              <span class="cmp-badge" style="background: #f1f5f9; color: #475569; font-size: 12px;">共 48 项</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <div class="cmp-toolbar-search">
+                <i class="bi bi-search"></i>
+                <input type="text" placeholder="搜索位号..." style="padding-left: 32px; height: 36px; width: 200px; font-size: 13px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--gray-50);">
+              </div>
+              <select class="cmp-select" style="width: auto; min-width: 100px; height: 36px; font-size: 13px;">
+                <option value="">全部状态</option>
+                <option value="pending">待办</option>
+                <option value="completed">已完成</option>
+                <option value="overdue">已逾期</option>
+              </select>
+              <button class="cmp-toolbar-btn cmp-toolbar-btn--primary" data-bs-toggle="modal" data-bs-target="#addValveModal"><i class="bi bi-plus-lg"></i> 添加阀门</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="cmp-table">
+              <thead>
+                <tr>
+                  <th class="cmp-table__th" style="width: 40px;"></th>
+                  <th class="cmp-table__th">位号</th>
+                  <th class="cmp-table__th">设备名称</th>
+                  <th class="cmp-table__th">计划开始</th>
+                  <th class="cmp-table__th">计划截止</th>
+                  <th class="cmp-table__th">状态</th>
+                  <th class="cmp-table__th">关联维护</th>
+                  <th class="cmp-table__th" style="width: 80px;">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="cmp-table__td"><input type="checkbox" class="form-check-input"></td>
+                  <td class="cmp-table__td"><span class="cmp-table__td-link">FV-101</span></td>
+                  <td class="cmp-table__td">进料调节阀</td>
+                  <td class="cmp-table__td">2026-03-01</td>
+                  <td class="cmp-table__td">2026-03-31</td>
+                  <td class="cmp-table__td"><span class="cmp-badge cmp-badge--approved" style="font-size: 12px;"><i class="bi bi-check-circle-fill"></i> 已完成</span></td>
+                  <td class="cmp-table__td">
+                    <a href="#" style="font-size: 13px; color: var(--mode-color);">2026-03-15 检修</a>
+                  </td>
+                  <td class="cmp-table__td">
+                    <button class="cmp-toolbar-btn cmp-toolbar-btn--sm cmp-toolbar-btn--secondary" style="padding: 4px 8px;" title="移除"><i class="bi bi-x-lg"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmp-table__td"><input type="checkbox" class="form-check-input"></td>
+                  <td class="cmp-table__td"><span class="cmp-table__td-link">FV-102</span></td>
+                  <td class="cmp-table__td">蒸汽流量调节阀</td>
+                  <td class="cmp-table__td">2026-03-01</td>
+                  <td class="cmp-table__td">2026-04-15</td>
+                  <td class="cmp-table__td"><span class="cmp-badge cmp-badge--approved" style="font-size: 12px;"><i class="bi bi-check-circle-fill"></i> 已完成</span></td>
+                  <td class="cmp-table__td">
+                    <a href="#" style="font-size: 13px; color: var(--mode-color);">2026-04-02 检修</a>
+                  </td>
+                  <td class="cmp-table__td">
+                    <button class="cmp-toolbar-btn cmp-toolbar-btn--sm cmp-toolbar-btn--secondary" style="padding: 4px 8px;" title="移除"><i class="bi bi-x-lg"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmp-table__td"><input type="checkbox" class="form-check-input"></td>
+                  <td class="cmp-table__td"><span class="cmp-table__td-link">LV-201</span></td>
+                  <td class="cmp-table__td">液位调节阀</td>
+                  <td class="cmp-table__td">2026-04-01</td>
+                  <td class="cmp-table__td">2026-05-31</td>
+                  <td class="cmp-table__td"><span class="cmp-badge" style="background: #f1f5f9; color: #475569; border-color: #d1d5db; font-size: 12px;"><i class="bi bi-hourglass"></i> 待办</span></td>
+                  <td class="cmp-table__td"><span style="color: var(--color-text-muted); font-size: 13px;">—</span></td>
+                  <td class="cmp-table__td">
+                    <button class="cmp-toolbar-btn cmp-toolbar-btn--sm cmp-toolbar-btn--secondary" style="padding: 4px 8px;" title="移除"><i class="bi bi-x-lg"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmp-table__td"><input type="checkbox" class="form-check-input"></td>
+                  <td class="cmp-table__td"><span class="cmp-table__td-link">XV-301</span></td>
+                  <td class="cmp-table__td">紧急切断阀</td>
+                  <td class="cmp-table__td">2026-05-01</td>
+                  <td class="cmp-table__td">2026-05-15</td>
+                  <td class="cmp-table__td"><span class="cmp-badge cmp-badge--pending" style="font-size: 12px;"><i class="bi bi-exclamation-triangle-fill"></i> 已逾期</span></td>
+                  <td class="cmp-table__td"><span style="color: var(--color-text-muted); font-size: 13px;">—</span></td>
+                  <td class="cmp-table__td">
+                    <button class="cmp-toolbar-btn cmp-toolbar-btn--sm cmp-toolbar-btn--secondary" style="padding: 4px 8px;" title="移除"><i class="bi bi-x-lg"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmp-table__td"><input type="checkbox" class="form-check-input"></td>
+                  <td class="cmp-table__td"><span class="cmp-table__td-link">PV-104</span></td>
+                  <td class="cmp-table__td">压力调节阀</td>
+                  <td class="cmp-table__td">2026-02-01</td>
+                  <td class="cmp-table__td">2026-02-28</td>
+                  <td class="cmp-table__td"><span class="cmp-badge cmp-badge--pending" style="font-size: 12px;"><i class="bi bi-exclamation-triangle-fill"></i> 已逾期</span></td>
+                  <td class="cmp-table__td"><span style="color: var(--color-text-muted); font-size: 13px;">—</span></td>
+                  <td class="cmp-table__td">
+                    <button class="cmp-toolbar-btn cmp-toolbar-btn--sm cmp-toolbar-btn--secondary" style="padding: 4px 8px;" title="移除"><i class="bi bi-x-lg"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="padding: 12px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13px; color: var(--color-text-muted);">显示 5 / 48 项</span>
+            <nav style="display: flex; gap: 4px;">
+              <a href="#" class="cmp-page-link" style="padding: 6px 12px; font-size: 13px;">上一页</a>
+              <a href="#" class="cmp-page-link active" style="padding: 6px 12px; font-size: 13px;">1</a>
+              <a href="#" class="cmp-page-link" style="padding: 6px 12px; font-size: 13px;">2</a>
+              <a href="#" class="cmp-page-link" style="padding: 6px 12px; font-size: 13px;">3</a>
+              <a href="#" class="cmp-page-link" style="padding: 6px 12px; font-size: 13px;">下一页</a>
+            </nav>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加阀门 弹窗 -->
+  <div class="modal fade" id="addValveModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
+        <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 20px 24px;">
+          <h5 class="modal-title" style="font-size: 18px; font-weight: 600; color: #1e293b; margin: 0;">
+            <i class="bi bi-plus-circle me-2" style="color: var(--mode-color);"></i>从台账中选择阀门
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" style="opacity: 0.5;"></button>
+        </div>
+        <div class="modal-body" style="padding: 20px 24px;">
+          <div class="row g-2 mb-3">
+            <div class="col-md-5">
+              <div class="input-group">
+                <span class="input-group-text" style="background: #f8fafc; border-right: none;"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" class="form-control" placeholder="搜索位号、名称..." style="border-left: none;">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <select class="cmp-select" style="height: 38px;">
+                <option value="">全部装置</option>
+                <option>常减压装置</option>
+                <option>催化裂化装置</option>
+                <option>重整装置</option>
+                <option>公用工程</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <select class="cmp-select" style="height: 38px;">
+                <option value="">全部类型</option>
+                <option>调节阀</option>
+                <option>开关阀</option>
+                <option>电动阀</option>
+                <option>压力表</option>
+              </select>
+            </div>
+            <div class="col-md-2" style="display: flex; align-items: center;">
+              <span class="text-muted" style="font-size: 14px;">已选 <strong id="selectedCount" style="color: var(--color-primary);">0</strong> 项</span>
+            </div>
+          </div>
+
+          <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-sm);">
+            <table class="cmp-table" style="margin: 0;">
+              <thead>
+                <tr>
+                  <th style="width: 40px;" class="cmp-table__th"><input type="checkbox" class="form-check-input" id="selectAllModal"></th>
+                  <th class="cmp-table__th">位号</th>
+                  <th class="cmp-table__th">设备名称</th>
+                  <th class="cmp-table__th">装置名称</th>
+                  <th class="cmp-table__th">类型</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="cmp-table__td"><input type="checkbox" class="form-check-input item-checkbox"></td>
+                  <td class="cmp-table__td" style="font-weight: 500; color: var(--color-primary);">FV-101</td>
+                  <td class="cmp-table__td">进料调节阀</td>
+                  <td class="cmp-table__td">常减压装置</td>
+                  <td class="cmp-table__td">调节阀</td>
+                </tr>
+                <tr>
+                  <td class="cmp-table__td"><input type="checkbox" class="form-check-input item-checkbox"></td>
+                  <td class="cmp-table__td" style="font-weight: 500; color: var(--color-primary);">FV-102</td>
+                  <td class="cmp-table__td">蒸汽流量调节阀</td>
+                  <td class="cmp-table__td">常减压装置</td>
+                  <td class="cmp-table__td">调节阀</td>
+                </tr>
+                <tr>
+                  <td class="cmp-table__td"><input type="checkbox" class="form-check-input item-checkbox"></td>
+                  <td class="cmp-table__td" style="font-weight: 500; color: var(--color-primary);">LV-201</td>
+                  <td class="cmp-table__td">液位调节阀</td>
+                  <td class="cmp-table__td">催化裂化装置</td>
+                  <td class="cmp-table__td">调节阀</td>
+                </tr>
+                <tr>
+                  <td class="cmp-table__td"><input type="checkbox" class="form-check-input item-checkbox"></td>
+                  <td class="cmp-table__td" style="font-weight: 500; color: var(--color-primary);">XV-301</td>
+                  <td class="cmp-table__td">紧急切断阀</td>
+                  <td class="cmp-table__td">重整装置</td>
+                  <td class="cmp-table__td">开关阀</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 批量设置日期 -->
+          <div class="mt-3" style="border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 12px 16px; background: #fafbfc;">
+            <div style="font-size: 13px; font-weight: 600; color: var(--color-text); margin-bottom: 8px;"><i class="bi bi-calendar-range me-1"></i>批量设置计划日期</div>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label style="font-size: 12px; color: var(--color-text-muted);">计划开始日期</label>
+                <input type="date" class="form-control form-control-sm" style="font-size: 13px;">
+              </div>
+              <div class="col-md-4">
+                <label style="font-size: 12px; color: var(--color-text-muted);">计划截止日期</label>
+                <input type="date" class="form-control form-control-sm" style="font-size: 13px;">
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button class="cmp-toolbar-btn cmp-toolbar-btn--primary btn-sm" style="padding: 4px 12px; font-size: 13px;"><i class="bi bi-arrow-right"></i> 应用到已选项</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 24px;">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="background: #f1f5f9; border: none; color: #475569; padding: 10px 20px; border-radius: 8px;">取消</button>
+          <button type="button" class="btn cmp-btn cmp-btn--primary" data-bs-dismiss="modal" style="padding: 10px 20px; border-radius: 8px;"><i class="bi bi-check-lg"></i> 确认添加（3 项）</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // 画环形进度
+    (function() {
+      var c = document.getElementById('progressChart');
+      if (!c) return;
+      var ctx = c.getContext('2d');
+      var x = 70, y = 70, r = 58, sw = 10;
+      ctx.clearRect(0, 0, 140, 140);
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = sw;
+      ctx.stroke();
+      var pct = 0.65;
+      ctx.beginPath();
+      ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + pct * Math.PI * 2);
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = sw;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    })();
+    // 全选
+    document.getElementById('selectAllModal')?.addEventListener('change', function() {
+      document.querySelectorAll('#addValveModal .item-checkbox').forEach(function(cb) {
+        cb.checked = this.checked;
+      }.bind(this));
+    });
+  </script>
+</body>
+</html>
