@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% from "macros/status.html" import days_left, late_flag %}
+{% block page_title %}检修预警{% endblock %}
+{% block header_actions %}
+<a href="{{ url_for('plans.index') }}" class="cmp-btn cmp-btn--secondary cmp-btn--action">
+  <i class="bi bi-calendar-check"></i> 全部计划
+</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto;">
+
+  <div class="cmp-card" style="padding: 20px 24px; margin-bottom: 20px;">
+    <h2 style="margin: 0 0 6px; font-size: 20px; font-weight: 700;">检修预警</h2>
+    <div style="font-size: 13px; color: var(--color-text-muted);">
+      按计划结束日期升序展示您需要完成的全部任务，点击任务即可直接完成。
+    </div>
+  </div>
+
+  {# 预警统计 #}
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
+    <a href="{{ url_for('plans.my_tasks', scope='overdue') }}" style="text-decoration:none;">
+      <div class="cmp-card" style="padding:16px; text-align:center; border:{% if stats.overdue %}2px solid #fecaca{% else %}1px solid var(--color-border){% endif %};">
+        <div style="font-size:28px; font-weight:700; color:{% if stats.overdue %}#b91c1c{% else %}#94a3b8{% endif %};">{{ stats.overdue }}</div>
+        <div style="font-size:13px; color:#b91c1c;">已逾期</div>
+        <div style="font-size:11px; color:var(--color-text-muted);">超过计划结束日期</div>
+      </div>
+    </a>
+    <a href="{{ url_for('plans.my_tasks', scope='7') }}" style="text-decoration:none;">
+      <div class="cmp-card" style="padding:16px; text-align:center; border:{% if stats.within7 %}2px solid #fde68a{% else %}1px solid var(--color-border){% endif %};">
+        <div style="font-size:28px; font-weight:700; color:{% if stats.within7 %}#d97706{% else %}#94a3b8{% endif %};">{{ stats.within7 }}</div>
+        <div style="font-size:13px; color:#92400e;">7 天内到期</div>
+        <div style="font-size:11px; color:var(--color-text-muted);">含今天到期</div>
+      </div>
+    </a>
+    <a href="{{ url_for('plans.my_tasks', scope='30') }}" style="text-decoration:none;">
+      <div class="cmp-card" style="padding:16px; text-align:center;">
+        <div style="font-size:28px; font-weight:700; color:#1e3a5f;">{{ stats.within30 }}</div>
+        <div style="font-size:13px; color:#1e3a5f;">30 天内到期</div>
+        <div style="font-size:11px; color:var(--color-text-muted);">含逾期与 7 天内</div>
+      </div>
+    </a>
+    <a href="{{ url_for('plans.my_tasks') }}" style="text-decoration:none;">
+      <div class="cmp-card" style="padding:16px; text-align:center;">
+        <div style="font-size:28px; font-weight:700; color:#475569;">{{ stats.total }}</div>
+        <div style="font-size:13px; color:#475569;">全部待办</div>
+        <div style="font-size:11px; color:var(--color-text-muted);">我的全部任务</div>
+      </div>
+    </a>
+  </div>
+
+  {# 筛选 #}
+  <div class="cmp-toolbar cmp-toolbar--card" style="margin-bottom: 16px;">
+    <div class="cmp-toolbar__left">
+      <form method="get" class="d-flex gap-2 align-items-center" style="margin:0; flex-wrap:wrap;">
+        <select name="scope" class="cmp-select" style="width:auto;min-width:130px;" onchange="this.form.submit()">
+          <option value="all" {% if scope == 'all' %}selected{% endif %}>全部状态</option>
+          <option value="overdue" {% if scope == 'overdue' %}selected{% endif %}>已逾期</option>
+          <option value="7" {% if scope == '7' %}selected{% endif %}>7 天内到期</option>
+          <option value="30" {% if scope == '30' %}selected{% endif %}>30 天内到期</option>
+        </select>
+        <select name="plan_id" class="cmp-select" style="width:auto;min-width:180px;" onchange="this.form.submit()">
+          <option value="">全部计划</option>
+          {% for p in plan_options %}
+          <option value="{{ p.id }}" {% if plan_id == p.id %}selected{% endif %}>{{ p.title }}</option>
+          {% endfor %}
+        </select>
+        <noscript><button type="submit" class="cmp-toolbar-btn cmp-toolbar-btn--primary">筛选</button></noscript>
+      </form>
+    </div>
+  </div>
+
+  {% if items %}
+  <div style="display:flex; flex-direction:column; gap:12px;">
+    {% for item in items %}
+    <div class="cmp-card" style="padding:0; overflow:hidden; border-left:4px solid {% if item._days_left is not none and item._days_left < 0 %}#dc2626{% elif item._days_left is not none and item._days_left <= 7 %}#f59e0b{% else %}#cbd5e1{% endif %};">
+      <div style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:280px;">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
+            <strong style="font-size:16px;">{{ item.tag }}</strong>
+            <span style="font-size:13px; color:var(--color-text-muted);">{{ item.device_name or '' }}</span>
+            <span class="cmp-status {% if item.group and item.group.category == 'valve' %}cmp-status--pending{% else %}cmp-status--published{% endif %}" style="font-size:11px;">
+              {{ category_label(item.group.category) if item.group else '阀门' }}
+            </span>
+          </div>
+          <div style="font-size:13px; color:var(--color-text-muted); display:flex; gap:16px; flex-wrap:wrap;">
+            <span><i class="bi bi-calendar-range"></i>
+              计划：{% if item.planned_date_start == item.planned_date_end %}{{ item.planned_date_start.strftime('%Y-%m-%d') }}{% else %}{{ item.planned_date_start.strftime('%Y-%m-%d') }} ~ {{ item.planned_date_end.strftime('%Y-%m-%d') }}{% endif %}
+            </span>
+            <span><i class="bi bi-folder"></i> {{ item.plan.title if item.plan else '—' }}</span>
+            {% if item.group and item.group.maintenance_project %}
+            <span><i class="bi bi-list-task"></i> {{ item.group.maintenance_project }}</span>
+            {% endif %}
+            {% if item.group and item.group.project_leader %}
+            <span><i class="bi bi-person"></i> 项目负责人 {{ item.group.project_leader }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+          <div style="font-size:18px;">{{ days_left(item._days_left) }}</div>
+          {% set is_valve = item.group and item.group.category == 'valve' %}
+          {% if is_valve %}
+          <a href="{{ url_for('valves.maintenance_create', plan_item_id=item.id) }}"
+             class="cmp-btn cmp-btn--primary cmp-btn--action cmp-btn--sm">
+            <i class="bi bi-wrench-adjustable"></i> 创建维护记录以完成
+          </a>
+          {% else %}
+          <form method="POST" action="{{ url_for('plans.confirm_item', id=item.plan_id, item_id=item.id) }}">
+            <input type="hidden" name="next" value="{{ url_for('plans.my_tasks', scope=scope, plan_id=plan_id or '') }}">
+            <button type="submit" class="cmp-btn cmp-btn--complete cmp-btn--action cmp-btn--sm"
+                    onclick="return confirm('确认完成 {{ item.tag }}？系统将记录完成时间为当前时间。')">
+              <i class="bi bi-check2-circle"></i> 确认完成
+            </button>
+          </form>
+          {% endif %}
+          <a href="{{ url_for('plans.detail', id=item.plan_id) }}" style="font-size:12px; color:var(--color-text-muted);">
+            查看所属计划 →
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="cmp-empty">
+    <i class="bi bi-check2-circle" style="font-size:48px; color:#10b981;"></i>
+    <p style="font-size:16px; margin-top:12px;">
+      {% if scope == 'all' and not plan_id %}当前没有待完成的检修任务{% else %}当前筛选条件下没有任务{% endif %}
+    </p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,186 +1,318 @@
 {% extends "base.html" %}
+{% from "macros/status.html" import status_plan, status_item, late_flag, days_left %}
 {% block page_title %}{{ plan.title }}{% endblock %}
 {% block back_btn %}
 <a href="{{ url_for('plans.index') }}" class="btn-back-header"><i class="bi bi-arrow-left"></i> 返回</a>
 {% endblock %}
-{% set plan_completed = items|selectattr('status', 'equalto', 'completed')|list|length %}
-{% set plan_total = items|length %}
-{% set pct = (plan_completed / plan_total * 100) if plan_total > 0 else 0 %}
-{% set plan_overdue = items|selectattr('_overdue', 'equalto', true)|list|length %}
-{% set plan_pending = plan_total - plan_completed %}
 {% block header_actions %}
-<span class="cmp-badge {% if plan.status == 'published' %}cmp-badge--approved{% elif plan.status == 'draft' %}cmp-badge--draft{% else %}cmp-badge--draft{% endif %}">
-  {% if plan.status == 'draft' %}<i class="bi bi-pencil"></i> 草稿
-  {% elif plan.status == 'published' %}<i class="bi bi-check-circle-fill"></i> 已发布
-  {% else %}<i class="bi bi-check-circle-fill"></i> 已完成{% endif %}
-</span>
-{% if plan.recipients %}
-{% for r in plan.recipients %}<span class="cmp-badge" style="background:#e0f2fe;color:#0369a1;font-size:12px;">{{ r.real_name or r.username }}</span>{% endfor %}
-{% endif %}
-{% if current_user.role in ['leader', 'admin'] and plan.status == 'draft' %}
-<button class="cmp-btn cmp-btn--primary cmp-btn--sm" data-bs-toggle="modal" data-bs-target="#publishModal"><i class="bi bi-send"></i> 发布</button>
-{% elif current_user.role in ['leader', 'admin'] and plan.status == 'published' %}
-<form method="POST" action="{{ url_for('plans.archive', id=plan.id) }}" style="display:inline;">
-  <button class="cmp-btn cmp-btn--secondary cmp-btn--sm"><i class="bi bi-check-circle"></i> 已完成</button>
-</form>
-{% endif %}
+  {{ status_plan(plan.status, plan_status_label(plan.status), plan_status_icon(plan.status)) }}
 {% endblock %}
 
 {% block content %}
-<div style="max-width: 1400px; margin: 0 auto;">
+<div style="max-width: 1500px; margin: 0 auto;">
 
-  <!-- 基本信息 -->
-  <div class="cmp-card" style="padding: 24px; margin-bottom: 24px;">
-    <div class="row g-2">
-      <div class="col-md-4 d-flex align-items-center gap-2">
-        <span style="font-size: 13px; color: var(--color-text-muted);">标题</span>
-        <span style="font-size: 15px; font-weight: 600;">{{ plan.title }}</span>
+  {# ── 第一层：计划总览 ── #}
+  <div class="cmp-card" style="padding: 24px; margin-bottom: 20px;">
+    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+      <div style="flex:1; min-width: 320px;">
+        <h2 style="margin: 0 0 8px; font-size: 22px; font-weight: 700;">{{ plan.title }}</h2>
+        <div style="font-size: 13px; color: var(--color-text-muted); margin-bottom: 10px;">
+          {{ plan.description or '（无描述）' }}
+        </div>
+        <div style="display:flex; gap:18px; flex-wrap:wrap; font-size: 13px; color: var(--color-text-muted);">
+          <span><i class="bi bi-person"></i> 创建人 {{ plan.creator.real_name or plan.creator.username }}</span>
+          <span><i class="bi bi-calendar3"></i> 创建于 {{ plan.created_at.strftime('%Y-%m-%d') }}</span>
+          {% if plan.published_at %}
+          <span><i class="bi bi-send"></i> 发布于 {{ plan.published_at.strftime('%Y-%m-%d') }}</span>
+          {% endif %}
+        </div>
       </div>
-      <div class="col-md-4 d-flex align-items-center gap-2">
-        <span style="font-size: 13px; color: var(--color-text-muted);">描述</span>
-        <span style="font-size: 14px;">{{ plan.description or '—' }}</span>
-      </div>
-      <div class="col-md-4 d-flex align-items-center gap-3">
-        <span style="font-size: 13px; color: var(--color-text-muted);">创建人</span>
-        <span class="cmp-creator cmp-creator--0"><span class="cmp-creator__avatar">{{ plan.creator.real_name[0] }}</span>{{ plan.creator.real_name or plan.creator.username }}</span>
-        <span style="font-size: 13px; color: var(--color-text-muted);">创建时间</span>
-        <span style="font-size: 13px;">{{ plan.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
-        {% if plan.published_at %}
-        <span style="font-size: 13px; color: var(--color-text-muted);">发布时间</span>
-        <span style="font-size: 13px;">{{ plan.published_at.strftime('%Y-%m-%d %H:%M') }}</span>
+
+      {# 管理动作区：动作词 + 明确按钮外观 #}
+      {% if is_manager %}
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        {% if plan.status == 'draft' %}
+        <a href="{{ url_for('plans.edit', id=plan.id) }}" class="cmp-btn cmp-btn--secondary cmp-btn--action cmp-btn--sm">
+          <i class="bi bi-pencil"></i> 编辑明细
+        </a>
+        <button type="button" class="cmp-btn cmp-btn--primary cmp-btn--action cmp-btn--sm"
+                data-bs-toggle="modal" data-bs-target="#publishModal">
+          <i class="bi bi-send"></i> 发布并通知
+        </button>
+        {% endif %}
+        {% if plan.status == 'published' %}
+        <button type="button" class="cmp-btn cmp-btn--complete cmp-btn--action cmp-btn--sm"
+                data-bs-toggle="modal" data-bs-target="#archiveModal">
+          <i class="bi bi-check2-circle"></i> 标记计划完成
+        </button>
+        {% endif %}
+        {% if plan.status in ('draft', 'archived') %}
+        <form method="POST" action="{{ url_for('plans.delete', id=plan.id) }}" style="display:inline;"
+              onsubmit="return confirm('删除后计划与全部明细将不可恢复，确认删除？')">
+          <button class="cmp-btn cmp-btn--outline-danger cmp-btn--action cmp-btn--sm"><i class="bi bi-trash"></i> 删除计划</button>
+        </form>
         {% endif %}
       </div>
+      {% endif %}
+    </div>
+
+    {# 进度区：草稿显示待发布；进行中/已完成显示完成率 #}
+    <div style="margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--color-border);">
+      {% if plan.status == 'draft' %}
+      <div style="display:flex; align-items:center; gap:12px; font-size:14px; color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:12px 16px;">
+        <i class="bi bi-hourglass-split" style="font-size:20px;"></i>
+        <div>
+          <strong>草稿尚未发布</strong>：共 {{ progress.total }} 项明细（阀门 {{ groups.valve|sum(attribute='total') }} 项、其他仪表 {{ groups.instrument|sum(attribute='total') }} 项）。
+          发布并选择通知对象后，员工端才会显示任务。
+        </div>
+      </div>
+      {% else %}
+      {% set pct = progress.percent %}
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
+        <span style="font-size:28px; font-weight:700; color:#059669; white-space:nowrap;">{{ pct }}%</span>
+        <div style="flex:1; height:12px; background:var(--gray-200); border-radius:6px; overflow:hidden;">
+          <div style="width: {{ pct }}%; height:100%; background: linear-gradient(90deg,#10b981,#34d399); border-radius:6px; transition: width .4s;"></div>
+        </div>
+        <span style="font-size:14px; color:var(--color-text-muted); white-space:nowrap;">{{ progress.completed }}/{{ progress.total }} 项已完成</span>
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:12px;">
+        <div style="text-align:center; padding:10px; background:#f0fdf4; border-radius:8px;">
+          <div style="font-size:22px; font-weight:700; color:#065f46;">{{ progress.completed }}</div>
+          <div style="font-size:12px; color:#065f46;">已完成</div>
+        </div>
+        <div style="text-align:center; padding:10px; background:#fffbeb; border-radius:8px;">
+          <div style="font-size:22px; font-weight:700; color:#92400e;">{{ progress.pending - progress.overdue }}</div>
+          <div style="font-size:12px; color:#92400e;">待办未逾期</div>
+        </div>
+        <div style="text-align:center; padding:10px; background:#fef2f2; border-radius:8px;">
+          <div style="font-size:22px; font-weight:700; color:{% if progress.overdue %}#991b1b{% else %}#94a3b8{% endif %};">{{ progress.overdue }}</div>
+          <div style="font-size:12px; color:{% if progress.overdue %}#991b1b{% else %}#94a3b8{% endif %};">已逾期</div>
+        </div>
+        {% if not is_manager %}
+        <div style="text-align:center; padding:10px; background:#eff6ff; border-radius:8px;">
+          <div style="font-size:22px; font-weight:700; color:#1e3a5f;">{{ my_progress.total }}</div>
+          <div style="font-size:12px; color:#1e3a5f;">我的待办</div>
+        </div>
+        {% endif %}
+      </div>
+      {% if not is_manager and my_progress.overdue %}
+      <div style="margin-top:14px; display:flex; align-items:center; gap:10px; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px 16px; color:#991b1b; font-size:14px;">
+        <i class="bi bi-exclamation-triangle-fill" style="font-size:20px;"></i>
+        <div><strong>您有 {{ my_progress.overdue }} 项已逾期</strong>，请尽快处理。</div>
+      </div>
+      {% endif %}
+      {% endif %}
     </div>
   </div>
 
-  {% set completed = plan_completed %}
-  {% set total = plan_total %}
-  {% set overdue = plan_overdue %}
-  {% set pending = plan_pending %}
-  {% if plan.status == 'published' %}
-  {% if current_user.role == 'employee' and pending > 0 %}
-  <div class="alert alert-warning d-flex align-items-center gap-3 py-3 px-4 mb-4" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;">
-    <i class="bi bi-exclamation-triangle-fill" style="font-size: 24px; color: #d97706;"></i>
-    <div>
-      <strong style="font-size: 15px; color: #92400e;">您有 {{ pending }} 项待完成</strong>
-      {% if overdue > 0 %}<span style="color: #dc2626; margin-left: 12px; font-weight: 600;">其中 {{ overdue }} 项已逾期！</span>{% endif %}
-      <div style="font-size: 13px; color: #a16207; margin-top: 2px;">请尽快完成计划项，避免影响整体进度</div>
+  {# ── 第二层：任务视图（按阀门/仪表分区，含完成入口） ── #}
+  {% for category, title, icon, empty_hint in [
+      ('valve', '阀门检修任务', 'bi-nut', '本计划暂无阀门检修任务'),
+      ('instrument', '其他仪表检修任务', 'bi-speedometer2', '本计划暂无其他仪表检修任务')] %}
+  {% set entries = groups[category] %}
+  {% if entries %}
+  <div class="cmp-card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
+    <div style="padding: 14px 20px; border-bottom: 1px solid var(--color-border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; background:{% if category == 'valve' %}#eef2ff{% else %}#ecfeff{% endif %};">
+      <h5 style="margin:0; font-size:16px; font-weight:600; display:flex; align-items:center; gap:8px;">
+        <i class="bi {{ icon }}"></i> {{ title }}
+        <span style="font-size:12px; font-weight:400; color:var(--color-text-muted);">
+          共 {{ entries|sum(attribute='total') }} 项 ·
+          已完成 {{ entries|sum(attribute='completed') }} 项
+          {% if entries|sum(attribute='overdue') %} · <span style="color:#b91c1c;">逾期 {{ entries|sum(attribute='overdue') }} 项</span>{% endif %}
+        </span>
+      </h5>
+      <span style="font-size:12px; color:var(--color-text-muted);">
+        {% if category == 'valve' %}完成方式：创建维护记录（点击任务上的按钮直达）{% else %}完成方式：确认完成并记录完成时间{% endif %}
+      </span>
     </div>
-  </div>
-  {% endif %}
-  <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 20px;">
-    <div class="cmp-card" style="padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-      <div style="position: relative; width: 160px; height: 160px;">
-        <canvas id="progressChart" width="160" height="160"></canvas>
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
-          <span style="font-size: 26px; font-weight: 700; color: #059669;">{{ '%.0f'|format(pct) }}%</span>
-          <div style="font-size: 13px; color: var(--color-text-muted);">完成率</div>
-        </div>
-      </div>
-    </div>
-    <div class="cmp-card" style="padding: 16px;">
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-        <div style="text-align: center; padding: 12px 8px; background: #f0fdf4; border-radius: 8px;">
-          <i class="bi bi-check-circle-fill" style="font-size: 24px; color: #10b981;"></i>
-          <div style="font-size: 26px; font-weight: 700; color: #065f46; margin: 4px 0 2px;">{{ completed }}</div>
-          <div style="font-size: 13px; color: #065f46;">已完成</div>
-        </div>
-        <div style="text-align: center; padding: 12px 8px; background: #fffbeb; border-radius: 8px;">
-          <i class="bi bi-clock" style="font-size: 24px; color: #f59e0b;"></i>
-          <div style="font-size: 26px; font-weight: 700; color: #92400e; margin: 4px 0 2px;">{{ total - completed - overdue }}</div>
-          <div style="font-size: 13px; color: #92400e;">待办</div>
-        </div>
-        <div style="text-align: center; padding: 12px 8px; background: #fef2f2; border-radius: 8px;">
-          <i class="bi bi-exclamation-triangle-fill" style="font-size: 24px; color: #ef4444;"></i>
-          <div style="font-size: 26px; font-weight: 700; {% if overdue > 0 %}color: #991b1b{% else %}color: #999{% endif %}; margin: 4px 0 2px;">{{ overdue }}</div>
-          <div style="font-size: 13px; {% if overdue > 0 %}color: #991b1b{% else %}color: #999{% endif %};">已逾期</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
 
-  <!-- 计划明细（只读表格） -->
-  <div class="cmp-card" style="padding: 0; overflow: hidden;">
-    <div style="padding: 16px 24px; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center;">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <h5 style="margin: 0; font-size: 16px; font-weight: 600;">计划明细</h5>
-        <span class="cmp-badge" style="background: #f1f5f9; color: #475569; font-size: 12px;">共 {{ groups|length }} 行 · {{ plan_total }} 台设备</span>
-      </div>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <div class="cmp-toolbar-search"><i class="bi bi-search"></i><input type="text" id="itemSearch" placeholder="搜索位号..." style="padding-left: 32px; height: 36px; width: 180px; font-size: 13px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--gray-50);"></div>
-      </div>
-    </div>
-    <div class="table-responsive">
-      <table class="cmp-table" id="itemTable" style="min-width: 1200px;">
-        <thead><tr>
-          <th class="cmp-table__th" style="width:40px;">序号</th>
-          <th class="cmp-table__th" style="width:190px;">设备名称</th>
-          <th class="cmp-table__th">检修项目</th>
-          <th class="cmp-table__th" style="width:110px;">检修时间</th>
-          <th class="cmp-table__th">检修方案</th>
-          <th class="cmp-table__th">主要安全管控措施</th>
-          <th class="cmp-table__th" style="width:100px;">项目负责人</th>
-          <th class="cmp-table__th" style="width:100px;">检修负责人</th>
-          <th class="cmp-table__th" style="width:100px;">质量验收</th>
-          <th class="cmp-table__th" style="width:100px;">备注</th>
-          <th class="cmp-table__th" style="width:90px;">状态</th>
-        </tr></thead>
-        <tbody>
-          {% for g in groups %}
-          <tr class="item-row" data-tags="{{ g.devices|map(attribute='tag')|join(' ') }}">
-            <td class="cmp-table__td" style="text-align:center; color: var(--color-text-muted);">{{ loop.index }}</td>
-            <td class="cmp-table__td">
-              {% for d in g.devices %}
-                {% set is_valve = is_valve_type(d.device_type) %}
-                <span class="tag-badge tag-badge--{% if d.status == 'completed' %}ok{% elif d._overdue %}overdue{% else %}pending{% endif %}"
-                      {% if d.maintenance_record %}title="已完成检修：{{ d.maintenance_record.检修时间.strftime('%Y-%m-%d') if d.maintenance_record.检修时间 else '' }}"{% endif %}>
-                  {% if d.maintenance_record %}<a href="{{ url_for('valves.maintenance_edit', id=d.maintenance_id) }}" style="color:inherit; text-decoration:none;">{{ d.tag }}</a>
-                  {% else %}{{ d.tag }}{% endif %}
-                  {% if d._overdue %}<i class="bi bi-exclamation-triangle-fill" style="font-size:10px;"></i>{% endif %}
-                </span>
-                {% if not is_valve and d.status == 'pending' and current_user.role == 'employee' and plan.status == 'published' %}
-                <form method="POST" action="{{ url_for('plans.confirm_item', id=plan.id, item_id=d.id) }}" style="display:inline;">
-                  <button type="submit" class="btn btn-sm btn-outline-success" style="font-size:11px; padding:2px 8px; margin-left:4px;" onclick="return confirm('确认完成此计划项？')">确认</button>
-                </form>
+    <div style="display:flex; flex-direction:column;">
+      {% for entry in entries %}
+      <div style="padding:16px 20px; border-bottom:1px solid var(--color-border);">
+        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+          <div style="flex:1; min-width:280px;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
+              <span style="font-size:14px; font-weight:600;">{{ entry.maintenance_project or '（未填写检修项目）' }}</span>
+              <span class="cmp-status cmp-status--draft" style="font-size:11px;">
+                <i class="bi bi-calendar-range"></i> {{ entry.planned_range }}
+              </span>
+              {% if entry.overdue %}
+              <span class="cmp-late-flag"><i class="bi bi-exclamation-triangle-fill"></i> {{ entry.overdue }} 项逾期</span>
+              {% elif entry.completed == entry.total %}
+              <span class="cmp-status cmp-status--completed" style="font-size:11px;"><i class="bi bi-check-circle-fill"></i> 本行已完成</span>
+              {% else %}
+              <span class="cmp-status cmp-status--pending" style="font-size:11px;">{{ entry.completed }}/{{ entry.total }} 完成</span>
+              {% endif %}
+            </div>
+            <div style="font-size:13px; color:var(--color-text-muted); display:flex; gap:16px; flex-wrap:wrap;">
+              {% if entry.project_leader %}<span>项目负责人：{{ entry.project_leader }}</span>{% endif %}
+              {% if entry.maintenance_leader %}<span>检修负责人：{{ entry.maintenance_leader }}</span>{% endif %}
+              {% if entry.maintenance_scheme %}<span title="{{ entry.maintenance_scheme }}">方案：{{ entry.maintenance_scheme|truncate(40) }}</span>{% endif %}
+            </div>
+            {% if entry.safety_measures or entry.quality_acceptance or entry.remark %}
+            <div style="font-size:12px; color:#94a3b8; margin-top:4px;">
+              {% if entry.safety_measures %}<span title="{{ entry.safety_measures }}">安全措施：{{ entry.safety_measures|truncate(36) }}</span>{% endif %}
+              {% if entry.quality_acceptance %}<span style="margin-left:12px;">质量验收：{{ entry.quality_acceptance|truncate(24) }}</span>{% endif %}
+              {% if entry.remark %}<span style="margin-left:12px;">备注：{{ entry.remark|truncate(24) }}</span>{% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        {# 设备任务卡片：每台设备都有明确的完成入口 #}
+        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:10px; margin-top:12px;">
+          {% for d in entry.devices %}
+          <div style="border:1px solid {% if d._overdue %}#fecaca{% elif d.status == 'completed' %}#a7f3d0{% else %}var(--color-border){% endif %}; border-radius:10px; padding:10px 12px; background:{% if d._overdue %}#fef2f2{% elif d.status == 'completed' %}#f0fdf4{% else %}#fff{% endif %};">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+              <strong style="font-size:14px;">{{ d.tag }}</strong>
+              {{ status_item(d) }}
+            </div>
+            <div style="font-size:12px; color:var(--color-text-muted); margin:4px 0 6px;">
+              {{ d.device_name or '' }}<br>
+              {{ days_left(d._days_left) }}
+              {% if d.status == 'completed' and d.completed_at %}
+              <span style="margin-left:6px;">完成于 {{ d.completed_at.strftime('%Y-%m-%d') }}</span>
+              {% endif %}
+            </div>
+            {% if d.status == 'pending' and plan.status == 'published' %}
+              {% if category == 'valve' %}
+                {% if current_user.role in ('employee', 'admin') %}
+                <a href="{{ url_for('valves.maintenance_create', plan_item_id=d.id) }}"
+                   class="cmp-btn cmp-btn--primary cmp-btn--action cmp-btn--sm" style="width:100%; justify-content:center;">
+                  <i class="bi bi-wrench-adjustable"></i> 创建维护记录以完成
+                </a>
+                {% else %}
+                <span style="font-size:12px; color:var(--color-text-muted);">由班组员工创建维护记录完成</span>
                 {% endif %}
-              {% endfor %}
-            </td>
-            <td class="cmp-table__td">{{ g.maintenance_project or '-' }}</td>
-            <td class="cmp-table__td">{{ g.planned_date_end }}</td>
-            <td class="cmp-table__td">{{ g.maintenance_scheme or '-' }}</td>
-            <td class="cmp-table__td">{{ g.safety_measures or '-' }}</td>
-            <td class="cmp-table__td">{{ g.project_leader or '-' }}</td>
-            <td class="cmp-table__td">{{ g.maintenance_leader or '-' }}</td>
-            <td class="cmp-table__td">{{ g.quality_acceptance or '-' }}</td>
-            <td class="cmp-table__td">{{ g.remark or '-' }}</td>
-            <td class="cmp-table__td">
-              {% if g.overdue > 0 %}<span class="cmp-badge cmp-badge--pending" style="font-size:12px;"><i class="bi bi-exclamation-triangle-fill"></i> {{ g.overdue }} 逾期</span>
-              {% elif g.completed == g.devices|length %}<span class="cmp-badge cmp-badge--approved" style="font-size:12px;"><i class="bi bi-check-circle-fill"></i> 已完成</span>
-              {% elif g.completed > 0 %}<span class="cmp-badge" style="background:#ecfdf5;color:#047857;font-size:12px;">{{ g.completed }}/{{ g.devices|length }} 完成</span>
-              {% else %}<span class="cmp-badge" style="background:#f1f5f9;color:#475569;font-size:12px;"><i class="bi bi-hourglass"></i> 待办</span>{% endif %}
-            </td>
-          </tr>
-          {% else %}
-          <tr><td colspan="11"><div class="cmp-empty"><i class="bi bi-inbox"></i><p>尚未添加计划项</p></div></td></tr>
+              {% else %}
+                {# 仪表任务由被指派的员工本人确认完成并记录完成时间，管理员代劳会丢失责任人 #}
+                {% if current_user.role == 'employee' %}
+                <form method="POST" action="{{ url_for('plans.confirm_item', id=plan.id, item_id=d.id) }}">
+                  <input type="hidden" name="next" value="{{ url_for('plans.detail', id=plan.id) }}">
+                  <button type="submit" class="cmp-btn cmp-btn--complete cmp-btn--action cmp-btn--sm"
+                          style="width:100%; justify-content:center;"
+                          onclick="return confirm('确认完成 {{ d.tag }}？系统将记录完成时间为当前时间。')">
+                    <i class="bi bi-check2-circle"></i> 确认完成
+                  </button>
+                </form>
+                {% else %}
+                <span style="font-size:12px; color:var(--color-text-muted);">由被指派的班组员工确认完成</span>
+                {% endif %}
+              {% endif %}
+            {% elif d.status == 'completed' and d.maintenance_record %}
+            <a href="{{ url_for('valves.maintenance_edit', id=d.maintenance_id) }}"
+               class="cmp-btn cmp-btn--secondary cmp-btn--action cmp-btn--sm" style="width:100%; justify-content:center;">
+              <i class="bi bi-file-earmark-text"></i> 查看维护记录
+            </a>
+            {% endif %}
+          </div>
           {% endfor %}
-        </tbody>
-      </table>
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </div>
+  {% endif %}
+  {% endfor %}
+
+  {% if not groups.valve and not groups.instrument %}
+  <div class="cmp-empty"><i class="bi bi-inbox"></i><p>尚未添加计划明细</p></div>
+  {% endif %}
+
+  {# ── 第三层：完整明细表（默认折叠，供查阅） ── #}
+  {% if groups.valve or groups.instrument %}
+  <div class="cmp-card" style="padding: 0; overflow: hidden;">
+    <button type="button" class="cmp-btn cmp-btn--secondary cmp-btn--action"
+            data-bs-toggle="collapse" data-bs-target="#fullDetailTable" aria-expanded="false"
+            style="width:100%; border-radius:0; border:none; border-bottom:1px solid var(--color-border); padding:14px 20px; justify-content:flex-start; background:var(--gray-50);">
+      <i class="bi bi-table"></i> 展开完整计划明细表（{{ progress.total }} 项，含全部字段）
+    </button>
+    <div class="collapse" id="fullDetailTable">
+      <div class="table-responsive">
+        <table class="cmp-table" style="min-width: 1300px;">
+          <thead><tr>
+            <th class="cmp-table__th" style="width:40px;">序号</th>
+            <th class="cmp-table__th" style="width:90px;">类别</th>
+            <th class="cmp-table__th" style="width:110px;">设备位号</th>
+            <th class="cmp-table__th" style="width:140px;">设备名称</th>
+            <th class="cmp-table__th">检修项目</th>
+            <th class="cmp-table__th" style="width:170px;">计划起止</th>
+            <th class="cmp-table__th">检修方案</th>
+            <th class="cmp-table__th">主要安全管控措施</th>
+            <th class="cmp-table__th" style="width:100px;">项目负责人</th>
+            <th class="cmp-table__th" style="width:100px;">检修负责人</th>
+            <th class="cmp-table__th" style="width:90px;">质量验收</th>
+            <th class="cmp-table__th" style="width:90px;">备注</th>
+            <th class="cmp-table__th" style="width:140px;">状态</th>
+          </tr></thead>
+          <tbody>
+            {% set ns = namespace(i=0) %}
+            {% for category, entries in [('valve', groups.valve), ('instrument', groups.instrument)] %}
+              {% for entry in entries %}
+              <tr>
+                <td class="cmp-table__td" style="text-align:center; color:var(--color-text-muted);">{{ ns.i + 1 }}</td>
+                <td class="cmp-table__td">
+                  <span class="cmp-status {% if category == 'valve' %}cmp-status--pending{% else %}cmp-status--published{% endif %}" style="font-size:11px;">
+                    {{ entry.category_label }}
+                  </span>
+                </td>
+                <td class="cmp-table__td">
+                  {% for d in entry.devices %}
+                  <div style="margin-bottom:2px;">
+                    <strong>{{ d.tag }}</strong>
+                    {% if d._overdue %}<i class="bi bi-exclamation-triangle-fill" style="font-size:10px;color:#dc2626;" title="已逾期 {{ -d._days_left }} 天"></i>{% endif %}
+                  </div>
+                  {% endfor %}
+                </td>
+                <td class="cmp-table__td" style="font-size:12px; color:var(--color-text-muted);">
+                  {% for d in entry.devices %}<div>{{ d.device_name or '—' }}</div>{% endfor %}
+                </td>
+                <td class="cmp-table__td">{{ entry.maintenance_project or '-' }}</td>
+                <td class="cmp-table__td">{{ entry.planned_range }}</td>
+                <td class="cmp-table__td">{{ entry.maintenance_scheme or '-' }}</td>
+                <td class="cmp-table__td">{{ entry.safety_measures or '-' }}</td>
+                <td class="cmp-table__td">{{ entry.project_leader or '-' }}</td>
+                <td class="cmp-table__td">{{ entry.maintenance_leader or '-' }}</td>
+                <td class="cmp-table__td">{{ entry.quality_acceptance or '-' }}</td>
+                <td class="cmp-table__td">{{ entry.remark or '-' }}</td>
+                <td class="cmp-table__td">
+                  <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start;">
+                    {% for d in entry.devices %}
+                    <div style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                      {{ status_item(d) }}{{ late_flag(d._days_left) }}
+                    </div>
+                    {% endfor %}
+                  </div>
+                </td>
+              </tr>
+              {% set ns.i = ns.i + 1 %}
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
-{% if current_user.role in ['leader', 'admin'] and plan.status == 'draft' %}
-<!-- Publish Modal -->
+{# ── 发布弹窗 ── #}
+{% if is_manager and plan.status == 'draft' %}
 <div class="modal fade" id="publishModal" tabindex="-1" data-bs-backdrop="static">
-  <form method="POST" action="{{ url_for('plans.publish', id=plan.id) }}" style="max-width:480px;margin:auto;" class="modal-dialog modal-dialog-centered">
+  <form method="POST" action="{{ url_for('plans.publish', id=plan.id) }}" style="max-width:520px;margin:auto;" class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">选择通知对象</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body" style="max-height:360px;overflow-y:auto;">
+      <div class="modal-header">
+        <h5 class="modal-title">发布计划并选择通知对象</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="max-height:380px;overflow-y:auto;">
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:13px;color:#1e3a5f;margin-bottom:12px;">
+          发布后员工端即可看到任务并收到通知。必须至少选择一位通知对象，否则无法发布。
+        </div>
         <div class="d-flex align-items-center gap-2 mb-2 pb-2" style="border-bottom:1px solid var(--bd);">
-          <input type="checkbox" id="selectAll" checked>
-          <label for="selectAll" class="small m-0">全选</label>
-          <span class="text-muted small" id="empCount"></span>
+          <input type="checkbox" id="selectAllRecipients" checked>
+          <label for="selectAllRecipients" class="small m-0">全选</label>
+          <span class="text-muted small" id="recipientCount"></span>
         </div>
         {% for emp in employees %}
         <div class="d-flex align-items-center gap-2 py-1">
@@ -190,7 +322,45 @@
         {% endfor %}
       </div>
       <div class="modal-footer">
-        <button type="submit" class="cmp-btn cmp-btn--primary"><i class="bi bi-send"></i> 发布并通知</button>
+        <button type="submit" class="cmp-btn cmp-btn--primary cmp-btn--action" id="publishSubmit">
+          <i class="bi bi-send"></i> 发布并通知
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+{# ── 标记计划完成确认弹窗：动作词 + 不可逆后果说明 ── #}
+{% if is_manager and plan.status == 'published' %}
+<div class="modal fade" id="archiveModal" tabindex="-1" data-bs-backdrop="static">
+  <form method="POST" action="{{ url_for('plans.archive', id=plan.id) }}" style="max-width:520px;margin:auto;" class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">标记计划完成</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:14px;">计划《{{ plan.title }}》当前进度：</p>
+        <ul style="font-size:14px;">
+          <li>已完成 <strong>{{ progress.completed }}</strong> / {{ progress.total }} 项</li>
+          {% if progress.pending > 0 %}
+          <li style="color:#b91c1c;">仍有 <strong>{{ progress.pending }}</strong> 项未完成</li>
+          {% endif %}
+          {% if progress.overdue > 0 %}
+          <li style="color:#b91c1c;">其中 <strong>{{ progress.overdue }}</strong> 项已逾期</li>
+          {% endif %}
+        </ul>
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:13px;color:#92400e;">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          标记完成后计划将结束，员工端不再显示其待办任务，且该操作不可撤销。未完成的任务会保留为"未完成"记录。
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="cmp-btn cmp-btn--secondary cmp-btn--action" data-bs-dismiss="modal">取消</button>
+        <button type="submit" class="cmp-btn cmp-btn--complete cmp-btn--action">
+          <i class="bi bi-check2-circle"></i> 确认标记完成
+        </button>
       </div>
     </div>
   </form>
@@ -199,54 +369,35 @@
 {% endblock %}
 
 {% block extra_js %}
-<style>
-.tag-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; margin: 2px;
-  border: 1px solid transparent;
-}
-.tag-badge--ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-.tag-badge--pending { background: #eff6ff; color: #1e3a5f; border-color: #bfdbfe; }
-.tag-badge--overdue { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
-</style>
-{% if current_user.role in ['leader', 'admin'] and plan.status == 'draft' %}
 <script>
 (function(){
-  var modal=document.getElementById('publishModal');
-  if(!modal)return;
-  var cb=modal.querySelectorAll('input[name="recipient_ids"]');
-  var selAll=modal.querySelector('#selectAll');
-  var cnt=modal.querySelector('#empCount');
-  function update(){cnt.textContent='('+modal.querySelectorAll('input[name="recipient_ids"]:checked').length+'/'+cb.length+')';}
-  selAll.addEventListener('change',function(){cb.forEach(function(c){c.checked=selAll.checked;});update();});
-  cb.forEach(function(c){c.addEventListener('change',function(){selAll.checked=modal.querySelectorAll('input[name="recipient_ids"]:checked').length===cb.length;update();});});
-  update();
-})();
-</script>
-{% endif %}
-<script>
-{% if plan.status == 'published' %}
-(function(){
-  var c = document.getElementById('progressChart');
-  if(!c)return;
-  var ctx=c.getContext('2d'), x=80, y=80, r=65, sw=11;
-  ctx.clearRect(0,0,160,160);
-  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=sw; ctx.stroke();
-  var pct={{ pct/100 }};
-  ctx.beginPath(); ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+Math.min(pct,1)*Math.PI*2);
-  ctx.strokeStyle='#10b981'; ctx.lineWidth=sw; ctx.lineCap='round'; ctx.stroke();
-})();
-{% endif %}
-
-(function(){
-  var searchInput=document.getElementById('itemSearch');
-  if(searchInput)searchInput.addEventListener('input', function(){
-    var kw=this.value.toLowerCase();
-    document.querySelectorAll('.item-row').forEach(function(r){
-      var tags=(r.dataset.tags||'').toLowerCase();
-      r.style.display=(!kw||tags.includes(kw))?'':'none';
+  // 发布弹窗：接收人全选与计数，并拦截"未选任何人"的发布
+  var modal = document.getElementById('publishModal');
+  if (modal){
+    var boxes = modal.querySelectorAll('input[name="recipient_ids"]');
+    var selAll = modal.querySelector('#selectAllRecipients');
+    var cnt = modal.querySelector('#recipientCount');
+    function update(){
+      var checked = modal.querySelectorAll('input[name="recipient_ids"]:checked').length;
+      cnt.textContent = '(' + checked + '/' + boxes.length + ')';
+      selAll.checked = boxes.length > 0 && checked === boxes.length;
+    }
+    selAll.addEventListener('change', function(){
+      boxes.forEach(function(c){ c.checked = selAll.checked; });
+      update();
     });
-  });
+    boxes.forEach(function(c){ c.addEventListener('change', update); });
+    update();
+
+    var form = modal.querySelector('form');
+    form.addEventListener('submit', function(e){
+      var checked = modal.querySelectorAll('input[name="recipient_ids"]:checked').length;
+      if (!checked){
+        e.preventDefault();
+        alert('请至少选择一位通知对象。若暂不发布，请关闭此窗口。');
+      }
+    });
+  }
 })();
 </script>
 {% endblock %}

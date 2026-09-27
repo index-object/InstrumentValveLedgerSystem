@@ -266,7 +266,6 @@ class MaintenancePlan(db.Model):
     description = db.Column(db.Text)
     status = db.Column(db.String(20), nullable=False, default="draft")
     total_items = db.Column(db.Integer, default=0)
-    completed_items = db.Column(db.Integer, default=0)
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     published_by = db.Column(db.Integer, db.ForeignKey("users.id"))
     published_at = db.Column(db.DateTime)
@@ -275,6 +274,9 @@ class MaintenancePlan(db.Model):
 
     creator = db.relationship("User", foreign_keys=[created_by])
     publisher = db.relationship("User", foreign_keys=[published_by])
+    groups = db.relationship("MaintenancePlanGroup", backref="plan", lazy="dynamic",
+                             cascade="all, delete-orphan",
+                             order_by="MaintenancePlanGroup.sort_order")
     items = db.relationship("MaintenancePlanItem", backref="plan", lazy="dynamic",
                             cascade="all, delete-orphan",
                             order_by="MaintenancePlanItem.planned_date_end")
@@ -282,14 +284,18 @@ class MaintenancePlan(db.Model):
                                  backref=db.backref("assigned_plans", lazy="dynamic"))
 
 
-class MaintenancePlanItem(db.Model):
-    __tablename__ = "maintenance_plan_items"
+class MaintenancePlanGroup(db.Model):
+    """计划任务组：一行表单 = 一组同类别（阀门 或 仪表）设备 + 一套检修参数。
+
+    组级字段（检修项目/方案/安全措施/负责人/日期区间）从计划项中上移到这里，
+    消除原先靠 MaintenancePlanItem.group_id 隐式分组、编辑时全删重建导致的
+    计划项重编号与维护记录关联错位问题。
+    """
+    __tablename__ = "maintenance_plan_groups"
     id = db.Column(db.Integer, primary_key=True)
     plan_id = db.Column(db.Integer, db.ForeignKey("maintenance_plans.id"), nullable=False)
-    device_type = db.Column(db.String(20), nullable=False)
-    device_id = db.Column(db.Integer, nullable=False)
-    tag = db.Column(db.String(50), nullable=False)
-    device_name = db.Column(db.String(100))
+    # "valve"（阀门，需维护记录完成）/ "instrument"（其他仪表，确认完成）
+    category = db.Column(db.String(20), nullable=False, default="valve")
     planned_date_start = db.Column(db.Date, nullable=False)
     planned_date_end = db.Column(db.Date, nullable=False)
     maintenance_project = db.Column(db.Text)
@@ -299,7 +305,38 @@ class MaintenancePlanItem(db.Model):
     maintenance_leader = db.Column(db.String(50))
     quality_acceptance = db.Column(db.Text)
     remark = db.Column(db.Text)
-    group_id = db.Column(db.Integer)
+    sort_order = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    items = db.relationship("MaintenancePlanItem", backref="group", lazy="select",
+                            cascade="all, delete-orphan",
+                            order_by="MaintenancePlanItem.id")
+
+    @property
+    def is_valve(self):
+        return self.category == "valve"
+
+    @property
+    def completed_count(self):
+        return sum(1 for i in self.items if i.status == "completed")
+
+    @property
+    def total_count(self):
+        return len(self.items)
+
+
+class MaintenancePlanItem(db.Model):
+    __tablename__ = "maintenance_plan_items"
+    id = db.Column(db.Integer, primary_key=True)
+    plan_id = db.Column(db.Integer, db.ForeignKey("maintenance_plans.id"), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey("maintenance_plan_groups.id"))
+    device_type = db.Column(db.String(20), nullable=False)
+    device_id = db.Column(db.Integer, nullable=False)
+    tag = db.Column(db.String(50), nullable=False)
+    device_name = db.Column(db.String(100))
+    # 冗余保留，写入时与所属任务组保持一致，供排序与逾期判定直接使用
+    planned_date_start = db.Column(db.Date, nullable=False)
+    planned_date_end = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(20), nullable=False, default="pending")
     maintenance_id = db.Column(db.Integer, db.ForeignKey("maintenance_records.id"))
     completed_at = db.Column(db.DateTime)
@@ -308,6 +345,11 @@ class MaintenancePlanItem(db.Model):
 
     maintenance_record = db.relationship("MaintenanceRecord")
     completer = db.relationship("User", foreign_keys=[completed_by])
+
+    @property
+    def is_valve(self):
+        from app.devices.valve_helper import is_valve_type
+        return is_valve_type(self.device_type)
 
 
 class PlanRecipient(db.Model):

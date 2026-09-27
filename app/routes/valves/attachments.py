@@ -15,8 +15,10 @@ from app.devices.valve_helper import (
     get_valve_by_id,
     get_valve_ledger_type,
     get_all_valve_models,
+    is_valve_type,
     count_valves_by_status,
 )
+from app.devices import DeviceTypeRegistry
 from app.routes.valves.permissions import (
     can_edit_valve,
     can_create_maintenance,
@@ -187,6 +189,35 @@ def maintenance_list():
     )
 
 
+def _name_field_for(type_code):
+    """取设备名称字段名：阀门是「名称」，其他仪表是「设备名称」"""
+    return "名称" if is_valve_type(type_code) else "设备名称"
+
+
+def _all_approved_devices():
+    """所有非草稿状态的仪表（阀门 + 其他仪表），供维护记录选择。
+
+    计划明细可以包含任意已审批仪表，因此维护记录也必须能选到它们，
+    否则计划里的仪表项永远无法通过维护记录完成。
+    """
+    devices, payload = [], []
+    for config in DeviceTypeRegistry.all():
+        model = config.model_class
+        if not model or not hasattr(model, "位号"):
+            continue
+        name_field = _name_field_for(config.code)
+        for d in model.query.filter(model.status != "draft").order_by(model.位号).all():
+            devices.append(d)
+            payload.append({
+                "id": d.id,
+                "tag": d.位号,
+                "name": getattr(d, name_field, "") or "",
+                "device_unit": d.装置名称 or "",
+                "type": config.code,
+            })
+    return devices, payload
+
+
 def _plan_item_data(item):
     return {
         "id": item.id,
@@ -196,20 +227,29 @@ def _plan_item_data(item):
         "device_id": item.device_id,
         "tag": item.tag,
         "device_name": item.device_name or "",
+        "category": item.group.category if item.group else "valve",
         "planned_date_start": item.planned_date_start.strftime("%Y-%m-%d") if item.planned_date_start else "",
         "planned_date_end": item.planned_date_end.strftime("%Y-%m-%d") if item.planned_date_end else "",
     }
 
 
 def _load_plan_items_data():
-    """加载当前用户可关联的待办计划项（领导无此列表）"""
-    if current_user.role == "leader":
+    """加载当前用户可关联的待办计划项。
+
+    仅返回当前用户被指派（plan_recipients）的进行中计划项，
+    避免看到并误关联其他班组的任务；领导不创建维护记录，返回空。
+    """
+    if current_user.role not in ("employee", "admin"):
         return []
-    pending_items = MaintenancePlanItem.query.join(MaintenancePlanItem.plan).filter(
+    query = MaintenancePlanItem.query.join(
+        MaintenancePlan, MaintenancePlanItem.plan_id == MaintenancePlan.id
+    ).filter(
         MaintenancePlanItem.status == "pending",
         MaintenancePlan.status == "published",
-    ).all()
-    return [_plan_item_data(item) for item in pending_items]
+    )
+    if current_user.role == "employee":
+        query = query.filter(MaintenancePlan.recipients.any(id=current_user.id))
+    return [_plan_item_data(item) for item in query.all()]
 
 
 def maintenance_create():
@@ -219,9 +259,7 @@ def maintenance_create():
         flash("无权创建维护记录")
         return redirect(url_for("valves.maintenance_list"))
 
-    valves = []
-    for model in get_all_valve_models():
-        valves.extend(model.query.filter(model.status != "draft").order_by(model.位号).all())
+    valves, valves_data = _all_approved_devices()
 
     if request.method == "POST":
         valve_id = request.form.get("valve_id")
@@ -253,7 +291,7 @@ def maintenance_create():
             device_type=valve_type,
             device_id=valve.id,
             设备位号=valve.位号,
-            设备名称=valve.名称,
+            设备名称=getattr(valve, _name_field_for(valve_type), "") or "",
             装置名称=valve.装置名称,
             检修时间=检修时间,
             检修内容=request.form.get("检修内容"),
@@ -265,6 +303,7 @@ def maintenance_create():
         db.session.flush()
 
         plan_item_id = request.form.get("plan_item_id", type=int)
+        linked_item = None
         if plan_item_id:
             plan_item = MaintenancePlanItem.query.get(plan_item_id)
             if (plan_item and plan_item.status == "pending"
@@ -274,18 +313,37 @@ def maintenance_create():
                 plan_item.maintenance_id = record.id
                 plan_item.completed_at = datetime.utcnow()
                 plan_item.completed_by = current_user.id
+                linked_item = plan_item
 
         db.session.commit()
-        flash("添加成功")
+
+        if linked_item is not None:
+            total = MaintenancePlanItem.query.filter_by(plan_id=linked_item.plan_id).count()
+            completed = MaintenancePlanItem.query.filter_by(
+                plan_id=linked_item.plan_id, status="completed"
+            ).count()
+            flash(
+                f"检修记录已保存，计划项 {linked_item.tag} 已完成"
+                f"（本计划进度 {completed}/{total}）"
+            )
+        else:
+            flash("维护记录已保存")
         return redirect(url_for("valves.maintenance_list"))
 
-    valves_data = [
-        {"id": v.id, "tag": v.位号, "name": v.名称 or "", "device_unit": v.装置名称 or "", "type": get_valve_ledger_type(v)}
-        for v in valves
-    ]
+    # 从「检修预警 / 我的检修任务」直接进入时，预选设备与计划项
+    preselected_item_id = request.args.get("plan_item_id", type=int)
+    preselected_item = None
+    if preselected_item_id:
+        preselected_item = MaintenancePlanItem.query.get(preselected_item_id)
+        if preselected_item and preselected_item.status != "pending":
+            preselected_item = None
 
     plan_items_data = _load_plan_items_data()
-    return render_template("maintenance/create.html", valves=valves, valves_data=valves_data, plan_items_data=plan_items_data)
+    return render_template(
+        "maintenance/create.html", valves=valves, valves_data=valves_data,
+        plan_items_data=plan_items_data,
+        preselected_item=_plan_item_data(preselected_item) if preselected_item else None,
+    )
 
 
 def maintenance_edit(id):
@@ -297,9 +355,7 @@ def maintenance_edit(id):
         flash("无权编辑此维护记录")
         return redirect(url_for("valves.maintenance_list"))
 
-    valves = []
-    for model in get_all_valve_models():
-        valves.extend(model.query.filter(model.status != "draft").order_by(model.位号).all())
+    valves, valves_data = _all_approved_devices()
 
     if request.method == "POST":
         valve_id = request.form.get("valve_id")
@@ -340,7 +396,7 @@ def maintenance_edit(id):
         record.device_type = valve_type
         record.device_id = valve.id
         record.设备位号 = valve.位号
-        record.设备名称 = valve.名称
+        record.设备名称 = getattr(valve, _name_field_for(valve_type), "") or ""
         record.装置名称 = valve.装置名称
         record.检修时间 = 检修时间
         record.检修内容 = request.form.get("检修内容")
@@ -374,10 +430,6 @@ def maintenance_edit(id):
         if all(i["id"] != plan_item.id for i in plan_items_data):
             plan_items_data.append(_plan_item_data(plan_item))
 
-    valves_data = [
-        {"id": v.id, "tag": v.位号, "name": v.名称 or "", "device_unit": v.装置名称 or "", "type": get_valve_ledger_type(v)}
-        for v in valves
-    ]
     return render_template("maintenance/edit.html", record=record, valves=valves, valves_data=valves_data, plan_items_data=plan_items_data, selected_plan_item_id=selected_plan_item_id)
 
 

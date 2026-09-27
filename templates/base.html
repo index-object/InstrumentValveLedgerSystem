@@ -69,12 +69,17 @@
                 <i class="bi bi-sliders"></i><span>后台管理</span>
             </a>
             {% endif %}
-            <a href="{{ url_for('plans.index') }}" class="sidebar-menu-item {% if request.endpoint and 'plans.' in request.endpoint %}active{% endif %}">
+            <a href="{{ url_for('plans.index') }}" class="sidebar-menu-item {% if request.endpoint and 'plans.' in request.endpoint and request.endpoint != 'plans.my_tasks' %}active{% endif %}">
                 <i class="bi bi-calendar-check"></i><span>检修计划</span>
+            </a>
+            {% if current_user.role in ['employee', 'admin'] %}
+            <a href="{{ url_for('plans.my_tasks') }}" class="sidebar-menu-item {% if request.endpoint == 'plans.my_tasks' %}active{% endif %}">
+                <i class="bi bi-exclamation-triangle"></i><span>检修预警</span>
                 {% if plan_warning_count > 0 %}
                 <span class="badge bg-danger ms-auto">{{ plan_warning_count }}</span>
                 {% endif %}
             </a>
+            {% endif %}
             <a href="{{ url_for('valves.maintenance_list') }}" class="sidebar-menu-item {% if request.endpoint == 'valves.maintenance_list' %}active{% endif %}">
                 <i class="bi bi-wrench"></i><span>维护记录</span>
             </a>
