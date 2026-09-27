@@ -132,12 +132,18 @@
             <td class="cmp-table__td" style="text-align:center; color: var(--color-text-muted);">{{ loop.index }}</td>
             <td class="cmp-table__td">
               {% for d in g.devices %}
-              <span class="tag-badge tag-badge--{% if d.status == 'completed' %}ok{% elif d._overdue %}overdue{% else %}pending{% endif %}"
-                    {% if d.maintenance_record %}title="已完成检修：{{ d.maintenance_record.检修时间.strftime('%Y-%m-%d') if d.maintenance_record.检修时间 else '' }}"{% endif %}>
-                {% if d.maintenance_record %}<a href="{{ url_for('valves.maintenance_edit', id=d.maintenance_id) }}" style="color:inherit; text-decoration:none;">{{ d.tag }}</a>
-                {% else %}{{ d.tag }}{% endif %}
-                {% if d._overdue %}<i class="bi bi-exclamation-triangle-fill" style="font-size:10px;"></i>{% endif %}
-              </span>
+                {% set is_valve = is_valve_type(d.device_type) %}
+                <span class="tag-badge tag-badge--{% if d.status == 'completed' %}ok{% elif d._overdue %}overdue{% else %}pending{% endif %}"
+                      {% if d.maintenance_record %}title="已完成检修：{{ d.maintenance_record.检修时间.strftime('%Y-%m-%d') if d.maintenance_record.检修时间 else '' }}"{% endif %}>
+                  {% if d.maintenance_record %}<a href="{{ url_for('valves.maintenance_edit', id=d.maintenance_id) }}" style="color:inherit; text-decoration:none;">{{ d.tag }}</a>
+                  {% else %}{{ d.tag }}{% endif %}
+                  {% if d._overdue %}<i class="bi bi-exclamation-triangle-fill" style="font-size:10px;"></i>{% endif %}
+                </span>
+                {% if not is_valve and d.status == 'pending' and current_user.role == 'employee' and plan.status == 'published' %}
+                <form method="POST" action="{{ url_for('plans.confirm_item', id=plan.id, item_id=d.id) }}" style="display:inline;">
+                  <button type="submit" class="btn btn-sm btn-outline-success" style="font-size:11px; padding:2px 8px; margin-left:4px;" onclick="return confirm('确认完成此计划项？')">确认</button>
+                </form>
+                {% endif %}
               {% endfor %}
             </td>
             <td class="cmp-table__td">{{ g.maintenance_project or '-' }}</td>

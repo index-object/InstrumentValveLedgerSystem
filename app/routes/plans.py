@@ -3,7 +3,8 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from app.models import db, MaintenancePlan, MaintenancePlanItem, Notification, User
-from app.devices.valve_helper import get_valve_ledger_type, get_all_valve_models
+from app.devices.valve_helper import get_valve_ledger_type, is_valve_type
+from app.devices import DeviceTypeRegistry
 from datetime import datetime, date
 
 plans_bp = Blueprint("plans", __name__, url_prefix="")
@@ -11,13 +12,17 @@ plans_bp = Blueprint("plans", __name__, url_prefix="")
 
 def _approved_devices():
     approved_devices = []
-    for model in get_all_valve_models():
+    for config in DeviceTypeRegistry.all():
+        model = config.model_class
+        if not model or not hasattr(model, '位号'):
+            continue
+        name_field = '名称' if is_valve_type(config.code) else '设备名称'
         for v in model.query.filter(model.status == "approved").order_by(model.位号).all():
             approved_devices.append({
                 "id": v.id,
-                "type": get_valve_ledger_type(v),
+                "type": config.code,
                 "tag": v.位号,
-                "name": v.名称 or "",
+                "name": getattr(v, name_field, "") or "",
                 "unit": v.装置名称 or "",
             })
     return approved_devices
@@ -79,13 +84,14 @@ def _save_items(plan, rows):
 
 
 def _is_overdue(item, now):
-    """逾期：待办且超过计划结束日期；或已完成但实际检修时间晚于计划结束日期"""
+    """逾期：待办且超过计划结束日期；或已完成但实际完成时间晚于计划结束日期"""
     if item.status == "pending":
         return item.planned_date_end is not None and item.planned_date_end < now
-    if item.status == "completed" and item.maintenance_record:
-        rec_time = item.maintenance_record.检修时间
-        if rec_time and item.planned_date_end:
-            return rec_time.date() > item.planned_date_end
+    if item.status == "completed":
+        if item.maintenance_record and item.maintenance_record.检修时间 and item.planned_date_end:
+            return item.maintenance_record.检修时间.date() > item.planned_date_end
+        if item.completed_at and item.planned_date_end:
+            return item.completed_at.date() > item.planned_date_end
     return False
 
 
@@ -197,7 +203,7 @@ def detail(id):
         g["overdue"] = sum(1 for d in g["devices"] if d._overdue)
 
     employees = User.query.filter(User.role == "employee", User.status == "active").order_by(User.real_name).all()
-    return render_template("plans/detail.html", plan=plan, items=items, groups=group_list, employees=employees)
+    return render_template("plans/detail.html", plan=plan, items=items, groups=group_list, employees=employees, is_valve_type=is_valve_type)
 
 
 @plans_bp.route("/plan/new", methods=["GET", "POST"])
@@ -344,3 +350,30 @@ def delete(id):
     db.session.commit()
     flash("计划已删除")
     return redirect(url_for("plans.index"))
+
+
+@plans_bp.route("/plan/<int:id>/confirm-item/<int:item_id>", methods=["POST"])
+@login_required
+def confirm_item(id, item_id):
+    item = MaintenancePlanItem.query.get_or_404(item_id)
+    plan = MaintenancePlan.query.get_or_404(id)
+
+    if current_user.role != "employee":
+        flash("只有员工可以确认完成")
+        return redirect(url_for("plans.detail", id=id))
+    if plan.status != "published" or current_user not in plan.recipients:
+        flash("无权操作此计划")
+        return redirect(url_for("plans.detail", id=id))
+    if item.status != "pending":
+        flash("该计划项不是待办状态")
+        return redirect(url_for("plans.detail", id=id))
+    if is_valve_type(item.device_type):
+        flash("阀门类型需通过维护记录完成")
+        return redirect(url_for("plans.detail", id=id))
+
+    item.status = "completed"
+    item.completed_at = datetime.utcnow()
+    item.completed_by = current_user.id
+    db.session.commit()
+    flash("确认完成")
+    return redirect(url_for("plans.detail", id=id))

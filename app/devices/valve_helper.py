@@ -3,6 +3,17 @@ from app.devices import DeviceTypeRegistry
 VALVE_TYPES = ["control_valve", "onoff_valve", "electric_valve"]
 
 
+def is_valve_type(type_code):
+    """判断是否为阀门类型"""
+    return type_code in VALVE_TYPES
+
+
+def get_all_instruments():
+    """获取所有仪表类型的配置（阀门 + 非阀门）"""
+    return [config for config in DeviceTypeRegistry.all()
+            if config.model_class and hasattr(config.model_class, '位号')]
+
+
 def get_valve_model(ledger_or_type):
     """根据台账或类型编码获取对应的阀门模型类"""
     if isinstance(ledger_or_type, str):

@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pytest
 from app import create_app, db
 from app.models import User, Ledger, MaintenanceRecord, Setting
+from sqlalchemy.pool import StaticPool
 
 
 @pytest.fixture
@@ -14,6 +15,7 @@ def app():
     app.config["TESTING"] = True
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
     app.config["WTF_CSRF_ENABLED"] = False
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"poolclass": StaticPool, "pool_recycle": -1}
 
     with app.app_context():
         db.create_all()

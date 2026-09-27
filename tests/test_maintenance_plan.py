@@ -281,9 +281,142 @@ def test_completed_maintenance_after_deadline_shows_overdue(client, init_databas
     assert item.status == "completed"
     assert item.maintenance_record.检修时间.date() > item.planned_date_end
 
+def test_non_valve_plan_item_confirmed_without_maintenance(client, init_database):
+    db = init_database
+    from app.devices.types.flow_meter import FlowMeter
+    device = FlowMeter(位号="FM-001", 设备名称="测试流量计", 装置名称="装置A", status="approved", created_by=1)
+    db.session.add(device)
+    db.session.commit()
+    device_id = device.id
+
+    _login(client, "admin", "admin123")
+    rows = [{
+        "devices": [{"type": "flow_meter", "id": device_id, "tag": "FM-001", "name": "测试流量计"}],
+        "planned_date_end": "2026-12-31",
+        "maintenance_project": "流量计检修",
+        "maintenance_scheme": "",
+        "safety_measures": "",
+        "project_leader": "",
+        "maintenance_leader": "",
+        "quality_acceptance": "",
+        "remark": "",
+    }]
+    _create_plan(client, "Non-Valve Plan", rows)
+    client.post("/plan/1/publish", data={"recipient_ids": [2]}, follow_redirects=True)
+
+    client.get("/logout")
+    _login(client, "user1", "user123")
+    resp = client.post("/plan/1/confirm-item/1", follow_redirects=True)
+    assert resp.status_code == 200
+
+    from app.models import MaintenancePlanItem
+    item = MaintenancePlanItem.query.get(1)
+    assert item.status == "completed"
+    assert item.maintenance_id is None
+    assert item.completed_by == 2  # user1 id
+
+    _login(client, "admin", "admin123")
+    resp = client.get("/plan/1")
+    text = resp.data.decode("utf-8")
+    assert "已完成" in text
+
+
+def test_non_valve_plan_overdue_by_completed_at(client, init_database):
+    db = init_database
+    from app.devices.types.flow_meter import FlowMeter
+    device = FlowMeter(位号="FM-002", 设备名称="测试流量计2", 装置名称="装置A", status="approved", created_by=1)
+    db.session.add(device)
+    db.session.commit()
+    device_id = device.id
+
+    _login(client, "admin", "admin123")
+    rows = [{
+        "devices": [{"type": "flow_meter", "id": device_id, "tag": "FM-002", "name": "测试流量计2"}],
+        "planned_date_end": "2026-07-31",
+        "maintenance_project": "流量计检修",
+        "maintenance_scheme": "",
+        "safety_measures": "",
+        "project_leader": "",
+        "maintenance_leader": "",
+        "quality_acceptance": "",
+        "remark": "",
+    }]
+    _create_plan(client, "Overdue Non-Valve Plan", rows)
+    client.post("/plan/1/publish", data={"recipient_ids": [2]}, follow_redirects=True)
+
+    client.get("/logout")
+    _login(client, "user1", "user123")
+    resp = client.post("/plan/1/confirm-item/1", follow_redirects=True)
+    assert resp.status_code == 200
+
+    from app.models import MaintenancePlanItem
+    item = MaintenancePlanItem.query.get(1)
+    assert item.status == "completed"
+    assert item.completed_at.date() > item.planned_date_end
+
     _login(client, "admin", "admin123")
     resp = client.get("/plan/1")
     text = resp.data.decode("utf-8")
     assert "已逾期" in text
     assert "1 逾期" in text
+
+
+def test_confirm_item_only_for_non_valve(client, init_database):
+    db = init_database
+    from app.devices.types.control_valve import ControlValve
+    valve = ControlValve(位号="FV-003", 名称="测试调节阀", status="approved", created_by=1)
+    db.session.add(valve)
+    db.session.commit()
+    valve_id = valve.id
+
+    _login(client, "admin", "admin123")
+    rows = [{
+        "devices": [{"type": "control_valve", "id": valve_id, "tag": "FV-003", "name": "测试调节阀"}],
+        "planned_date_end": "2026-12-31",
+        "maintenance_project": "年度检修",
+        "maintenance_scheme": "",
+        "safety_measures": "",
+        "project_leader": "",
+        "maintenance_leader": "",
+        "quality_acceptance": "",
+        "remark": "",
+    }]
+    _create_plan(client, "Valve Plan", rows)
+    client.post("/plan/1/publish", data={"recipient_ids": [2]}, follow_redirects=True)
+
+    client.get("/logout")
+    _login(client, "user1", "user123")
+    resp = client.post("/plan/1/confirm-item/1", follow_redirects=True)
+    assert resp.status_code == 200
+    text = resp.data.decode("utf-8")
+    assert "阀门类型需通过维护记录完成" in text
+
+    from app.models import MaintenancePlanItem
+    item = MaintenancePlanItem.query.get(1)
+    assert item.status == "pending"
+
+
+def test_non_valve_plan_list_shows_all_instruments(client, init_database):
+    db = init_database
+    _login(client, "admin", "admin123")
+    from app.devices.types.flow_meter import FlowMeter
+    device = FlowMeter(位号="FM-003", 设备名称="测试流量计3", 装置名称="装置A", status="approved", created_by=1)
+    db.session.add(device)
+    db.session.commit()
+
+    rows = [{
+        "devices": [{"type": "flow_meter", "id": device.id, "tag": "FM-003", "name": "测试流量计3"}],
+        "planned_date_end": "2026-12-31",
+        "maintenance_project": "流量计检修",
+        "maintenance_scheme": "",
+        "safety_measures": "",
+        "project_leader": "",
+        "maintenance_leader": "",
+        "quality_acceptance": "",
+        "remark": "",
+    }]
+    resp = _create_plan(client, "All Instruments Plan", rows)
+    assert resp.status_code == 200
+    text = resp.data.decode("utf-8")
+    assert "FM-003" in text
 
