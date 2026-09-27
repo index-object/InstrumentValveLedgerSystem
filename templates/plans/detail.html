@@ -20,7 +20,7 @@
           {{ plan.description or '（无描述）' }}
         </div>
         <div style="display:flex; gap:18px; flex-wrap:wrap; font-size: 13px; color: var(--color-text-muted);">
-          <span><i class="bi bi-person"></i> 创建人 {{ plan.creator.real_name or plan.creator.username }}</span>
+          <span><i class="bi bi-person"></i> 创建人 {{ plan.creator.real_name or plan.creator.username if plan.creator else '—' }}</span>
           <span><i class="bi bi-calendar3"></i> 创建于 {{ plan.created_at.strftime('%Y-%m-%d') }}</span>
           {% if plan.published_at %}
           <span><i class="bi bi-send"></i> 发布于 {{ plan.published_at.strftime('%Y-%m-%d') }}</span>

@@ -69,7 +69,7 @@
       </div>
       <div style="display: flex; gap: 20px; font-size: 13px; color: var(--color-text-muted); flex-wrap: wrap;">
         <span><i class="bi bi-calendar3"></i> {{ plan.created_at.strftime('%Y-%m-%d') }}</span>
-        <span><i class="bi bi-person"></i> {{ plan.creator.real_name or plan.creator.username }}</span>
+        <span><i class="bi bi-person"></i> {{ plan.creator.real_name or plan.creator.username if plan.creator else '—' }}</span>
         <span><i class="bi bi-list-check"></i> {{ plan._total }} 项</span>
         {% if plan.recipients %}
         <span><i class="bi bi-people"></i> {% for r in plan.recipients %}<span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:12px;padding:0 6px;border-radius:4px;line-height:1.6;">{{ r.real_name or r.username }}</span>{% endfor %}</span>

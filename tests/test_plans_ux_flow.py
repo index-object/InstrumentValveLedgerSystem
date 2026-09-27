@@ -143,3 +143,103 @@ def test_nav_badge_is_scoped_to_recipient(client, init_database):
     _login(client, "user2", "user123")
     text = client.get("/plans").data.decode("utf-8")
     assert "已逾期" in text
+
+
+# ========== 查询数量：防止 N+1 退化 ==========
+
+def _count_queries(db, fn):
+    """统计 fn() 期间执行的 SQL 语句数"""
+    from sqlalchemy import event
+
+    statements = []
+
+    def recorder(conn, cursor, statement, params, context, executemany):
+        statements.append(statement)
+
+    event.listen(db.engine, "before_cursor_execute", recorder)
+    try:
+        result = fn()
+    finally:
+        event.remove(db.engine, "before_cursor_execute", recorder)
+    return len(statements), result
+
+
+def _seed_plans(db, creator, recipient, count, items_per_plan=5, category="instrument"):
+    from datetime import date as _date
+    from app.models import (
+        MaintenancePlan, MaintenancePlanGroup, MaintenancePlanItem, PlanRecipient,
+    )
+
+    for i in range(count):
+        plan = MaintenancePlan(title=f"压测计划{i}", status="published",
+                               created_by=creator.id, total_items=items_per_plan)
+        db.session.add(plan)
+        db.session.flush()
+        plan.recipients.append(recipient)
+        group = MaintenancePlanGroup(
+            plan_id=plan.id, category=category,
+            planned_date_start=_date(2026, 1, 1), planned_date_end=_date(2026, 12, 31),
+        )
+        db.session.add(group)
+        db.session.flush()
+        for j in range(items_per_plan):
+            db.session.add(MaintenancePlanItem(
+                plan_id=plan.id, group_id=group.id,
+                device_type="flow_meter" if category == "instrument" else "control_valve",
+                device_id=j, tag=f"T-{i}-{j}",
+                planned_date_start=group.planned_date_start,
+                planned_date_end=group.planned_date_end,
+            ))
+    db.session.commit()
+
+
+def test_plan_list_query_count_is_constant(client, init_database):
+    """计划列表的查询数不得随计划数增长（原实现每个计划各查一次明细与创建人）"""
+    db = init_database
+    from app.models import MaintenancePlan, MaintenancePlanGroup, MaintenancePlanItem
+
+    _login(client, "admin", "admin123")
+
+    def reset():
+        MaintenancePlanItem.query.delete()
+        MaintenancePlanGroup.query.delete()
+        MaintenancePlan.query.delete()
+        db.session.commit()
+
+    def measure(count):
+        reset()
+        _seed_plans(db, creator=_user(db, "admin"), recipient=_user(db, "user1"), count=count)
+        return _count_queries(db, lambda: client.get("/plans"))[0]
+
+    few = measure(5)
+    many = measure(30)
+    assert many - few < 10, f"查询数随计划数增长，疑似 N+1：5 个计划 {few} 条，30 个计划 {many} 条"
+
+
+def test_my_tasks_query_count_is_constant(client, init_database):
+    """检修预警页的查询数不得随待办项数增长"""
+    db = init_database
+    from app.models import MaintenancePlan, MaintenancePlanGroup, MaintenancePlanItem, PlanRecipient
+
+    _login(client, "user1", "user123")
+
+    def reset():
+        MaintenancePlanItem.query.delete()
+        MaintenancePlanGroup.query.delete()
+        PlanRecipient.query.delete()
+        MaintenancePlan.query.delete()
+        db.session.commit()
+
+    def measure(count):
+        reset()
+        _seed_plans(db, creator=_user(db, "admin"), recipient=_user(db, "user1"), count=count)
+        return _count_queries(db, lambda: client.get("/my/plan-tasks"))[0]
+
+    few = measure(5)
+    many = measure(30)
+    assert many - few < 10, f"查询数随待办项增长，疑似 N+1：5 个计划 {few} 条，30 个计划 {many} 条"
+
+
+def _user(db, username):
+    from app.models import User
+    return User.query.filter_by(username=username).first()

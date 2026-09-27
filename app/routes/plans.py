@@ -2,6 +2,7 @@ from flask import (
     Blueprint, render_template, redirect, url_for, request, flash,
 )
 from flask_login import login_required, current_user
+from sqlalchemy.orm import joinedload, selectinload
 from app.models import (
     db, MaintenancePlan, MaintenancePlanGroup, MaintenancePlanItem, Notification, User,
 )
@@ -353,6 +354,12 @@ def _my_task_items(user, now=None):
         MaintenancePlanItem.query
         .join(MaintenancePlan, MaintenancePlanItem.plan_id == MaintenancePlan.id)
         .join(MaintenancePlanGroup, MaintenancePlanItem.group_id == MaintenancePlanGroup.id)
+        .options(
+            # 模板要显示所属计划与任务组（项目名、负责人），不 eager load
+            # 就会按每个待办项各触发一次查询（N+1）。
+            joinedload(MaintenancePlanItem.plan),
+            joinedload(MaintenancePlanItem.group),
+        )
         .filter(
             MaintenancePlan.status == "published",
             MaintenancePlanItem.status == "pending",
@@ -393,7 +400,16 @@ def index():
         query = query.filter(MaintenancePlan.title.contains(search))
     if status_filter:
         query = query.filter(MaintenancePlan.status == status_filter)
-    plans = query.order_by(MaintenancePlan.created_at.desc()).all()
+    # 一次性 eager load 创建人与接收人：模板里会访问 plan.creator / plan.recipients，
+    # 否则每个计划各触发一次懒加载查询（N+1）。
+    plans = (
+        query.options(
+            joinedload(MaintenancePlan.creator),
+            selectinload(MaintenancePlan.recipients),
+        )
+        .order_by(MaintenancePlan.created_at.desc())
+        .all()
+    )
 
     now = date.today()
     # 一次性取回所有相关计划项，避免按计划逐个查询（N+1）
