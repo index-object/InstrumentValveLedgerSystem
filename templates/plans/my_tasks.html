@@ -36,7 +36,7 @@
     <a href="{{ url_for('plans.my_tasks', scope='30') }}" style="text-decoration:none;">
       <div class="cmp-card" style="padding:16px; text-align:center;">
         <div style="font-size:28px; font-weight:700; color:#1e3a5f;">{{ stats.within30 }}</div>
-        <div style="font-size:13px; color:#1e3a5f;">30 天内到期</div>
+        <div style="font-size:13px; color:#1e3a5f;">30 天内到期或已逾期</div>
         <div style="font-size:11px; color:var(--color-text-muted);">含逾期与 7 天内</div>
       </div>
     </a>
@@ -57,7 +57,7 @@
           <option value="all" {% if scope == 'all' %}selected{% endif %}>全部状态</option>
           <option value="overdue" {% if scope == 'overdue' %}selected{% endif %}>已逾期</option>
           <option value="7" {% if scope == '7' %}selected{% endif %}>7 天内到期</option>
-          <option value="30" {% if scope == '30' %}selected{% endif %}>30 天内到期</option>
+          <option value="30" {% if scope == '30' %}selected{% endif %}>30 天内到期或已逾期</option>
         </select>
         <select name="plan_id" class="cmp-select" style="width:auto;min-width:180px;" onchange="this.form.submit()">
           <option value="">全部计划</option>
