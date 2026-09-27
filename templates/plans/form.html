@@ -9,61 +9,78 @@
   --mode-bg-subtle: #ecfdf5;
   --mode-border: #a7f3d0;
 }
-#planTable tbody tr { border-bottom: 1px solid var(--color-border); }
-#planTable tbody tr:last-child { border-bottom: none; }
-#planTable textarea.form-control {
-  min-height: 5em;
-  resize: vertical;
-  font-size: 13px;
-  line-height: 1.5;
+.plan-table tbody tr { border-bottom: 1px solid var(--color-border); }
+.plan-table tbody tr:last-child { border-bottom: none; }
+.plan-table textarea.form-control { resize: vertical; font-size: 13px; line-height: 1.5; }
+.plan-table textarea.form-control:focus { border-color: var(--mode-color); box-shadow: 0 0 0 3px var(--mode-bg-subtle); }
+.plan-table .add-device-btn { border-color: var(--mode-border); color: var(--mode-color); }
+.plan-table .add-device-btn:hover { background: var(--mode-bg-subtle); }
+.plan-category { border-radius: 10px; overflow: hidden; }
+.plan-category__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; }
+.plan-category__title { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; margin: 0; }
+.plan-category__hint { font-size: 12px; font-weight: 400; color: var(--color-text-muted); }
+.plan-category--valve .plan-category__head { background: #eef2ff; border-bottom: 1px solid #c7d2fe; }
+.plan-category--instrument .plan-category__head { background: #ecfeff; border-bottom: 1px solid #a5f3fc; }
+.tag-cell { min-height: 32px; max-height: 105px; overflow-y: auto; }
+.tag-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #eff6ff; color: #1e3a5f; border: 1px solid #bfdbfe;
+  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin: 2px;
 }
-#planTable textarea.form-control::placeholder {
-  text-align: center;
-  line-height: 6.5em;
-}
-#planTable textarea.form-control:focus { border-color: var(--mode-color); box-shadow: 0 0 0 3px var(--mode-bg-subtle); }
-#planTable .add-device-btn { border-color: var(--mode-border); color: var(--mode-color); }
-#planTable .add-device-btn:hover { background: var(--mode-bg-subtle); }
+.tag-badge-x { cursor: pointer; font-style: normal; opacity: .6; }
+.tag-badge-x:hover { opacity: 1; color: #ef4444; }
+.row-num { text-align: center; color: var(--color-text-muted); padding-top: 8px; }
 </style>
 {% endblock %}
 {% block header_actions %}
 <a href="{{ url_for('plans.index') }}" class="cmp-btn cmp-btn--secondary"><i class="bi bi-arrow-left"></i> 返回</a>
 {% endblock %}
 {% block content %}
-<div style="max-width: 1400px; margin: 0 auto;">
+<div style="max-width: 1500px; margin: 0 auto;">
   <form method="POST" id="planForm">
     <div class="cmp-card" style="padding: 20px 24px; margin-bottom: 20px;">
       <div class="row g-3 align-items-end">
         <div class="col-md-5">
           <label class="cmp-label"><span class="required">*</span> 计划标题</label>
-          <input type="text" name="title" class="cmp-input" value="{{ plan.title if plan else '' }}" placeholder="例如：2026年度大检修计划" required>
+          <input type="text" name="title" class="cmp-input" value="{{ form_title or (plan.title if plan else '') }}" placeholder="例如：2026年度大检修计划" required>
         </div>
         <div class="col-md-5">
           <label class="cmp-label">计划描述</label>
-          <input type="text" name="description" class="cmp-input" value="{{ plan.description if plan else '' }}" placeholder="描述本次检修的范围、目的等">
+          <input type="text" name="description" class="cmp-input" value="{{ description if description is defined else (plan.description if plan else '') }}" placeholder="描述本次检修的范围、目的等">
         </div>
         <div class="col-md-2 d-flex gap-2 justify-content-end">
-          <a href="{{ url_for('plans.index') }}" class="cmp-btn cmp-btn--secondary">取消</a>
-          <button type="submit" class="cmp-btn cmp-btn--primary"><i class="bi bi-save"></i> {{ '保存' if plan else '保存为草稿' }}</button>
+          <a href="{{ url_for('plans.index') }}" class="cmp-btn cmp-btn--secondary cmp-btn--action">取消</a>
+          <button type="submit" class="cmp-btn cmp-btn--primary cmp-btn--action"><i class="bi bi-save"></i> {{ '保存' if plan else '保存为草稿' }}</button>
         </div>
+      </div>
+      <div style="margin-top: 12px; font-size: 12px; color: var(--color-text-muted);">
+        <i class="bi bi-info-circle"></i>
+        计划保存后为「草稿」，需在计划详情页发布并选择通知对象，员工端才可见。
       </div>
     </div>
 
-    <div class="cmp-card" style="padding: 0; overflow: hidden;">
-      <div style="padding: 14px 20px; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <h5 style="margin: 0; font-size: 16px; font-weight: 600;">计划明细</h5>
-          <span class="cmp-badge" style="background:#f1f5f9;color:#475569;font-size:12px;" id="rowCount"></span>
-        </div>
-        <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--primary" id="addRowBtn"><i class="bi bi-plus-lg"></i> 新增一行</button>
+    {% for category, title, icon, hint, modal_id in [
+        ('valve', '阀门检修明细', 'bi-nut', '阀门任务由员工创建维护记录后自动完成', 'valvePickerModal'),
+        ('instrument', '其他仪表检修明细', 'bi-speedometer2', '仪表任务由员工在计划页确认完成并记录完成时间', 'instrumentPickerModal')] %}
+    <div class="cmp-card plan-category plan-category--{{ category }}" style="padding: 0; margin-bottom: 20px;">
+      <div class="plan-category__head">
+        <h5 class="plan-category__title">
+          <i class="bi {{ icon }}"></i> {{ title }}
+          <span class="badge-count" id="count-{{ category }}" style="background:#f1f5f9;color:#475569;font-size:12px;padding:2px 10px;border-radius:999px;">0 行</span>
+          <span class="plan-category__hint">{{ hint }}</span>
+        </h5>
+        <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--primary cmp-toolbar-btn--action add-row-btn" data-category="{{ category }}">
+          <i class="bi bi-plus-lg"></i> 新增{{ '阀门' if category == 'valve' else '仪表' }}一行
+        </button>
       </div>
       <div class="table-responsive">
-        <table class="cmp-table" id="planTable" style="min-width: 1200px;">
+        <table class="cmp-table plan-table" id="table-{{ category }}" style="min-width: 1320px;">
           <thead><tr>
             <th class="cmp-table__th" style="width:40px;">序号</th>
-            <th class="cmp-table__th" style="min-width:190px;">设备名称</th>
-            <th class="cmp-table__th" style="width:150px;">检修项目</th>
-            <th class="cmp-table__th" style="width:140px;">检修时间</th>
+            <th class="cmp-table__th" style="min-width:200px;">{{ '设备位号（可多选）' if category == 'valve' else '设备位号' }}</th>
+            <th class="cmp-table__th" style="width:170px;">检修项目</th>
+            <th class="cmp-table__th" style="width:150px;">计划开始</th>
+            <th class="cmp-table__th" style="width:150px;">计划结束</th>
             <th class="cmp-table__th">检修方案</th>
             <th class="cmp-table__th">主要安全管控措施</th>
             <th class="cmp-table__th" style="width:110px;">项目负责人</th>
@@ -72,24 +89,35 @@
             <th class="cmp-table__th" style="width:110px;">备注</th>
             <th class="cmp-table__th" style="width:50px;"></th>
           </tr></thead>
-          <tbody id="planTbody"></tbody>
+          <tbody id="tbody-{{ category }}"></tbody>
         </table>
-        <div style="padding: 10px 20px; font-size: 12px; color: var(--color-text-muted);">
-          提示：点击「添加」弹出位号选择器，可多选，同一设备可出现在多行（对应不同检修项目）；行按检修时间自动升序排列。
+        <div class="empty-hint" id="empty-{{ category }}" style="padding: 18px 20px; font-size: 13px; color: var(--color-text-muted);">
+          暂无{{ '阀门' if category == 'valve' else '仪表' }}明细，点击右上角「新增一行」开始填写。
         </div>
       </div>
+    </div>
+    {% endfor %}
+
+    <div class="cmp-card" style="padding: 14px 20px; font-size: 12px; color: var(--color-text-muted); display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+      <span><i class="bi bi-lightbulb"></i> 填写说明：计划结束日期是逾期判定依据；同一行的设备共享该行的检修项目、方案与负责人；表格不会自动重排。</span>
+      <button type="button" id="sortByDateBtn" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--action cmp-toolbar-btn--sm">
+        <i class="bi bi-sort-numeric-down"></i> 按计划结束日期排序
+      </button>
     </div>
 
     <input type="hidden" name="rows_json" id="rowsJson">
   </form>
 </div>
 
-<!-- 位号选择器弹窗 -->
+<!-- 位号选择器弹窗（阀门/仪表共用，按类别过滤设备） -->
 <div class="modal fade" id="devicePickerModal" tabindex="-1" data-bs-backdrop="static">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
       <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 20px 24px;">
-        <h5 class="modal-title" style="font-size: 18px; font-weight: 600;"><i class="bi bi-pin-angle me-2" style="color: var(--mode-color);"></i>选择位号</h5>
+        <h5 class="modal-title" style="font-size: 18px; font-weight: 600;">
+          <i class="bi bi-pin-angle me-2" style="color: var(--mode-color);"></i>
+          选择位号 <span class="text-muted" style="font-size:14px;font-weight:400;" id="pickerCategoryHint"></span>
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" style="padding: 20px 24px;">
@@ -115,7 +143,7 @@
             </tr></thead>
             <tbody id="pickerBody">
               {% for dev in approved_devices %}
-              <tr class="picker-row" data-type="{{ dev.type }}" data-id="{{ dev.id }}" data-tag="{{ dev.tag }}" data-name="{{ dev.name }}" data-unit="{{ dev.unit }}" style="cursor: pointer;">
+              <tr class="picker-row" data-category="{{ dev.category }}" data-type="{{ dev.type }}" data-id="{{ dev.id }}" data-tag="{{ dev.tag }}" data-name="{{ dev.name }}" data-unit="{{ dev.unit }}" style="cursor: pointer;">
                 <td class="cmp-table__td"><input type="checkbox" class="form-check-input picker-checkbox"></td>
                 <td class="cmp-table__td" style="font-weight: 500; color: var(--color-primary);">{{ dev.tag }}</td>
                 <td class="cmp-table__td">{{ dev.name }}</td>
@@ -125,7 +153,9 @@
             </tbody>
           </table>
         </div>
-        <div style="margin-top: 10px; font-size: 13px; color: var(--color-text-muted);">已选 <strong id="pickerCount">0</strong> 个位号</div>
+        <div style="margin-top: 10px; font-size: 13px; color: var(--color-text-muted);">
+          当前筛选出 <strong id="pickerVisibleCount">0</strong> 个，已选 <strong id="pickerCount">0</strong> 个
+        </div>
       </div>
       <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 24px;">
         <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="background: #f1f5f9; border: none; color: #475569; padding: 10px 20px; border-radius: 8px;">取消</button>
@@ -139,39 +169,56 @@
 {% block extra_js %}
 <script>
 (function(){
-  var tbody = document.getElementById('planTbody');
-  var rowCountEl = document.getElementById('rowCount');
-  var modal = document.getElementById('devicePickerModal');
-  var activeRow = null;
-
+  var CATEGORY_LABEL = { valve: '阀门', instrument: '其他仪表' };
   var approvedDevices = {{ approved_devices|tojson }};
-  // 预填充数据（编辑模式）
-  var initGroups = {{ groups|tojson if groups else '[]' }};
+  var initRows = {{ (rows or [])|tojson }};
+
+  var modalEl = document.getElementById('devicePickerModal');
+  var pickerSearch = document.getElementById('pickerSearch');
+  var pickerUnit = document.getElementById('pickerUnit');
+  var selAll = document.getElementById('pickerSelectAll');
+  var activeRow = null;       // 正在选择位号的行
+  var activeCategory = null;  // 该行的类别
+
+  function tbody(category){ return document.getElementById('tbody-' + category); }
 
   function badgeHtml(dev){
-    return '<span class="tag-badge" data-type="'+dev.type+'" data-id="'+dev.id+'" data-tag="'+dev.tag+'" data-name="'+dev.name+'">'+dev.tag+'<i class="bi bi-x tag-badge-x" onclick="removeBadge(this)"></i></span>';
+    return '<span class="tag-badge" data-type="' + dev.type + '" data-id="' + dev.id
+      + '" data-tag="' + dev.tag + '" data-name="' + (dev.name || '') + '">' + dev.tag
+      + '<i class="bi bi-x tag-badge-x" data-remove-badge="1"></i></span>';
   }
 
-  function emptyRow(){
+  function emptyRow(category){
+    var selectText = category === 'valve' ? '选择位号（可多选）' : '选择位号';
     return '' +
       '<td><div class="row-num"></div></td>' +
-      '<td><div class="tag-cell" data-type="" data-id="" data-tag="" data-name=""></div>' +
-      '  <button type="button" class="btn btn-sm btn-outline-primary add-device-btn" style="margin-top:6px;font-size:12px;padding:2px 10px;"><i class="bi bi-plus-lg"></i> 添加</button></td>' +
-      '<td><textarea class="form-control form-control-sm proj-input" rows="5" placeholder="检修项目"></textarea></td>' +
-      '<td><input type="date" class="form-control form-control-sm date-input"></td>' +
-      '<td><textarea class="form-control form-control-sm scheme-input" rows="5" placeholder="检修方案"></textarea></td>' +
-      '<td><textarea class="form-control form-control-sm safety-input" rows="5" placeholder="主要安全管控措施"></textarea></td>' +
-      '<td><textarea class="form-control form-control-sm pj-input" rows="5" placeholder="姓名"></textarea></td>' +
-      '<td><textarea class="form-control form-control-sm ml-input" rows="5" placeholder="姓名"></textarea></td>' +
-      '<td><textarea class="form-control form-control-sm qa-input" rows="5" placeholder="验收"></textarea></td>' +
-      '<td><textarea class="form-control form-control-sm remark-input" rows="5" placeholder="备注"></textarea></td>' +
+      '<td><div class="tag-cell" data-category="' + category + '"></div>' +
+      '  <button type="button" class="btn btn-sm btn-outline-primary add-device-btn" style="margin-top:6px;font-size:12px;padding:2px 10px;">' +
+      '<i class="bi bi-plus-lg"></i> ' + selectText + '</button></td>' +
+      '<td><textarea class="form-control form-control-sm proj-input" rows="3" placeholder="检修项目"></textarea></td>' +
+      '<td><input type="date" class="form-control form-control-sm start-input"></td>' +
+      '<td><input type="date" class="form-control form-control-sm end-input"></td>' +
+      '<td><textarea class="form-control form-control-sm scheme-input" rows="3" placeholder="检修方案"></textarea></td>' +
+      '<td><textarea class="form-control form-control-sm safety-input" rows="3" placeholder="主要安全管控措施"></textarea></td>' +
+      '<td><input type="text" class="form-control form-control-sm pj-input" placeholder="姓名"></td>' +
+      '<td><input type="text" class="form-control form-control-sm ml-input" placeholder="姓名"></td>' +
+      '<td><textarea class="form-control form-control-sm qa-input" rows="2" placeholder="验收"></textarea></td>' +
+      '<td><textarea class="form-control form-control-sm remark-input" rows="2" placeholder="备注"></textarea></td>' +
       '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-row-btn" title="删除此行"><i class="bi bi-x-lg"></i></button></td>';
   }
 
-  function addRow(devs, fields){
+  function setRowDevices(tr, devs){
+    var cell = tr.querySelector('.tag-cell');
+    cell.innerHTML = devs.map(badgeHtml).join('');
+    cell._devs = devs;
+  }
+
+  function addRow(category, devs, fields){
     var tr = document.createElement('tr');
-    tr.innerHTML = emptyRow();
-    tbody.appendChild(tr);
+    tr.dataset.category = category;
+    tr.innerHTML = emptyRow(category);
+    if (fields && fields.group_id) tr.dataset.groupId = fields.group_id;
+    tbody(category).appendChild(tr);
     setRowDevices(tr, devs || []);
     if (fields){
       tr.querySelector('.proj-input').value = fields.maintenance_project || '';
@@ -181,176 +228,228 @@
       tr.querySelector('.ml-input').value = fields.maintenance_leader || '';
       tr.querySelector('.qa-input').value = fields.quality_acceptance || '';
       tr.querySelector('.remark-input').value = fields.remark || '';
-      if (fields.planned_date_end) tr.querySelector('.date-input').value = fields.planned_date_end;
+      tr.querySelector('.start-input').value = fields.planned_date_start || '';
+      tr.querySelector('.end-input').value = fields.planned_date_end || '';
     }
+    refreshCounts();
     return tr;
   }
 
-  function setRowDevices(tr, devs){
-    var cell = tr.querySelector('.tag-cell');
-    cell.innerHTML = devs.map(badgeHtml).join('');
-    var d = devs[0] || {};
-    cell.dataset.type = d.type || '';
-    cell.dataset.id = d.id || '';
-    cell.dataset.tag = d.tag || '';
-    cell.dataset.name = d.name || '';
-    cell._devs = devs;
+  function allRows(){
+    return [].slice.call(document.querySelectorAll('.plan-table tbody tr'));
   }
-
-  function addBadgeToRow(tr, devs){
-    var existing = tr.querySelector('.tag-cell')._devs || [];
-    var seen = {};
-    existing.forEach(function(d){ seen[d.type + ':' + d.id] = true; });
-    var merged = existing.slice();
-    devs.forEach(function(d){
-      var key = d.type + ':' + d.id;
-      if (!seen[key]) { seen[key] = true; merged.push(d); }
-    });
-    setRowDevices(tr, merged);
-  }
-
-  window.removeBadge = function(icon){
-    var badge = icon.closest('.tag-badge');
-    var tr = badge.closest('tr');
-    var cell = tr.querySelector('.tag-cell');
-    var key = badge.dataset.type + ':' + badge.dataset.id;
-    var remaining = (cell._devs || []).filter(function(d){ return d.type + ':' + d.id !== key; });
-    setRowDevices(tr, remaining);
-  };
 
   function renumber(){
-    [].slice.call(tbody.querySelectorAll('.row-num')).forEach(function(n, i){ n.textContent = i + 1; });
-    rowCountEl.textContent = '共 ' + tbody.querySelectorAll('tr').length + ' 行';
+    ['valve', 'instrument'].forEach(function(category){
+      [].slice.call(tbody(category).querySelectorAll('.row-num')).forEach(function(n, i){ n.textContent = i + 1; });
+    });
   }
 
-  function dateVal(tr){
-    var v = tr.querySelector('.date-input').value;
-    return v || '';
+  function refreshCounts(){
+    ['valve', 'instrument'].forEach(function(category){
+      var count = tbody(category).querySelectorAll('tr').length;
+      document.getElementById('count-' + category).textContent = count + ' 行';
+      document.getElementById('empty-' + category).style.display = count ? 'none' : '';
+    });
+    renumber();
   }
 
-  function sortByDate(){
-    var rows = [].slice.call(tbody.querySelectorAll('tr'));
+  // ── 位号选择器 ──
+  function visiblePickerRows(){
+    return [].slice.call(document.querySelectorAll('.picker-row')).filter(function(r){
+      return r.style.display !== 'none';
+    });
+  }
+
+  function filterPicker(){
+    var kw = (pickerSearch.value || '').toLowerCase();
+    var uf = pickerUnit.value || '';
+    document.querySelectorAll('.picker-row').forEach(function(r){
+      var tag = (r.dataset.tag || '').toLowerCase();
+      var name = (r.dataset.name || '').toLowerCase();
+      var matchCategory = !activeCategory || r.dataset.category === activeCategory;
+      var matchKeyword = !kw || tag.indexOf(kw) >= 0 || name.indexOf(kw) >= 0;
+      var matchUnit = !uf || r.dataset.unit === uf;
+      r.style.display = (matchCategory && matchKeyword && matchUnit) ? '' : 'none';
+      if (!matchCategory) r.querySelector('.picker-checkbox').checked = false;
+    });
+    updatePickerCount();
+  }
+
+  function updatePickerCount(){
+    var visible = visiblePickerRows();
+    document.getElementById('pickerVisibleCount').textContent = visible.length;
+    document.getElementById('pickerCount').textContent =
+      visible.filter(function(r){ return r.querySelector('.picker-checkbox').checked; }).length;
+    selAll.checked = visible.length > 0 && visible.every(function(r){
+      return r.querySelector('.picker-checkbox').checked;
+    });
+  }
+
+  if (pickerSearch) pickerSearch.addEventListener('input', filterPicker);
+  if (pickerUnit) pickerUnit.addEventListener('change', filterPicker);
+
+  // 全选只作用于当前可见（未被搜索/装置/类别过滤掉）的行
+  if (selAll) selAll.addEventListener('change', function(){
+    visiblePickerRows().forEach(function(r){ r.querySelector('.picker-checkbox').checked = selAll.checked; });
+    updatePickerCount();
+  });
+
+  document.querySelectorAll('.picker-row').forEach(function(row){
+    row.addEventListener('click', function(e){
+      if (e.target.type !== 'checkbox'){
+        var cb = this.querySelector('.picker-checkbox');
+        cb.checked = !cb.checked;
+      }
+      updatePickerCount();
+    });
+  });
+  document.querySelectorAll('.picker-checkbox').forEach(function(cb){
+    cb.addEventListener('change', updatePickerCount);
+  });
+
+  // 行内事件委托
+  document.addEventListener('click', function(e){
+    var addBtn = e.target.closest('.add-device-btn');
+    if (addBtn){
+      activeRow = addBtn.closest('tr');
+      activeCategory = activeRow.dataset.category;
+      document.getElementById('pickerCategoryHint').textContent =
+        '（' + CATEGORY_LABEL[activeCategory] + '）';
+      // 勾选状态按行隔离：每次打开都重置，避免上一次的勾选串到别的行
+      document.querySelectorAll('.picker-checkbox').forEach(function(cb){ cb.checked = false; });
+      pickerSearch.value = '';
+      pickerUnit.value = '';
+      filterPicker();
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      return;
+    }
+    var rmRow = e.target.closest('.remove-row-btn');
+    if (rmRow){
+      rmRow.closest('tr').remove();
+      refreshCounts();
+      return;
+    }
+    var rmBadge = e.target.closest('[data-remove-badge]');
+    if (rmBadge){
+      var badge = rmBadge.closest('.tag-badge');
+      var tr = badge.closest('tr');
+      var cell = tr.querySelector('.tag-cell');
+      var key = badge.dataset.type + ':' + badge.dataset.id;
+      setRowDevices(tr, (cell._devs || []).filter(function(d){
+        return d.type + ':' + d.id !== key;
+      }));
+      return;
+    }
+    var addRowBtn = e.target.closest('.add-row-btn');
+    if (addRowBtn){
+      var tr = addRow(addRowBtn.dataset.category, []);
+      tr.querySelector('.start-input').focus();
+    }
+  });
+
+  document.getElementById('pickerConfirm').addEventListener('click', function(){
+    if (!activeRow){
+      alert('请先点击某一行的「选择位号」按钮，再添加设备');
+      return;
+    }
+    var picked = visiblePickerRows().filter(function(r){
+      return r.querySelector('.picker-checkbox').checked;
+    }).map(function(r){
+      return { type: r.dataset.type, id: r.dataset.id, tag: r.dataset.tag, name: r.dataset.name };
+    });
+    if (picked.length){
+      var cell = activeRow.querySelector('.tag-cell');
+      if (activeCategory === 'valve'){
+        // 阀门行可多选：合并已选位号并去重
+        var existing = cell._devs || [];
+        var seen = {};
+        existing.forEach(function(d){ seen[d.type + ':' + d.id] = true; });
+        var merged = existing.slice();
+        picked.forEach(function(d){
+          if (!seen[d.type + ':' + d.id]){ seen[d.type + ':' + d.id] = true; merged.push(d); }
+        });
+        setRowDevices(activeRow, merged);
+      } else {
+        // 仪表行单设备：直接替换
+        setRowDevices(activeRow, picked.slice(0, 1));
+      }
+    }
+    activeRow = null;
+    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+  });
+
+  // 显式排序：不再在填写过程中自动重排整行
+  var sortBtn = document.getElementById('sortByDateBtn');
+  function sortByEndDate(category){
+    var rows = [].slice.call(tbody(category).querySelectorAll('tr'));
     rows.sort(function(a, b){
-      var da = dateVal(a), db = dateVal(b);
+      var da = a.querySelector('.end-input').value;
+      var db = b.querySelector('.end-input').value;
       if (da === db) return 0;
       if (!da) return 1;
       if (!db) return -1;
       return da < db ? -1 : 1;
     });
-    rows.forEach(function(r){ tbody.appendChild(r); });
+    rows.forEach(function(r){ tbody(category).appendChild(r); });
+  }
+  if (sortBtn) sortBtn.addEventListener('click', function(){
+    sortByEndDate('valve');
+    sortByEndDate('instrument');
     renumber();
-  }
-
-  // 事件委托
-  tbody.addEventListener('click', function(e){
-    var addBtn = e.target.closest('.add-device-btn');
-    if (addBtn){ activeRow = addBtn.closest('tr'); modal && bootstrap.Modal.getOrCreateInstance(modal).show(); return; }
-    var rmBtn = e.target.closest('.remove-row-btn');
-    if (rmBtn){ rmBtn.closest('tr').remove(); renumber(); return; }
-  });
-  tbody.addEventListener('change', function(e){
-    if (e.target.classList.contains('date-input')) sortByDate();
-  });
-
-  // 弹窗内搜索/筛选/全选
-  var pickerSearch = document.getElementById('pickerSearch');
-  var pickerUnit = document.getElementById('pickerUnit');
-  if (pickerSearch) pickerSearch.addEventListener('input', filterPicker);
-  if (pickerUnit) pickerUnit.addEventListener('change', filterPicker);
-  function filterPicker(){
-    var kw = (pickerSearch ? pickerSearch.value : '').toLowerCase();
-    var uf = pickerUnit ? pickerUnit.value : '';
-    document.querySelectorAll('.picker-row').forEach(function(r){
-      var tag = (r.dataset.tag || '').toLowerCase();
-      var name = (r.dataset.name || '').toLowerCase();
-      var unit = r.dataset.unit || '';
-      r.style.display = (!kw || tag.includes(kw) || name.includes(kw)) && (!uf || unit === uf) ? '' : 'none';
-    });
-    updatePickerCount();
-  }
-  var selAll = document.getElementById('pickerSelectAll');
-  if (selAll) selAll.addEventListener('change', function(){
-    document.querySelectorAll('.picker-row:not([style*="display:none"]) .picker-checkbox').forEach(function(cb){ cb.checked = selAll.checked; });
-    updatePickerCount();
-  });
-  function updatePickerCount(){
-    var el = document.getElementById('pickerCount');
-    if (el) el.textContent = document.querySelectorAll('.picker-checkbox:checked').length;
-  }
-  document.querySelectorAll('.picker-checkbox').forEach(function(cb){ cb.addEventListener('change', updatePickerCount); });
-  document.querySelectorAll('.picker-row').forEach(function(row){
-    row.addEventListener('click', function(e){
-      if (e.target.type !== 'checkbox'){ var cb = this.querySelector('.picker-checkbox'); cb.checked = !cb.checked; updatePickerCount(); }
-    });
-  });
-
-  var confirmBtn = document.getElementById('pickerConfirm');
-  if (confirmBtn) confirmBtn.addEventListener('click', function(){
-    if (!activeRow){ return; }
-    var devs = [];
-    document.querySelectorAll('.picker-checkbox:checked').forEach(function(cb){
-      var r = cb.closest('.picker-row');
-      devs.push({type: r.dataset.type, id: r.dataset.id, tag: r.dataset.tag, name: r.dataset.name});
-    });
-    if (devs.length){ addBadgeToRow(activeRow, devs); }
-    activeRow = null;
-    [].slice.call(document.querySelectorAll('.picker-checkbox:checked')).forEach(function(cb){ cb.checked = false; });
-    updatePickerCount();
-    bootstrap.Modal.getOrCreateInstance(modal).hide();
+    sortBtn.textContent = '已按计划结束日期排序';
+    setTimeout(function(){ sortBtn.innerHTML = '<i class="bi bi-sort-numeric-down"></i> 按计划结束日期排序'; }, 1800);
   });
 
   // 初始渲染
-  if (initGroups.length){
-    initGroups.forEach(function(g){
-      var devs = g.devices.map(function(d){ return {type: d.type, id: d.id, tag: d.tag, name: d.name}; });
-      addRow(devs, g);
+  if (initRows.length){
+    initRows.forEach(function(row){
+      var category = row.category === 'instrument' ? 'instrument' : 'valve';
+      addRow(category, row.devices || [], row);
     });
   } else {
-    addRow([]);
+    addRow('valve', []);
+    addRow('instrument', []);
   }
-  sortByDate();
+  refreshCounts();
 
-  document.getElementById('addRowBtn').addEventListener('click', function(){ addRow([]); sortByDate(); });
-
-  // 提交：序列化
+  // 提交序列化
   document.getElementById('planForm').addEventListener('submit', function(e){
     var rows = [];
-    [].slice.call(tbody.querySelectorAll('tr')).forEach(function(tr){
-      var cell = tr.querySelector('.tag-cell');
-      var devs = cell._devs || [];
+    allRows().forEach(function(tr){
+      var category = tr.dataset.category;
+      var devs = (tr.querySelector('.tag-cell')._devs || []);
       if (!devs.length) return;
+      var start = tr.querySelector('.start-input').value;
+      var end = tr.querySelector('.end-input').value;
       rows.push({
-        devices: devs.map(function(d){ return {type: d.type, id: d.id, tag: d.tag, name: d.name}; }),
-        planned_date_end: dateVal(tr),
+        group_id: tr.dataset.groupId || null,
+        category: category,
+        devices: devs.map(function(d){ return { type: d.type, id: d.id, tag: d.tag, name: d.name }; }),
+        planned_date_start: start,
+        planned_date_end: end,
         maintenance_project: tr.querySelector('.proj-input').value,
         maintenance_scheme: tr.querySelector('.scheme-input').value,
         safety_measures: tr.querySelector('.safety-input').value,
         project_leader: tr.querySelector('.pj-input').value,
         maintenance_leader: tr.querySelector('.ml-input').value,
         quality_acceptance: tr.querySelector('.qa-input').value,
-        remark: tr.querySelector('.remark-input').value,
+        remark: tr.querySelector('.remark-input').value
       });
     });
-    if (!rows.length){ e.preventDefault(); alert('请至少添加一行，且每行至少选择一个位号'); return; }
+    if (!rows.length){
+      e.preventDefault();
+      alert('请至少填写一行计划明细，且每行都要选择位号并填写计划开始/结束日期');
+      return;
+    }
+    var missing = rows.filter(function(r){ return !r.planned_date_start || !r.planned_date_end; });
+    if (missing.length){
+      e.preventDefault();
+      alert('有 ' + missing.length + ' 行未填写完整的计划开始/结束日期');
+      return;
+    }
     document.getElementById('rowsJson').value = JSON.stringify(rows);
   });
 })();
 </script>
-<style>
-.tag-cell {
-  min-height: 32px;
-  max-height: 105px;
-  overflow-y: auto;
-}
-.tag-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: #eff6ff; color: #1e3a5f; border: 1px solid #bfdbfe;
-  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin: 2px;
-}
-.tag-badge-x { cursor: pointer; font-style: normal; opacity: .6; }
-.tag-badge-x:hover { opacity: 1; color: #ef4444; }
-.row-num { text-align: center; color: var(--color-text-muted); padding-top: 8px; }
-.add-device-btn { border-color: var(--color-border); color: var(--mode-color); }
-#planTbody textarea { min-width: 180px; }
-</style>
 {% endblock %}

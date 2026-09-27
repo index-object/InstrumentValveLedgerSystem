@@ -1,23 +1,39 @@
 import sys
 import os
+import tempfile
+import atexit
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 import pytest
 from app import create_app, db
 from app.models import User, SheetMapping
 
+# 必须在 create_app 之前指定独立数据库：create_app() 会立即读取
+# SQLALCHEMY_DATABASE_URI，创建后再改 app.config 无效，那样
+# db.create_all()/drop_all() 会作用于项目根目录的 valves.db 并清空它。
+_TEST_DB_FD, _TEST_DB_PATH = tempfile.mkstemp(prefix="valves-sheetmap-", suffix=".db")
+os.close(_TEST_DB_FD)
+atexit.register(lambda: os.path.exists(_TEST_DB_PATH) and os.remove(_TEST_DB_PATH))
+
 
 @pytest.fixture
 def app():
-    app = create_app()
-    app.config["TESTING"] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-    app.config["WTF_CSRF_ENABLED"] = False
+    from config import Config
+
+    class TestConfig(Config):
+        TESTING = True
+        SQLALCHEMY_DATABASE_URI = "sqlite:///" + _TEST_DB_PATH
+        WTF_CSRF_ENABLED = False
+
+    app = create_app(TestConfig)
 
     with app.app_context():
+        db.drop_all()
         db.create_all()
         yield app
+        db.session.remove()
         db.drop_all()
+        db.engine.dispose()
 
 
 @pytest.fixture

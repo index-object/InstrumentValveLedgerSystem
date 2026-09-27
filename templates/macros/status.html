@@ -1,0 +1,66 @@
+{#
+  状态徽章与动作按钮宏。
+
+  设计约定（对应检修计划模块「看到字样忍不住想点」的反馈）：
+  * 状态一律用 status_* 宏渲染，输出不可点击的 span（cursor: default，无 hover 效果）；
+  * 动作一律用 action_* 宏或 <button>/<a class="...--action"> 渲染，有明确的按钮外观与 hover 反馈。
+#}
+
+{% macro status_plan(status, label, icon=none) %}
+  {%- set cls = {'draft': 'draft', 'published': 'published', 'archived': 'archived'}.get(status, 'draft') -%}
+  <span class="cmp-status cmp-status--{{ cls }}">
+    {%- if icon %}<i class="bi {{ icon }}"></i>{% endif %} {{ label }}
+  </span>
+{% endmacro %}
+
+{% macro status_item(item) %}
+  {%- if item.status == 'completed' -%}
+    <span class="cmp-status cmp-status--completed"><i class="bi bi-check-circle-fill"></i> 已完成</span>
+  {%- elif item.status == 'pending' -%}
+    <span class="cmp-status cmp-status--pending"><i class="bi bi-hourglass"></i> 待办</span>
+  {%- else -%}
+    <span class="cmp-status cmp-status--draft">{{ item.status }}</span>
+  {%- endif -%}
+{% endmacro %}
+
+{# 逾期角标：与状态徽章并存，红色以示区别 #}
+{% macro late_flag(days) %}
+  {%- if days is not none and days < 0 -%}
+    <span class="cmp-late-flag" title="已超过计划结束日期 {{ -days }} 天">
+      <i class="bi bi-exclamation-triangle-fill"></i> 逾期 {{ -days }} 天
+    </span>
+  {%- endif -%}
+{% endmacro %}
+
+{# 剩余天数：逾期为红，7 天内为橙，其余为灰 #}
+{% macro days_left(days) %}
+  {%- if days is none -%}
+    <span class="text-muted">—</span>
+  {%- elif days < 0 -%}
+    <span style="color:#b91c1c;font-weight:700;">已逾期 {{ -days }} 天</span>
+  {%- elif days == 0 -%}
+    <span style="color:#d97706;font-weight:700;">今天到期</span>
+  {%- elif days <= 7 -%}
+    <span style="color:#d97706;font-weight:600;">还剩 {{ days }} 天</span>
+  {%- else -%}
+    <span style="color:#64748b;">还剩 {{ days }} 天</span>
+  {%- endif -%}
+{% endmacro %}
+
+{# 标记计划完成：动作按钮 + 数据属性驱动的确认弹窗，文案说明不可逆后果 #}
+{% macro archive_button(plan, progress=none, extra_class='') %}
+  <button type="button"
+          class="cmp-btn cmp-btn--complete cmp-btn--action cmp-btn--sm {{ extra_class }}"
+          data-bs-toggle="modal" data-bs-target="#archiveModal">
+    <i class="bi bi-check2-circle"></i> 标记完成
+  </button>
+{% endmacro %}
+
+{% macro delete_button(action, confirm_text, extra_class='') %}
+  <form method="POST" action="{{ action }}" style="display:inline;"
+        onsubmit="return confirm('{{ confirm_text }}')">
+    <button class="cmp-btn cmp-btn--outline-danger cmp-btn--action cmp-btn--sm {{ extra_class }}">
+      <i class="bi bi-trash"></i> 删除
+    </button>
+  </form>
+{% endmacro %}

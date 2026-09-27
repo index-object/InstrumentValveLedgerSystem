@@ -11,6 +11,7 @@ import pytest
 from flask_login import login_user
 from app import db
 from app.models import User, Ledger, MaintenanceRecord
+from app.devices.types.control_valve import ControlValve as Valve
 from app.routes.valves.permissions import (
     can_create_ledger,
     can_edit_ledger,

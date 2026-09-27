@@ -1,31 +1,94 @@
 import sys
 import os
+import tempfile
+import atexit
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from app import create_app, db
 from app.models import User, Ledger, MaintenanceRecord, Setting
-from sqlalchemy.pool import StaticPool
+
+# 测试必须使用独立数据库，绝不能碰项目根目录的 valves.db。
+# create_app() 内部会 from_object(Config) 并读取 SQLALCHEMY_DATABASE_URI，
+# 因此 URI 必须在 create_app 之前通过 config_class 指定——在创建之后
+# 修改 app.config 是无效的，那样 db.create_all()/drop_all() 会直接作用于
+# 真实数据库并清空它。
+_TEST_DB_FD, _TEST_DB_PATH = tempfile.mkstemp(prefix="valves-test-", suffix=".db")
+os.close(_TEST_DB_FD)
+atexit.register(lambda: os.path.exists(_TEST_DB_PATH) and os.remove(_TEST_DB_PATH))
 
 
-@pytest.fixture
+def _build_test_config_class():
+    from config import Config
+
+    class TestConfig(Config):
+        TESTING = True
+        SQLALCHEMY_DATABASE_URI = "sqlite:///" + _TEST_DB_PATH
+        WTF_CSRF_ENABLED = False
+
+    return TestConfig
+
+
+@pytest.fixture(scope="session")
 def app():
-    app = create_app()
-    app.config["TESTING"] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-    app.config["WTF_CSRF_ENABLED"] = False
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"poolclass": StaticPool, "pool_recycle": -1}
+    """整个测试会话共用一个 app 与一个临时数据库。
+
+    必须是会话级：db 是模块级单例，若按函数反复 create_app()，
+    同一个测试内多个 fixture 依赖 app 时会重复 init_app 并争抢文件库，
+    表现为 sqlite "database is locked"。表结构只建一次，数据在
+    init_database fixture 中按用例清空。
+    """
+    app = create_app(_build_test_config_class())
 
     with app.app_context():
+        db.drop_all()
         db.create_all()
         yield app
-        db.drop_all()
+        db.session.remove()
+        db.engine.dispose()
 
 
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def clean_db(app):
+    """每个用例开始前清空全部业务表，保证用例之间互不影响。
+
+    会话级 app 让表结构只建一次，数据隔离靠这里完成。
+    """
+    with app.app_context():
+        _clear_all_rows()
+    yield
+
+
+def _clear_all_rows():
+    """清空全部业务表，保证用例之间互不影响（保留表结构）"""
+    from app.models import (
+        User, Ledger, MaintenanceRecord, Setting, SheetMapping, Notification,
+        MaintenancePlan, MaintenancePlanGroup, MaintenancePlanItem, PlanRecipient,
+        ValveAttachment, ValvePhoto, ValveDocument, ValveFile, ApprovalLog,
+    )
+    from app.devices import DeviceTypeRegistry
+
+    models = [
+        MaintenancePlanItem, MaintenancePlanGroup, PlanRecipient, MaintenancePlan,
+        Notification, MaintenanceRecord, ApprovalLog, ValveAttachment, ValvePhoto,
+        ValveDocument, ValveFile, SheetMapping, Ledger, Setting, User,
+    ]
+    for config in DeviceTypeRegistry.all():
+        if config.model_class:
+            models.insert(0, config.model_class)
+
+    for model in models:
+        try:
+            db.session.query(model).delete()
+        except Exception:
+            db.session.rollback()
+    db.session.commit()
 
 
 @pytest.fixture
@@ -47,7 +110,6 @@ def init_database(app):
         yield db
 
         db.session.remove()
-        db.drop_all()
 
 
 # ========== 权限测试用fixtures ==========

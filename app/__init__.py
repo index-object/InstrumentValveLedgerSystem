@@ -52,29 +52,23 @@ def create_app(config_class=Config):
             pending_count = 0
 
         try:
-            if current_user.is_authenticated:
+            if current_user.is_authenticated and current_user.role == "employee":
                 from datetime import date, timedelta
                 from app.models import MaintenancePlan, MaintenancePlanItem
                 now = date.today()
-                plan_warning_count = 0
-                if current_user.role in ("employee", "admin"):
-                    published_plan_ids = db.session.query(MaintenancePlan.id).filter(
-                        MaintenancePlan.status == "published"
-                    ).subquery()
-                    seven_days_later = now + timedelta(days=7)
-                    plan_warning_count = MaintenancePlanItem.query.filter(
-                        MaintenancePlanItem.plan_id.in_(published_plan_ids),
-                        MaintenancePlanItem.status == "pending",
-                        MaintenancePlanItem.planned_date_end >= now.isoformat(),
-                        MaintenancePlanItem.planned_date_end <= seven_days_later.isoformat(),
-                    ).count() + MaintenancePlanItem.query.filter(
-                        MaintenancePlanItem.plan_id.in_(published_plan_ids),
-                        MaintenancePlanItem.status == "pending",
-                        MaintenancePlanItem.planned_date_end < now.isoformat(),
-                    ).count()
+                # 角标口径与「检修预警」页第一条统计保持一致：
+                # 仅统计指派给当前用户的进行中计划项，且已逾期或 7 天内到期。
+                plan_warning_count = MaintenancePlanItem.query.join(
+                    MaintenancePlan, MaintenancePlanItem.plan_id == MaintenancePlan.id
+                ).filter(
+                    MaintenancePlan.status == "published",
+                    MaintenancePlanItem.status == "pending",
+                    MaintenancePlan.recipients.any(id=current_user.id),
+                    MaintenancePlanItem.planned_date_end <= now + timedelta(days=7),
+                ).count()
             else:
                 plan_warning_count = 0
-        except:
+        except Exception:
             plan_warning_count = 0
 
         from app.devices.valve_helper import VALVE_TYPES

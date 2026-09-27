@@ -40,11 +40,11 @@
                 </div>
             </div>
             <div class="mb-3" id="planItemSection" style="display:none;">
-                    <label class="cmp-label" style="font-weight: 500;">归属年度计划</label>
+                    <label class="cmp-label" style="font-weight: 500;">关联检修计划任务</label>
                     <select name="plan_item_id" id="planItemSelect" class="form-control cmp-input">
-                        <option value="">— 不关联计划 —</option>
+                        <option value="">— 不关联计划（普通维护）—</option>
                     </select>
-                    <small class="text-muted">该设备有待完成的年度保养计划项，可选关联</small>
+                    <small class="text-muted">选择后保存，该计划任务将自动标记为已完成，并推进计划进度</small>
             </div>
             <div class="mb-3">
                     <label class="cmp-label" style="font-weight: 500;"><span class="required">*</span> 检修内容</label>
@@ -123,6 +123,7 @@
 <script>
 const valvesData = {{ valves_data|tojson }};
 const planItemsData = {{ plan_items_data|tojson }};
+const preselectedItem = {{ (preselected_item or {})|tojson }};
 
 let selectedValveId = null;
 let selectedValveTag = null;
@@ -174,16 +175,40 @@ function renderValves() {
 
             const items = planItemsData.filter(p => p.device_type === selectedValveType && p.device_id === selectedValveId);
             const select = document.getElementById('planItemSelect');
-            select.innerHTML = '<option value="">— 不关联计划 —</option>';
+            select.innerHTML = '<option value="">— 不关联计划（普通维护）—</option>';
             items.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p.id;
-                opt.textContent = p.plan_title + ' (截止 ' + p.planned_date_end + ')';
+                opt.textContent = p.plan_title + ' · ' + p.tag + '（截止 ' + p.planned_date_end + '）';
                 select.appendChild(opt);
             });
             document.getElementById('planItemSection').style.display = items.length ? '' : 'none';
         }
     });
+
+    // 从「我的检修任务 / 检修预警」带 plan_item_id 进入：自动预选设备与该计划任务
+    if (preselectedItem && preselectedItem.id) {
+        selectedValveId = preselectedItem.device_id;
+        selectedValveType = preselectedItem.device_type;
+        const device = valvesData.find(v => v.id === preselectedItem.device_id && v.type === preselectedItem.device_type);
+        if (device) {
+            selectedValveTag = device.tag;
+            selectedValveName = device.name;
+            selectedValveUnit = device.device_unit;
+        }
+        document.getElementById('valveSelectConfirm').click();
+        document.getElementById('planItemSelect').value = preselectedItem.id;
+        document.getElementById('planItemSection').style.display = '';
+        // 计划任务信息不随设备选择变化，直接展示为提示条
+        const tip = document.createElement('div');
+        tip.className = 'alert alert-warning py-2 px-3 mb-3';
+        tip.style.cssText = 'background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:13px;color:#92400e;';
+        tip.innerHTML = '<i class="bi bi-info-circle-fill me-1"></i>正在完成计划任务：<strong>'
+            + preselectedItem.tag + '</strong> ' + (preselectedItem.device_name || '')
+            + '，所属计划《' + preselectedItem.plan_title + '》，计划截止 ' + preselectedItem.planned_date_end
+            + '。保存后该任务自动标记完成。';
+        document.getElementById('planItemSection').parentNode.insertBefore(tip, document.getElementById('planItemSection'));
+    }
 
 const modalEl = document.getElementById('valveSelectModal');
 modalEl.addEventListener('show.bs.modal', function() {

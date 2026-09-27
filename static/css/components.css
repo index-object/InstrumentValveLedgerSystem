@@ -153,6 +153,47 @@
 .cmp-badge--rejected { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
 .cmp-badge--draft { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
 
+/* ─── 计划/任务状态徽章 ───
+   状态一律不可点击：无 hover 位移、无阴影变化、cursor 为默认。
+   与动作按钮（.cmp-btn / .cmp-toolbar-btn，均有 pointer 与 hover 反馈）形成明确区分，
+   避免用户看到「已完成」这类状态文字忍不住去点。 */
+.cmp-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; border: 1px solid transparent;
+  cursor: default; user-select: none; white-space: nowrap;
+}
+.cmp-status--draft { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+.cmp-status--published { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+.cmp-status--archived { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.cmp-status--pending { background: #eff6ff; color: #1e3a5f; border-color: #bfdbfe; }
+.cmp-status--completed { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.cmp-status--overdue { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+
+/* 逾期角标：与状态并存，可追加在状态徽章之后 */
+.cmp-late-flag {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 12px; font-weight: 600; color: #b91c1c;
+  background: #fef2f2; border: 1px solid #fecaca;
+  border-radius: 999px; padding: 4px 10px; cursor: default; user-select: none;
+}
+
+/* ─── 动作按钮（统一可点击暗示：pointer + hover 位移与阴影 + 按下态） ─── */
+.cmp-btn--action, .cmp-toolbar-btn--action {
+  cursor: pointer; border-width: 1px; border-style: solid;
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+.cmp-btn--action:hover, .cmp-toolbar-btn--action:hover {
+  transform: translateY(-1px); box-shadow: 0 3px 10px rgba(15, 23, 42, .12);
+}
+.cmp-btn--action:active, .cmp-toolbar-btn--action:active { transform: translateY(0); box-shadow: none; }
+
+/* 危险动作（标记完成/删除）需要更明确的按钮外观 */
+.cmp-btn--complete { background: #059669; color: #fff; border-color: #047857; }
+.cmp-btn--complete:hover { background: #047857; color: #fff; }
+.cmp-btn--outline-danger { background: #fff; color: #dc2626; border-color: #fecaca; }
+.cmp-btn--outline-danger:hover { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+
 /* ─── Pagination ─── */
 .cmp-pagination { display: flex; justify-content: center; gap: 8px; margin-top: 24px; }
 .cmp-page-link {
