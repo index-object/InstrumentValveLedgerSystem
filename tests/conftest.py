@@ -1,5 +1,6 @@
 import sys
 import os
+import shutil
 import tempfile
 import atexit
 
@@ -18,6 +19,11 @@ _TEST_DB_FD, _TEST_DB_PATH = tempfile.mkstemp(prefix="valves-test-", suffix=".db
 os.close(_TEST_DB_FD)
 atexit.register(lambda: os.path.exists(_TEST_DB_PATH) and os.remove(_TEST_DB_PATH))
 
+# 上传目录同理：测试上传的文件（含导入中间数据）必须落在临时目录，
+# 不能写进项目真实的 uploads/，否则每跑一次测试就多一批残留文件。
+_TEST_UPLOAD_DIR = tempfile.mkdtemp(prefix="valves-test-uploads-")
+atexit.register(lambda: shutil.rmtree(_TEST_UPLOAD_DIR, ignore_errors=True))
+
 
 def _build_test_config_class():
     from config import Config
@@ -26,6 +32,7 @@ def _build_test_config_class():
         TESTING = True
         SQLALCHEMY_DATABASE_URI = "sqlite:///" + _TEST_DB_PATH
         WTF_CSRF_ENABLED = False
+        UPLOAD_FOLDER = _TEST_UPLOAD_DIR
 
     return TestConfig
 
@@ -52,6 +59,16 @@ def app():
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def restore_upload_folder(app):
+    """用例里可能临时改写 UPLOAD_FOLDER（如导出/导入用例）指向自己的 tmp_path，
+    这些目录在用例结束后会被删掉。app 是会话级的，不还原就会让后面的用例
+    把文件写进已删除的目录。"""
+    original = app.config.get("UPLOAD_FOLDER")
+    yield
+    app.config["UPLOAD_FOLDER"] = original
 
 
 @pytest.fixture(autouse=True)

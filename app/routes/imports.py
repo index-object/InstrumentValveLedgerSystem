@@ -5,7 +5,10 @@ from app.models import db, Ledger, ValveAttachment, SheetMapping, Setting
 from app.devices import DeviceTypeRegistry
 from app.import_engine import ImportEngine
 from app.utils.duplicate_check import check_duplicate
-from app.utils.import_cache import cleanup_import_cache
+from app.utils.import_cache import (
+    cleanup_import_cache, cleanup_scratch,
+    save_scratch, load_scratch, delete_scratch,
+)
 from app.utils.maintenance_link import relink_orphan_maintenance_records
 from datetime import datetime
 import os
@@ -14,6 +17,13 @@ import uuid
 imports = Blueprint("imports", __name__)
 
 _engine = None
+
+# 会话里只放 token。解析错误、同批次重复选择、跳过明细都会随数据量增长，
+# 直接写进会话会撑爆签名 Cookie（上限 4093 字节）并被浏览器静默丢弃，
+# 后续步骤就会读不到状态而报「找不到已上传的文件」。数据本体见
+# app/utils/import_cache.py 的 scratch 部分。
+SKIPPED_TOKEN_KEY = "import_skipped_token"
+CHOICES_TOKEN_KEY = "import_conflict_choices_token"
 
 
 def get_engine():
@@ -26,6 +36,30 @@ def get_engine():
 def _skip_duplicate_for_tag(tag):
     """位号为 / 或 \\ 时不参与重复验证"""
     return not tag or tag.strip() in ("/", "-", "\\")
+
+
+def _save_conflict_choices(choices):
+    """同批次重复的用户选择可能很多条，存服务器端，会话只留 token。"""
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+    if choices:
+        session[CHOICES_TOKEN_KEY] = save_scratch(upload_folder, choices)
+    else:
+        _clear_conflict_choices()
+
+
+def _load_conflict_choices():
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+    token = session.get(CHOICES_TOKEN_KEY)
+    if not token:
+        return {}
+    return load_scratch(upload_folder, token) or {}
+
+
+def _clear_conflict_choices():
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+    token = session.pop(CHOICES_TOKEN_KEY, None)
+    if token:
+        delete_scratch(upload_folder, token)
 
 
 def _infer_attachment_type(name: str) -> str:
@@ -50,7 +84,11 @@ def _infer_attachment_type(name: str) -> str:
 @imports.route("/imports")
 @login_required
 def index():
-    skipped = session.pop("import_skipped", None)
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+    token = session.pop(SKIPPED_TOKEN_KEY, None)
+    skipped = load_scratch(upload_folder, token) if token else None
+    if token:
+        delete_scratch(upload_folder, token)
     return render_template("imports/import.html", skipped=skipped)
 
 
@@ -180,6 +218,7 @@ def upload():
     retention = Setting.query.get("import_cache_retention")
     max_keep = int(retention.value) if retention else 30
     cleanup_import_cache(upload_folder, max_keep)
+    cleanup_scratch(upload_folder)
 
     engine = get_engine()
     try:
@@ -194,9 +233,9 @@ def upload():
 
     preview, unmatched = _build_preview(result)
 
+    # 解析错误不再进会话：预览/冲突页都会重新解析，直接用那次结果的 errors
     session["import_file"] = saved_name
     session["import_filename"] = filename
-    session["import_errors"] = result.errors
     session.pop("import_mappings", None)
 
     # 查记忆表，自动填充已学习的映射
@@ -235,7 +274,7 @@ def upload():
         )
 
     has_conflicts = any(p.get("batch_conflict_count", 0) > 0 for p in preview)
-    session.pop("import_conflict_choices", None)
+    _clear_conflict_choices()
     if has_conflicts:
         return redirect(url_for("imports.conflicts"))
 
@@ -259,7 +298,7 @@ def preview():
         return redirect(url_for("imports.index"))
 
     # 应用同批次重复的用户选择
-    conflict_choices = session.get("import_conflict_choices", {})
+    conflict_choices = _load_conflict_choices()
     for sr in result.sheets:
         sheet_choices = conflict_choices.get(sr.sheet_name, {})
         if sheet_choices:
@@ -348,7 +387,7 @@ def preview():
                 item["detected_name"] = cfg.name
 
     filename = session.get("import_filename", "导入文件")
-    errors = session.get("import_errors", [])
+    errors = result.errors
     return render_template(
         "imports/import_preview.html",
         preview=preview,
@@ -395,7 +434,7 @@ def save_mapping():
         return redirect(url_for("imports.preview"))
     preview, _ = _build_preview(result)
     has_conflicts = any(p.get("batch_conflict_count", 0) > 0 for p in preview)
-    session.pop("import_conflict_choices", None)
+    _clear_conflict_choices()
     if has_conflicts:
         return redirect(url_for("imports.conflicts"))
     return redirect(url_for("imports.preview"))
@@ -431,7 +470,7 @@ def conflicts():
     return render_template("imports/resolve_conflicts.html",
                            conflicts_data=conflicts_data,
                            filename=session.get("import_filename", "导入文件"),
-                           errors=session.get("import_errors", []))
+                           errors=result.errors)
 
 
 @imports.route("/imports/resolve-conflicts", methods=["POST"])
@@ -451,7 +490,7 @@ def resolve_conflicts():
                 if sheet_name not in choices:
                     choices[sheet_name] = {}
                 choices[sheet_name][batch_key] = int(value)
-    session["import_conflict_choices"] = choices
+    _save_conflict_choices(choices)
     return redirect(url_for("imports.preview"))
 
 
@@ -498,6 +537,7 @@ def execute():
     total_updated = 0
     per_sheet = []
     type_ledgers = {}
+    conflict_choices = _load_conflict_choices()
 
     for sr in result.sheets:
         sheet_name = sr.sheet_name
@@ -570,8 +610,8 @@ def execute():
                     db.session.delete(ledger)
                 continue
 
-        # 从 session 读取同批次重复的用户选择
-        batch_choices = session.get("import_conflict_choices", {}).get(sheet_name, {})
+        # 同批次重复的用户选择（已从服务器端读回，循环外只读一次）
+        batch_choices = conflict_choices.get(sheet_name, {})
 
         # 写入记录
         seen_tags = {}
@@ -671,11 +711,9 @@ def execute():
         os.remove(saved_path)
     except Exception:
         pass
-    for key in (
-        "import_file", "import_preview", "import_errors",
-        "import_mappings", "import_filename",
-    ):
+    for key in ("import_file", "import_mappings", "import_filename"):
         session.pop(key, None)
+    _clear_conflict_choices()
 
     all_skipped_details = []
     for s in per_sheet:
@@ -687,5 +725,6 @@ def execute():
         parts.append(f"更新 {total_updated} 条")
     flash(f"导入完成：{'，'.join(parts)}")
     if all_skipped_details:
-        session["import_skipped"] = all_skipped_details
+        # 跳过明细可能上百条，同样存服务器端，避免撑爆会话 Cookie
+        session[SKIPPED_TOKEN_KEY] = save_scratch(upload_folder, all_skipped_details)
     return redirect(url_for("imports.index"))
