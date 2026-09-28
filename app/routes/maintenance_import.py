@@ -13,16 +13,29 @@ from app.models import db, MaintenanceRecord, Setting
 from app.utils.device_lookup import resolve_device, resolve_type_code
 from app.utils.maintenance_link import relink_orphan_maintenance_records
 from app.devices import DeviceTypeRegistry
-from app.utils.import_cache import cleanup_import_cache
+from app.utils.import_cache import (
+    cleanup_import_cache, cleanup_scratch,
+    save_scratch, load_scratch, delete_scratch,
+)
 
 maintenance_import = Blueprint("maintenance_import", __name__,
                                template_folder="../../templates")
+
+# 会话里只放这两个 token。解析结果动辄几十上百条，一旦写进会话就会撑爆
+# 签名 Cookie（上限 4093 字节），浏览器静默丢弃后再读会话就报「找不到已上传
+# 的文件」。数据本体存服务器端，见 app/utils/import_cache.py 的 scratch 部分。
+TOKEN_KEY = "maintenance_import_token"
+SKIPPED_TOKEN_KEY = "maintenance_import_skipped_token"
 
 
 @maintenance_import.route("/maintenance/import")
 @login_required
 def index():
-    skipped = session.pop("maintenance_import_skipped", None)
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+    token = session.pop(SKIPPED_TOKEN_KEY, None)
+    skipped = load_scratch(upload_folder, token) if token else None
+    if token:
+        delete_scratch(upload_folder, token)
     return render_template("maintenance_import/import.html", skipped=skipped)
 
 
@@ -51,6 +64,48 @@ def _parse_xlsx(filepath: str) -> list[dict]:
         if record.get("装置名称") and record.get("设备位号"):
             records.append(record)
     return records
+
+
+def _classify_records(raw_records: list[dict]) -> tuple[list, list, list, list]:
+    """把原始行分成 已匹配 / 未匹配 / 歧义 / 重复 四类。
+
+    返回的每项都带 ``index``（在 raw_records 中的下标），预览页据此回填
+    歧义行的类型选择，因此这里的顺序必须与上传时的行序一致。
+    """
+    matched = []
+    unmatched = []
+    ambiguous = []
+    duplicates = []
+
+    for idx, rec in enumerate(raw_records):
+        unit = rec.get("装置名称", "")
+        tag = rec.get("设备位号", "")
+        if _check_duplicate(unit, tag, rec.get("检修时间", "")):
+            duplicates.append({"index": idx, "data": rec})
+            continue
+        result = resolve_device(unit, tag, type_hint=resolve_type_code(rec.get("设备类型", "")))
+        if result is None:
+            unmatched.append({"index": idx, "data": rec})
+        elif len(result) == 1:
+            dev_type, dev_id, snapshot = result[0]
+            matched.append({
+                "index": idx,
+                "data": rec,
+                "device_type": dev_type,
+                "device_id": dev_id,
+                "snapshot": snapshot,
+            })
+        else:
+            ambiguous.append({
+                "index": idx,
+                "data": rec,
+                "candidates": [
+                    {"code": code, "name": _get_type_name(code)}
+                    for code, _, _ in result
+                ],
+            })
+
+    return matched, unmatched, ambiguous, duplicates
 
 
 @maintenance_import.route("/maintenance/import/upload", methods=["POST"])
@@ -98,46 +153,20 @@ def upload():
             pass
         return redirect(url_for("maintenance_import.index"))
 
-    matched = []
-    unmatched = []
-    ambiguous = []
-    duplicates = []
+    matched, unmatched, ambiguous, duplicates = _classify_records(raw_records)
 
-    for idx, rec in enumerate(raw_records):
-        unit = rec.get("装置名称", "")
-        tag = rec.get("设备位号", "")
-        if _check_duplicate(unit, tag, rec.get("检修时间", "")):
-            duplicates.append({"index": idx, "data": rec})
-            continue
-        result = resolve_device(unit, tag, type_hint=resolve_type_code(rec.get("设备类型", "")))
-        if result is None:
-            unmatched.append({"index": idx, "data": rec})
-        elif len(result) == 1:
-            dev_type, dev_id, snapshot = result[0]
-            matched.append({
-                "index": idx,
-                "data": rec,
-                "device_type": dev_type,
-                "device_id": dev_id,
-                "snapshot": snapshot,
-            })
-        else:
-            ambiguous.append({
-                "index": idx,
-                "data": rec,
-                "candidates": [
-                    {"code": code, "name": _get_type_name(code)}
-                    for code, _, _ in result
-                ],
-            })
-
-    session["maintenance_import_file"] = saved_name
-    session["maintenance_import_filename"] = file.filename
-    session["maintenance_import_raw"] = raw_records
-    session["maintenance_import_matched"] = matched
-    session["maintenance_import_unmatched"] = unmatched
-    session["maintenance_import_ambiguous"] = ambiguous
-    session["maintenance_import_duplicates"] = duplicates
+    # 解析结果写服务器端，会话只留 token：否则文件稍大就会撑爆 4KB 的
+    # 签名 Cookie，被浏览器丢弃后点「确认导入」只会看到「找不到已上传的文件」。
+    cleanup_scratch(upload_folder)
+    session[TOKEN_KEY] = save_scratch(upload_folder, {
+        "saved_name": saved_name,
+        "filename": file.filename,
+        "raw": raw_records,
+        "matched": matched,
+        "unmatched": unmatched,
+        "ambiguous": ambiguous,
+        "duplicates": duplicates,
+    })
 
     return render_template(
         "maintenance_import/preview.html",
@@ -160,19 +189,22 @@ def upload():
 @maintenance_import.route("/maintenance/import/execute", methods=["POST"])
 @login_required
 def execute():
-    saved_name = session.get("maintenance_import_file")
-    if not saved_name:
+    upload_folder = current_app.config.get("UPLOAD_FOLDER")
+    token = session.pop(TOKEN_KEY, None)
+    payload = load_scratch(upload_folder, token) if token else None
+    if not payload:
         flash("找不到已上传的文件，请重新上传")
         return redirect(url_for("maintenance_import.index"))
+    delete_scratch(upload_folder, token)
 
-    upload_folder = current_app.config.get("UPLOAD_FOLDER")
-    saved_path = os.path.join(upload_folder, saved_name)
+    saved_name = payload.get("saved_name")
+    saved_path = os.path.join(upload_folder, saved_name) if saved_name else None
 
-    raw_records = session.get("maintenance_import_raw", [])
-    matched = session.get("maintenance_import_matched", [])
-    unmatched = session.get("maintenance_import_unmatched", [])
-    ambiguous = session.get("maintenance_import_ambiguous", [])
-    duplicates = session.get("maintenance_import_duplicates", [])
+    raw_records = payload.get("raw", [])
+    matched = payload.get("matched", [])
+    unmatched = payload.get("unmatched", [])
+    ambiguous = payload.get("ambiguous", [])
+    duplicates = payload.get("duplicates", [])
 
     unmatched_action = request.form.get("unmatched_action", "skip")
 
@@ -305,24 +337,19 @@ def execute():
     # 导入时能自动关联回原设备，而不是停在「找不到设备」。
     relink_orphan_maintenance_records()
 
-    try:
-        os.remove(saved_path)
-    except Exception:
-        pass
-    for key in (
-        "maintenance_import_file", "maintenance_import_filename",
-        "maintenance_import_raw", "maintenance_import_matched",
-        "maintenance_import_unmatched", "maintenance_import_ambiguous",
-        "maintenance_import_duplicates",
-    ):
-        session.pop(key, None)
+    if saved_path:
+        try:
+            os.remove(saved_path)
+        except OSError:
+            pass
 
     parts = [f"创建 {created} 条"]
     if skipped:
         parts.append(f"跳过 {skipped} 条")
     flash(f"导入完成：{'，'.join(parts)}")
     if skipped_details:
-        session["maintenance_import_skipped"] = skipped_details
+        # 跳过明细同样可能上百条，仍走服务器端，避免撑爆会话 Cookie
+        session[SKIPPED_TOKEN_KEY] = save_scratch(upload_folder, skipped_details)
     return redirect(url_for("maintenance_import.index"))
 
 
