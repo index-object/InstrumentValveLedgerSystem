@@ -1,69 +1,112 @@
-from flask import flash, redirect, url_for, request, render_template, make_response
-from flask_login import login_required, current_user
-from app.models import db
+# coding=utf-8
+"""阀门台账导出。
+
+导出的数据范围必须与用户在列表页上看到的一致：既受角色、来源上下文
+（全部台账 / 我的台账 / 审批中心 / 数据统计）约束，也受当前搜索、状态
+与列筛选约束；勾选导出（ids）同样不能绕过这些口径。
+"""
+
+from urllib.parse import quote
+
+from flask import (
+    abort,
+    flash,
+    redirect,
+    url_for,
+    request,
+    make_response,
+)
+from flask_login import login_required
+
+from app.models import Ledger
 from app.devices import DeviceTypeRegistry
-from app.devices.valve_helper import get_valve_model, get_valve_by_id, get_all_valve_models, count_valves_by_status
+from app.devices.valve_helper import (
+    get_valve_by_id,
+    get_all_valve_models,
+    is_valve_type,
+)
 from app.routes.valves.forms import get_valve_export_data
+from app.routes.valves.permissions import (
+    can_export_data,
+    can_export_device,
+)
+from app.utils.excel_export import (
+    STATUS_LABELS,
+    build_excel_response,
+    exporter_label,
+    user_labels,
+)
+from app.utils.export_scope import (
+    apply_ledger_scope,
+    apply_search,
+    apply_field_filters,
+)
+from app.utils.navigation import get_from_param, url_with_params
 from datetime import datetime
 from io import BytesIO
 
 
-
-def update_ledger_status(ledger):
-    counts = count_valves_by_status(ledger.id)
-    if counts["total"] == 0:
-        return
-    if counts["approved"] == counts["total"]:
-        ledger.status = "approved"
-        ledger.approved_at = datetime.utcnow()
-
-
-
 def export_data():
-    """导出数据"""
+    """导出阀门台账数据（范围与用户当前可见的列表一致）。"""
+    if not can_export_data():
+        flash("无权导出数据")
+        return redirect(url_for("ledgers.list"))
+
     device_type = request.args.get("device_type")
-    from_param = request.args.get("from")
+    from_param = get_from_param()
     ledger_id = request.args.get("ledger_id", type=int)
     ids = request.args.getlist("ids")
-    valves = []
 
-    models = []
-    if device_type:
-        config = DeviceTypeRegistry.get(device_type)
-        if config:
-            models = [config.model_class]
-    if not models:
+    ledger = None
+    if ledger_id:
+        ledger = Ledger.query.get(ledger_id)
+        if not ledger:
+            abort(404)
+
+    # 非阀门类型统一交给设备导出处理，避免用阀门字段取数导致 500
+    if device_type and not is_valve_type(device_type):
+        return redirect(url_with_params("devices.export", type_code=device_type))
+
+    config = DeviceTypeRegistry.get(device_type) if device_type else None
+    if config and config.model_class:
+        models = [config.model_class]
+    else:
         models = get_all_valve_models()
 
+    records = []
     for model in models:
         query = model.query
+        query = apply_ledger_scope(query, model, ledger, from_param, request.args)
+        query = apply_search(query, model, request.args, broad=True)
+        query = apply_field_filters(query, model, request.args)
         if ids:
             query = query.filter(model.id.in_(ids))
-        else:
-            if from_param in ("mine", "approvals"):
-                pass
-            else:
-                query = query.filter(model.status == "approved")
-        if ledger_id:
-            query = query.filter(model.ledger_id == ledger_id)
-        if from_param == "mine":
-            query = query.filter(model.created_by == current_user.id)
-        valves.extend(query.all())
+        records.extend(query.all())
 
-    data = [get_valve_export_data(v) for v in valves]
+    # 逐条按导出权限收口：勾选导出也不能拿到他人的草稿 / 待审批数据
+    records = [r for r in records if can_export_device(r)]
+    records.sort(key=lambda r: r.id or 0)
+
+    names = user_labels({r.created_by for r in records})
+    ledger_name = ledger.名称 if ledger is not None else ""
+
+    data = []
+    for record in records:
+        row = {
+            "台账合集": ledger_name,
+            "状态": STATUS_LABELS.get(record.status, record.status or ""),
+            "创建人": names.get(record.created_by, ""),
+        }
+        row.update(get_valve_export_data(record))
+        data.append(row)
+
     import pandas as pd
+
     df = pd.DataFrame(data)
 
-    buffer = BytesIO()
-    df.to_excel(buffer, index=False, engine="openpyxl")
-    buffer.seek(0)
-
-    output = make_response(buffer.read())
-    output.headers["Content-Disposition"] = "attachment; filename=valves.xlsx"
-    output.headers["Content-Type"] = (
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    return output
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"阀门台账_{ledger_name or exporter_label()}_{stamp}"
+    return build_excel_response(df, filename)
 
 
 def export_valve_pdf(id):
@@ -71,6 +114,10 @@ def export_valve_pdf(id):
     valve = get_valve_by_id(id)
     if not valve:
         flash("未找到该阀门")
+        return redirect(url_for("valves.list"))
+
+    if not can_export_device(valve):
+        flash("无权导出该台账")
         return redirect(url_for("valves.list"))
 
     html = f"""
@@ -160,7 +207,7 @@ def export_valve_pdf(id):
         pdf_buffer.seek(0)
         output = make_response(pdf_buffer.read())
         output.headers["Content-Disposition"] = (
-            f"attachment; filename=valve_{valve.位号}.pdf"
+            f"attachment; filename=valve_{quote(valve.位号 or str(valve.id))}.pdf"
         )
         output.headers["Content-Type"] = "application/pdf"
         return output

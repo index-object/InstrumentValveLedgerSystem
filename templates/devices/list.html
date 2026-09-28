@@ -52,7 +52,7 @@
         <i class="bi bi-trash"></i> 删除
       </button>
       {% endif %}
-      <a href="{{ url_for('devices.export', type_code=type_code) }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm">
+      <a href="{{ url_with_params('devices.export', type_code=type_code, ledger_id=(ledger.id if ledger else none), from=(from_param or none)) }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary cmp-toolbar-btn--sm">
         <i class="bi bi-download"></i> 导出
       </a>
       {% if is_mine %}

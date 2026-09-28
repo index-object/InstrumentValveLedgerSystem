@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, make_response, abort
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, abort
 from flask_login import login_required, current_user
 from app.models import db, Ledger, ApprovalLog, Setting
 from app.devices import DeviceTypeRegistry
@@ -6,7 +6,6 @@ from app.utils.duplicate_check import check_duplicate
 from app.utils.params import expects_params
 from app.utils.navigation import url_with_params
 from datetime import datetime
-from io import BytesIO
 # 延迟导入 pandas（避免在应用启动时立即加载可能含有本机指令的二进制扩展）
 
 devices_bp = Blueprint("devices", __name__, url_prefix="/device")
@@ -301,35 +300,81 @@ def reject(type_code, id):
 @devices_bp.route("/<type_code>/export")
 @login_required
 def export(type_code):
+    """导出仪表数据（范围与用户当前可见的列表一致）。
+
+    员工在 ``/device/<type_code>`` 列表里只能看到自己创建的数据，
+    导出过去却是全量，这里统一按角色与列表筛选口径收口。
+    """
+    from app.routes.valves.permissions import can_export_data, can_export_device
+    from app.utils.excel_export import (
+        STATUS_LABELS,
+        build_excel_response,
+        exporter_label,
+        user_labels,
+    )
+    from app.utils.export_scope import (
+        apply_device_list_scope,
+        apply_field_filters,
+        apply_ledger_scope,
+        apply_search,
+    )
+
+    if not can_export_data():
+        flash("无权导出数据")
+        return redirect(url_for("devices.list", type_code=type_code))
+
     config = get_config_or_404(type_code)
     model = config.model_class
     fields = config.get_fields_flat()
 
     ids = request.args.getlist("ids")
-    if ids:
-        records = model.query.filter(model.id.in_(ids)).all()
+    ledger_id = request.args.get("ledger_id", type=int)
+    from_param = request.args.get("from", "all")
+
+    ledger = None
+    if ledger_id:
+        ledger = Ledger.query.get(ledger_id)
+        if not ledger:
+            abort(404)
+
+    query = model.query
+    if ledger is not None:
+        # 台账合集详情页（非阀门类型）看到的范围
+        query = apply_ledger_scope(query, model, ledger, from_param, request.args)
+        query = apply_search(query, model, request.args, broad=True)
     else:
-        records = model.query.filter_by(status="approved").all()
+        # /device/<type_code> 列表页看到的范围：员工仅自己创建的数据
+        query = apply_device_list_scope(query, model)
+        query = apply_search(query, model, request.args, broad=False)
+    query = apply_field_filters(query, model, request.args)
+    if ids:
+        query = query.filter(model.id.in_(ids))
+
+    # 逐条按导出权限收口：勾选导出也不能拿到他人的草稿 / 待审批数据
+    records = [r for r in query.all() if can_export_device(r)]
+    records.sort(key=lambda r: r.id or 0)
+
+    names = user_labels({r.created_by for r in records})
+    ledger_name = ledger.名称 if ledger is not None else ""
 
     data = []
-    for r in records:
-        row = {}
-        for f in fields:
-            row[f] = getattr(r, f, "") or ""
+    for record in records:
+        row = {
+            "台账合集": ledger_name,
+            "状态": STATUS_LABELS.get(record.status, record.status or ""),
+            "创建人": names.get(record.created_by, ""),
+        }
+        for field in fields:
+            row[field] = getattr(record, field, "") or ""
         data.append(row)
 
     import pandas as pd
-    df = pd.DataFrame(data)
-    buffer = BytesIO()
-    df.to_excel(buffer, index=False, engine="openpyxl")
-    buffer.seek(0)
 
-    output = make_response(buffer.read())
-    output.headers["Content-Disposition"] = f"attachment; filename={config.code}.xlsx"
-    output.headers["Content-Type"] = (
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    return output
+    df = pd.DataFrame(data)
+
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{config.name}_{ledger_name or exporter_label()}_{stamp}"
+    return build_excel_response(df, filename)
 
 
 @devices_bp.route("/<type_code>/check-tag")

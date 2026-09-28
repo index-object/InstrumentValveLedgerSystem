@@ -24,6 +24,13 @@ from app.routes.valves.permissions import (
     can_create_maintenance,
     can_edit_maintenance,
     can_delete_maintenance,
+    can_export_data,
+    can_export_maintenance,
+)
+from app.utils.excel_export import (
+    build_excel_response,
+    exporter_label,
+    user_labels,
 )
 from app.utils.navigation import get_from_param, url_with_params
 from werkzeug.utils import secure_filename
@@ -452,20 +459,48 @@ def maintenance_batch_delete():
 
 
 def maintenance_export():
-    """导出维护记录"""
-    import pandas as pd
-    from io import BytesIO
+    """导出维护记录（范围与维护记录列表页一致）。
+
+    员工在列表页只能看到自己创建的记录，导出过去却是全量；
+    这里统一按角色、搜索条件与勾选范围收口。
+    """
+    if not can_export_data():
+        flash("无权导出数据")
+        return redirect(url_for("valves.maintenance_list"))
 
     ids = request.args.getlist("ids")
-    if ids:
-        records = MaintenanceRecord.query.filter(MaintenanceRecord.id.in_(ids)).all()
-    else:
-        records = MaintenanceRecord.query.order_by(
-            MaintenanceRecord.检修时间.desc()
-        ).all()
+    query = MaintenanceRecord.query
 
+    # 与 maintenance_list 一致：员工只能看到 / 导出自己的记录
+    if current_user.role == "employee":
+        query = query.filter(MaintenanceRecord.created_by == current_user.id)
+
+    search = (request.args.get("search") or "").strip()
+    if search:
+        search_conditions = [
+            getattr(MaintenanceRecord, column_name).contains(search)
+            for column_name in [
+                "装置名称",
+                "设备位号",
+                "设备名称",
+                "检修人员",
+                "检修内容",
+                "类型",
+            ]
+        ]
+        query = query.filter(db.or_(*search_conditions))
+
+    if ids:
+        query = query.filter(MaintenanceRecord.id.in_(ids))
+
+    records = query.order_by(MaintenanceRecord.检修时间.desc()).all()
+    # 逐条按导出权限收口，勾选导出也不能越过归属限制
+    records = [r for r in records if can_export_maintenance(r)]
+
+    names = user_labels({r.created_by for r in records})
     data = [
         {
+            "创建人": names.get(r.created_by, ""),
             "装置名称": r.装置名称,
             "设备位号": r.设备位号,
             "设备名称": r.设备名称,
@@ -477,17 +512,11 @@ def maintenance_export():
         for r in records
     ]
 
-    df = pd.DataFrame(data)
-    buffer = BytesIO()
-    df.to_excel(buffer, index=False, engine="openpyxl")
-    buffer.seek(0)
+    import pandas as pd
 
-    output = make_response(buffer.read())
-    output.headers["Content-Disposition"] = "attachment; filename=maintenance.xlsx"
-    output.headers["Content-Type"] = (
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    return output
+    df = pd.DataFrame(data)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return build_excel_response(df, f"维护记录_{exporter_label()}_{stamp}")
 
 
 def attachments(id):

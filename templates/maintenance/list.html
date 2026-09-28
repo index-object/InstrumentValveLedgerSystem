@@ -34,7 +34,7 @@
             <button type="button" class="cmp-toolbar-btn cmp-toolbar-btn--secondary" onclick="batchExport()">
                 <i class="bi bi-download"></i> 导出选中
             </button>
-            <a href="{{ url_for('valves.maintenance_export') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary">
+            <a href="{{ url_with_params('valves.maintenance_export') }}" class="cmp-toolbar-btn cmp-toolbar-btn--secondary">
                 <i class="bi bi-download"></i> 导出全部
             </a>
             {# 导入按钮：仅员工和管理员可见 #}
@@ -191,15 +191,19 @@
 </div>
 
 <script>
+// 导出范围与列表页保持一致：携带当前搜索 / 分页参数，勾选时再追加 ids
+window.maintenanceExportUrl = {{ url_with_params('valves.maintenance_export') | tojson }};
+
 function batchExport() {
     if (window.isSelectAllMode && window.isSelectAllMode()) {
-        window.location.href = "{{ url_for('valves.maintenance_export') }}";
+        window.location.href = window.maintenanceExportUrl;
         return;
     }
     const checked = document.querySelectorAll('.item-checkbox:checked');
     if (checked.length === 0) { alert('请先选择要导出的记录'); return; }
     const ids = Array.from(checked).map(cb => cb.value);
-    window.location.href = "{{ url_for('valves.maintenance_export') }}?" + ids.map(id => 'ids=' + id).join('&');
+    const sep = window.maintenanceExportUrl.includes('?') ? '&' : '?';
+    window.location.href = window.maintenanceExportUrl + sep + ids.map(id => 'ids=' + id).join('&');
 }
 
 function batchDelete() {

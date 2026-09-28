@@ -183,9 +183,35 @@ def can_import_data(ledger):
 def can_export_data():
     """检查当前用户是否可以导出数据
 
-    所有登录用户都可以导出数据
+    所有登录用户都可以导出数据，但导出范围按角色区分，
+    见 can_export_device / can_export_maintenance
     """
     return True
+
+
+def can_export_device(record):
+    """检查当前用户是否可以导出指定的阀门 / 仪表记录
+
+    管理员、领导可以导出任意记录；员工只能导出自己创建的记录，
+    以及已审批（对所有登录用户可见）的记录，不能导出他人的
+    草稿 / 待审批 / 已驳回数据。
+    """
+    if current_user.role in ("admin", "leader"):
+        return True
+    if record.created_by == current_user.id:
+        return True
+    return getattr(record, "status", None) == "approved"
+
+
+def can_export_maintenance(record):
+    """检查当前用户是否可以导出指定维护记录
+
+    管理员、领导可以导出任意记录；员工只能导出自己创建的记录，
+    与维护记录列表页的可见范围一致。
+    """
+    if current_user.role in ("admin", "leader"):
+        return True
+    return record.created_by == current_user.id
 
 
 # ========== 维护记录权限 ==========
