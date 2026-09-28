@@ -49,6 +49,7 @@ from app.utils.navigation import (
     url_with_from,
     url_with_params,
 )
+from app.utils.maintenance_link import relink_records_for_device
 
 valves = Blueprint("valves", __name__)
 
@@ -189,6 +190,10 @@ def new():
         else:
             process_attachments_create(db, device_type, valve.id, request.form.get("attachments"))
         db.session.commit()
+
+        # 阀门（重新）创建后，把之前因删除而失联的维护记录按
+        # （装置名称 + 设备位号）自动挂回本阀门
+        relink_records_for_device(valve, device_type)
 
         flash("提交成功")
         return redirect(url_for("valves.list"))

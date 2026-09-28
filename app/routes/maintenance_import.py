@@ -10,7 +10,8 @@ from flask_login import login_required, current_user
 from openpyxl import load_workbook
 
 from app.models import db, MaintenanceRecord, Setting
-from app.utils.device_lookup import resolve_device
+from app.utils.device_lookup import resolve_device, resolve_type_code
+from app.utils.maintenance_link import relink_orphan_maintenance_records
 from app.devices import DeviceTypeRegistry
 from app.utils.import_cache import cleanup_import_cache
 
@@ -108,7 +109,7 @@ def upload():
         if _check_duplicate(unit, tag, rec.get("检修时间", "")):
             duplicates.append({"index": idx, "data": rec})
             continue
-        result = resolve_device(unit, tag)
+        result = resolve_device(unit, tag, type_hint=resolve_type_code(rec.get("设备类型", "")))
         if result is None:
             unmatched.append({"index": idx, "data": rec})
         elif len(result) == 1:
@@ -228,7 +229,10 @@ def execute():
             })
             continue
         rec = raw_records[amb_idx]
-        resolved = resolve_device(rec.get("装置名称", ""), rec.get("设备位号", ""))
+        resolved = resolve_device(
+            rec.get("装置名称", ""), rec.get("设备位号", ""),
+            type_hint=resolve_type_code(rec.get("设备类型", "")),
+        )
         if not resolved:
             skipped += 1
             skipped_details.append({
@@ -295,6 +299,11 @@ def execute():
             })
 
     db.session.commit()
+
+    # 未匹配行里有一部分只是设备还没审批（resolve_device 排除了草稿），
+    # 这里再按（装置名称 + 设备位号）自愈一次，保证导出的检修记录重新
+    # 导入时能自动关联回原设备，而不是停在「找不到设备」。
+    relink_orphan_maintenance_records()
 
     try:
         os.remove(saved_path)

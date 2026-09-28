@@ -12,6 +12,7 @@ from flask_login import login_required, current_user
 from app.models import db, Ledger, ApprovalLog, Setting, ValveAttachment, MaintenanceRecord
 from app.devices.valve_helper import VALVE_TYPES, get_valve_model, get_valve_by_id, get_valve_ledger_type, get_all_valve_models, count_valves_by_status, query_valves, handle_maintenance_on_valve_delete
 from app.utils.duplicate_check import check_duplicate
+from app.utils.maintenance_link import relink_records_for_device
 from app.utils.params import expects_params
 from app.devices import DeviceTypeRegistry
 from app.routes.valves.permissions import (
@@ -686,6 +687,10 @@ def new_valve(id):
         if config and config.model_class:
             ledger.valve_count = config.model_class.query.filter_by(ledger_id=id).count()
         db.session.commit()
+
+        # 阀门（重新）创建后，把之前因删除而失联的维护记录自动挂回本阀门
+        relink_records_for_device(valve, ledger.类型)
+
         flash("添加成功，内容已保存为草稿，请在台账集合详情页提交审批")
         return redirect(url_for("ledgers.detail", id=id, **{"from": from_param}))
 
@@ -882,6 +887,7 @@ def batch_save_valve(id):
 
     saved_ids = []
     errors = []
+    created_valves = []
 
     approved_to_draft = False
 
@@ -908,6 +914,7 @@ def batch_save_valve(id):
             valve.created_by = current_user.id
             valve.status = "draft"
             db.session.add(valve)
+            created_valves.append(valve)
 
         for key, value in form_data.items():
             if key == "ledger_id":
@@ -933,6 +940,10 @@ def batch_save_valve(id):
     if config and config.model_class:
         ledger.valve_count = config.model_class.query.filter_by(ledger_id=id).count()
     db.session.commit()
+
+    # 批量新增的阀门（重新）创建后，把失联的维护记录自动挂回
+    for valve in created_valves:
+        relink_records_for_device(valve, ledger.类型)
 
     return jsonify({"success": True, "saved_ids": saved_ids, "errors": errors})
 

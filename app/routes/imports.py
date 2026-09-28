@@ -6,6 +6,7 @@ from app.devices import DeviceTypeRegistry
 from app.import_engine import ImportEngine
 from app.utils.duplicate_check import check_duplicate
 from app.utils.import_cache import cleanup_import_cache
+from app.utils.maintenance_link import relink_orphan_maintenance_records
 from datetime import datetime
 import os
 import uuid
@@ -661,6 +662,10 @@ def execute():
         total_updated += updated
 
     db.session.commit()
+
+    # 台账导入会（重新）创建设备：把此前因设备删除而失联的维护记录按
+    # （装置名称 + 设备位号）自动挂回，避免导入后记录仍显示「已删除」
+    relink_orphan_maintenance_records()
 
     try:
         os.remove(saved_path)

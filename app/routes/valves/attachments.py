@@ -33,6 +33,11 @@ from app.utils.excel_export import (
     user_labels,
 )
 from app.utils.navigation import get_from_param, url_with_params
+from app.utils.maintenance_link import (
+    device_type_label,
+    relink_orphan_maintenance_records,
+    relink_records_for_device,
+)
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
@@ -95,6 +100,9 @@ def maintenance(id):
         valve = get_valve_by_id(id)
     if not valve:
         abort(404)
+
+    # 打开设备的维护记录页时，把之前因设备删除而失联的记录挂回本设备
+    relink_records_for_device(valve, get_valve_ledger_type(valve))
 
     if request.method == "POST":
         # 草稿状态阀门不可创建维护记录
@@ -162,6 +170,10 @@ def maintenance(id):
 
 def maintenance_list():
     """维护记录列表"""
+    # 设备删除后重建会让旧记录的 device_id 失效，列表打开时按
+    # （装置名称 + 设备位号）自愈，避免记录永远显示「已删除 / 找不到设备」
+    relink_orphan_maintenance_records()
+
     query = MaintenanceRecord.query
 
     if current_user.role == "employee":
@@ -182,6 +194,9 @@ def maintenance_list():
         page=page, per_page=per_page, error_out=False
     )
 
+    # 本页再兜底检查一遍：历史遗留的「主键悬空但未标记删除」记录也一并自愈
+    relink_orphan_maintenance_records(records=pagination.items)
+
     record_ids = [r.id for r in pagination.items]
     plan_lookup = {}
     if record_ids:
@@ -199,6 +214,15 @@ def maintenance_list():
 def _name_field_for(type_code):
     """取设备名称字段名：阀门是「名称」，其他仪表是「设备名称」"""
     return "名称" if is_valve_type(type_code) else "设备名称"
+
+
+def _format_maintenance_time(value):
+    """导出检修时间：带时分时保留时间，否则只输出日期，保证可回导。"""
+    if not value:
+        return ""
+    if value.hour or value.minute or value.second:
+        return value.strftime("%Y-%m-%d %H:%M:%S")
+    return value.strftime("%Y-%m-%d")
 
 
 def _all_approved_devices():
@@ -468,6 +492,9 @@ def maintenance_export():
         flash("无权导出数据")
         return redirect(url_for("valves.maintenance_list"))
 
+    # 导出前先自愈关联，保证导出的「设备类型」等字段反映真实归属
+    relink_orphan_maintenance_records()
+
     ids = request.args.getlist("ids")
     query = MaintenanceRecord.query
 
@@ -504,7 +531,9 @@ def maintenance_export():
             "装置名称": r.装置名称,
             "设备位号": r.设备位号,
             "设备名称": r.设备名称,
-            "检修时间": r.检修时间.strftime("%Y-%m-%d") if r.检修时间 else "",
+            # 稳定字段：重新导入时用它消除同（装置，位号）多类型带来的歧义
+            "设备类型": device_type_label(r.device_type),
+            "检修时间": _format_maintenance_time(r.检修时间),
             "检修人员": r.检修人员,
             "检修内容": r.检修内容,
             "类型": r.类型,

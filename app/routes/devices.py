@@ -2,7 +2,9 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from flask_login import login_required, current_user
 from app.models import db, Ledger, ApprovalLog, Setting
 from app.devices import DeviceTypeRegistry
+from app.devices.valve_helper import handle_maintenance_on_valve_delete
 from app.utils.duplicate_check import check_duplicate
+from app.utils.maintenance_link import relink_records_for_device
 from app.utils.params import expects_params
 from app.utils.navigation import url_with_params
 from datetime import datetime
@@ -132,6 +134,9 @@ def new(type_code):
         db.session.add(device)
         db.session.commit()
 
+        # 仪表（重新）创建后，把之前因删除而失联的维护记录自动挂回本设备
+        relink_records_for_device(device, type_code)
+
         flash("保存成功，内容已保存为草稿")
         if ledger_id:
             return redirect(url_for("ledgers.detail", id=ledger_id, **{"from": from_param}))
@@ -186,6 +191,10 @@ def delete(type_code, id):
     config = get_config_or_404(type_code)
     device = config.model_class.query.get_or_404(id)
     ledger_id = device.ledger_id
+
+    # 设备删除后保留关联的维护记录并标记「已删除」，待同（装置，位号）
+    # 的设备重建时自动挂回；否则记录会指向不存在的主键，页面显示 404
+    handle_maintenance_on_valve_delete(type_code, device.id, None)
 
     db.session.delete(device)
     db.session.commit()
@@ -407,6 +416,7 @@ def batch_delete(type_code):
     for id_str in ids:
         device = model.query.get(int(id_str))
         if device:
+            handle_maintenance_on_valve_delete(type_code, device.id, None)
             db.session.delete(device)
             count += 1
 
