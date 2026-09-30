@@ -77,7 +77,7 @@
         <table class="cmp-table plan-table" id="table-{{ category }}" style="min-width: 1320px;">
           <thead><tr>
             <th class="cmp-table__th" style="width:40px;">序号</th>
-            <th class="cmp-table__th" style="min-width:200px;">{{ '设备位号（可多选）' if category == 'valve' else '设备位号' }}</th>
+            <th class="cmp-table__th" style="min-width:200px;">设备位号（可多选）</th>
             <th class="cmp-table__th" style="width:170px;">检修项目</th>
             <th class="cmp-table__th" style="width:150px;">计划开始</th>
             <th class="cmp-table__th" style="width:150px;">计划结束</th>
@@ -189,12 +189,12 @@
   }
 
   function emptyRow(category){
-    var selectText = category === 'valve' ? '选择位号（可多选）' : '选择位号';
+    // 阀门与其他仪表都支持一行多选：同一行的设备共享该行的检修项目、方案与日期区间
     return '' +
       '<td><div class="row-num"></div></td>' +
       '<td><div class="tag-cell" data-category="' + category + '"></div>' +
       '  <button type="button" class="btn btn-sm btn-outline-primary add-device-btn" style="margin-top:6px;font-size:12px;padding:2px 10px;">' +
-      '<i class="bi bi-plus-lg"></i> ' + selectText + '</button></td>' +
+      '<i class="bi bi-plus-lg"></i> 选择位号（可多选）</button></td>' +
       '<td><textarea class="form-control form-control-sm proj-input" rows="3" placeholder="检修项目"></textarea></td>' +
       '<td><input type="date" class="form-control form-control-sm start-input"></td>' +
       '<td><input type="date" class="form-control form-control-sm end-input"></td>' +
@@ -359,21 +359,17 @@
       return { type: r.dataset.type, id: r.dataset.id, tag: r.dataset.tag, name: r.dataset.name };
     });
     if (picked.length){
+      // 阀门与其他仪表行为一致：把本次勾选的位号合并进该行并去重，
+      // 因此同一行可以放多台同类别设备，共享该行的检修参数与日期区间。
       var cell = activeRow.querySelector('.tag-cell');
-      if (activeCategory === 'valve'){
-        // 阀门行可多选：合并已选位号并去重
-        var existing = cell._devs || [];
-        var seen = {};
-        existing.forEach(function(d){ seen[d.type + ':' + d.id] = true; });
-        var merged = existing.slice();
-        picked.forEach(function(d){
-          if (!seen[d.type + ':' + d.id]){ seen[d.type + ':' + d.id] = true; merged.push(d); }
-        });
-        setRowDevices(activeRow, merged);
-      } else {
-        // 仪表行单设备：直接替换
-        setRowDevices(activeRow, picked.slice(0, 1));
-      }
+      var existing = cell._devs || [];
+      var seen = {};
+      existing.forEach(function(d){ seen[d.type + ':' + d.id] = true; });
+      var merged = existing.slice();
+      picked.forEach(function(d){
+        if (!seen[d.type + ':' + d.id]){ seen[d.type + ':' + d.id] = true; merged.push(d); }
+      });
+      setRowDevices(activeRow, merged);
     }
     activeRow = null;
     bootstrap.Modal.getOrCreateInstance(modalEl).hide();

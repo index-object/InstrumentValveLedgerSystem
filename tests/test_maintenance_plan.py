@@ -201,6 +201,61 @@ def test_multiple_devices_share_one_group(client, init_database):
     assert MaintenancePlanItem.query.count() == 2
 
 
+def test_multiple_instruments_share_one_group(client, init_database):
+    """其他仪表行与阀门行一致：一行可选多台仪表，共享该行的检修参数与区间"""
+    db = init_database
+    _login(client, "admin", "admin123")
+    rows = [_row([
+        {"type": "flow_meter", "id": 1, "tag": "FT-001", "name": "进料流量计"},
+        {"type": "pressure_transmitter", "id": 2, "tag": "PT-002", "name": "塔顶压力变送器"},
+        {"type": "temperature", "id": 3, "tag": "TT-003", "name": "塔底温度计"},
+    ], category="instrument")]
+
+    resp = _create_plan(client, "仪表多选", rows)
+    assert resp.status_code == 200
+
+    from app.models import MaintenancePlanGroup, MaintenancePlanItem
+    groups = MaintenancePlanGroup.query.all()
+    assert len(groups) == 1, "同一行的多台仪表应只生成一个任务组"
+    assert groups[0].category == "instrument"
+
+    items = MaintenancePlanItem.query.all()
+    assert len(items) == 3, "三台仪表都应写入计划项"
+    assert {i.tag for i in items} == {"FT-001", "PT-002", "TT-003"}
+    assert {i.group_id for i in items} == {groups[0].id}, "三台仪表应挂在同一个任务组下"
+    # 同一行的设备共享该行的计划区间
+    assert {i.planned_date_start for i in items} == {groups[0].planned_date_start}
+    assert {i.planned_date_end for i in items} == {groups[0].planned_date_end}
+
+
+def test_instrument_multi_select_renders_all_tags(client, init_database):
+    """仪表多选后详情页与编辑表单都应展示全部位号"""
+    db = init_database
+    _login(client, "admin", "admin123")
+    rows = [_row([
+        {"type": "flow_meter", "id": 1, "tag": "FT-001", "name": "进料流量计"},
+        {"type": "pressure_transmitter", "id": 2, "tag": "PT-002", "name": "塔顶压力变送器"},
+    ], category="instrument")]
+    _create_plan(client, "仪表多选展示", rows)
+
+    detail = client.get("/plan/1").data.decode("utf-8")
+    assert "FT-001" in detail and "PT-002" in detail
+
+    # 编辑表单应把两台仪表都预填回同一行
+    form = client.get("/plan/1/edit").data.decode("utf-8")
+    assert "FT-001" in form and "PT-002" in form
+    assert "设备位号（可多选）" in form
+
+
+def test_form_header_marks_multi_select_for_both_categories(client, init_database):
+    """两类明细的表头与按钮都提示可多选（原先仅阀门提示）"""
+    _login(client, "admin", "admin123")
+    form = client.get("/plan/new").data.decode("utf-8")
+    assert form.count("设备位号（可多选）") == 2, "阀门与其他仪表表头都应标注可多选"
+    assert "选择位号（可多选）" in form
+    assert "仪表行单设备" not in form
+
+
 def test_detail_separates_valve_and_instrument(client, init_database):
     db = init_database
     valve_id = _create_approved_valve(db)
